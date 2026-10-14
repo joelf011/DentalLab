@@ -1,0 +1,419 @@
+
+class Cliente {
+  +nome
+  +NIF
+  +moradaFaturacao
+  +email
+  +telefone
+  +ativo
+}
+
+class Utilizador {
+  +nome
+  +email
+  +perfil
+  +ativo
+}
+
+class Colaborador {
+  +nome
+  +ativo
+}
+
+class OrdemTrabalho {
+  +dataCriacao
+  +dataEnvio
+  +prazoEntrega
+  +estado
+  +nomePaciente
+  +idadePaciente
+  +dataAceitacao
+  +dataConclusao
+  +motivoEspera
+  +motivoRejeicao
+}
+
+class Trabalho {
+  +nomeMedicoResponsavel
+  +natureza
+  +cor
+  +estado
+  +dataInicio
+  +dataConclusao
+  +dataEntrega
+}
+
+class TipoTrabalho {
+  +nome
+  +descricao
+  +ativo
+}
+
+class Dente {
+  +numeroFDI
+}
+
+class Etapa {
+  +nome
+  +descricao
+  +acaoSistema
+  +ativa
+}
+
+class EtapaTipoTrabalho {
+  +ordemSequencia
+  +obrigatoria
+}
+
+class EtapaTrabalho {
+  +nomeEtapa
+  +ordemSequencia
+  +acaoSistema
+  +estado
+  +dataInicio
+  +dataConclusao
+  +motivoSalto
+}
+
+class HistoricoResponsabilidade {
+  +dataAtribuicao
+  +dataFim
+  +observacoes
+}
+
+class MaterialRecebido {
+  +descricao
+  +observacoes
+}
+
+class Ficheiro {
+  +nome
+  +localizacao
+  +tipo
+  +visibilidade
+  +dataCarregamento
+}
+
+class Fotografia {
+  +localizacao
+  +descricao
+  +visibilidade
+  +dataCarregamento
+}
+
+class Comentario {
+  +conteudo
+  +visibilidade
+  +dataCriacao
+  +dataEdicao
+}
+
+class RegistoAuditoria {
+  +acao
+  +entidadeAfetada
+  +dataHora
+  +valoresAnteriores
+  +valoresPosteriores
+}
+
+class PerfilUtilizador {
+  <<enumeration>>
+  ADMIN
+  COLABORADOR
+  CLIENTE
+}
+
+class EstadoOrdem {
+  <<enumeration>>
+  INICIADA
+  EM_PROCESSAMENTO
+  EM_ESPERA
+  CONCLUIDA
+  REJEITADA
+}
+
+class EstadoTrabalho {
+  <<enumeration>>
+  EM_AVALIACAO
+  POR_INICIAR
+  EM_PROCESSAMENTO
+  EM_PROVA
+  CONCLUIDO
+  ENTREGUE
+}
+
+class EstadoEtapa {
+  <<enumeration>>
+  POR_INICIAR
+  EM_PROCESSAMENTO
+  CONCLUIDA
+  SALTADA
+}
+
+class NaturezaTrabalho {
+  <<enumeration>>
+  FISICO
+  DIGITAL
+}
+
+class VisibilidadeConteudo {
+  <<enumeration>>
+  INTERNA
+  EXTERNA
+}
+
+class AcaoSistemaEtapa {
+  <<enumeration>>
+  NORMAL
+  INICIAR_PROVA
+  FATURACAO
+  EMBALAMENTO_ENVIO_FINAL
+}
+
+Cliente "1" -- "0..*" OrdemTrabalho : corresponde
+Utilizador "1" -- "0..*" OrdemTrabalho : cria
+
+Cliente "1" -- "1" Utilizador : contaPartilhada
+Colaborador "1" -- "1" Utilizador : loginIndividual
+
+OrdemTrabalho "1" *-- "1..*" Trabalho : contem
+TipoTrabalho "1" -- "0..*" Trabalho : classifica
+Trabalho "0..*" -- "0..*" Dente : abrange
+
+TipoTrabalho "1" *-- "1..*" EtapaTipoTrabalho : configura
+Etapa "1" -- "0..*" EtapaTipoTrabalho : define
+Trabalho "1" *-- "1..*" EtapaTrabalho : percorre
+Etapa "0..1" -- "0..*" EtapaTrabalho : modeloOrigem
+
+Colaborador "0..1" -- "0..*" EtapaTrabalho : responsavelAtual
+EtapaTrabalho "1" *-- "0..*" HistoricoResponsabilidade : historico
+Colaborador "1" -- "0..*" HistoricoResponsabilidade : atribuido
+
+Trabalho "1" *-- "0..*" MaterialRecebido : regista
+Trabalho "1" *-- "0..*" Ficheiro : inclui
+Trabalho "1" *-- "0..*" Fotografia : inclui
+Trabalho "1" *-- "0..*" Comentario : recebe
+Utilizador "1" -- "0..*" Comentario : publica
+Comentario "0..1" --> "0..*" Comentario : resposta
+
+Utilizador "1" -- "0..*" RegistoAuditoria : executa
+
+Utilizador --> PerfilUtilizador : perfil
+OrdemTrabalho --> EstadoOrdem : estado
+Trabalho --> EstadoTrabalho : estado
+EtapaTrabalho --> EstadoEtapa : estado
+Trabalho --> NaturezaTrabalho : natureza
+Ficheiro --> VisibilidadeConteudo : visibilidade
+Fotografia --> VisibilidadeConteudo : visibilidade
+Comentario --> VisibilidadeConteudo : visibilidade
+Etapa --> AcaoSistemaEtapa : acaoSistema
+EtapaTrabalho --> AcaoSistemaEtapa : acaoSistema
+class Cliente {
+  +nome
+  +NIF
+  +moradaFaturacao
+  +email
+  +telefone
+  +ativo
+}
+
+class Utilizador {
+  +nome
+  +email
+  +perfil
+  +ativo
+}
+
+class Colaborador {
+  +nome
+  +ativo
+}
+
+class OrdemTrabalho {
+  +dataCriacao
+  +dataEnvio
+  +prazoEntrega
+  +estado
+  +nomePaciente
+  +idadePaciente
+  +dataAceitacao
+  +dataConclusao
+  +motivoEspera
+  +motivoRejeicao
+}
+
+class Trabalho {
+  +nomeMedicoResponsavel
+  +natureza
+  +cor
+  +estado
+  +dataInicio
+  +dataConclusao
+  +dataEntrega
+}
+
+class TipoTrabalho {
+  +nome
+  +descricao
+  +ativo
+}
+
+class Dente {
+  +numeroFDI
+}
+
+class Etapa {
+  +nome
+  +descricao
+  +acaoSistema
+  +ativa
+}
+
+class EtapaTipoTrabalho {
+  +ordemSequencia
+  +obrigatoria
+}
+
+class EtapaTrabalho {
+  +nomeEtapa
+  +ordemSequencia
+  +acaoSistema
+  +estado
+  +dataInicio
+  +dataConclusao
+  +motivoSalto
+}
+
+class HistoricoResponsabilidade {
+  +dataAtribuicao
+  +dataFim
+  +observacoes
+}
+
+class MaterialRecebido {
+  +descricao
+  +observacoes
+}
+
+class Ficheiro {
+  +nome
+  +localizacao
+  +tipo
+  +visibilidade
+  +dataCarregamento
+}
+
+class Fotografia {
+  +localizacao
+  +descricao
+  +visibilidade
+  +dataCarregamento
+}
+
+class Comentario {
+  +conteudo
+  +visibilidade
+  +dataCriacao
+  +dataEdicao
+}
+
+class RegistoAuditoria {
+  +acao
+  +entidadeAfetada
+  +dataHora
+  +valoresAnteriores
+  +valoresPosteriores
+}
+
+class PerfilUtilizador {
+  <<enumeration>>
+  ADMIN
+  COLABORADOR
+  CLIENTE
+}
+
+class EstadoOrdem {
+  <<enumeration>>
+  INICIADA
+  EM_PROCESSAMENTO
+  EM_ESPERA
+  CONCLUIDA
+  REJEITADA
+}
+
+class EstadoTrabalho {
+  <<enumeration>>
+  EM_AVALIACAO
+  POR_INICIAR
+  EM_PROCESSAMENTO
+  EM_PROVA
+  CONCLUIDO
+  ENTREGUE
+}
+
+class EstadoEtapa {
+  <<enumeration>>
+  POR_INICIAR
+  EM_PROCESSAMENTO
+  CONCLUIDA
+  SALTADA
+}
+
+class NaturezaTrabalho {
+  <<enumeration>>
+  FISICO
+  DIGITAL
+}
+
+class VisibilidadeConteudo {
+  <<enumeration>>
+  INTERNA
+  EXTERNA
+}
+
+class AcaoSistemaEtapa {
+  <<enumeration>>
+  NORMAL
+  INICIAR_PROVA
+  FATURACAO
+  EMBALAMENTO_ENVIO_FINAL
+}
+
+Cliente "1" -- "0..*" OrdemTrabalho : corresponde
+Utilizador "1" -- "0..*" OrdemTrabalho : cria
+
+Cliente "1" -- "1" Utilizador : contaPartilhada
+Colaborador "1" -- "1" Utilizador : loginIndividual
+
+OrdemTrabalho "1" *-- "1..*" Trabalho : contem
+TipoTrabalho "1" -- "0..*" Trabalho : classifica
+Trabalho "0..*" -- "0..*" Dente : abrange
+
+TipoTrabalho "1" *-- "1..*" EtapaTipoTrabalho : configura
+Etapa "1" -- "0..*" EtapaTipoTrabalho : define
+Trabalho "1" *-- "1..*" EtapaTrabalho : percorre
+Etapa "0..1" -- "0..*" EtapaTrabalho : modeloOrigem
+
+Colaborador "0..1" -- "0..*" EtapaTrabalho : responsavelAtual
+EtapaTrabalho "1" *-- "0..*" HistoricoResponsabilidade : historico
+Colaborador "1" -- "0..*" HistoricoResponsabilidade : atribuido
+
+Trabalho "1" *-- "0..*" MaterialRecebido : regista
+Trabalho "1" *-- "0..*" Ficheiro : inclui
+Trabalho "1" *-- "0..*" Fotografia : inclui
+Trabalho "1" *-- "0..*" Comentario : recebe
+Utilizador "1" -- "0..*" Comentario : publica
+Comentario "0..1" --> "0..*" Comentario : resposta
+
+Utilizador "1" -- "0..*" RegistoAuditoria : executa
+
+Utilizador --> PerfilUtilizador : perfil
+OrdemTrabalho --> EstadoOrdem : estado
+Trabalho --> EstadoTrabalho : estado
+EtapaTrabalho --> EstadoEtapa : estado
+Trabalho --> NaturezaTrabalho : natureza
+Ficheiro --> VisibilidadeConteudo : visibilidade
+Fotografia --> VisibilidadeConteudo : visibilidade
+Comentario --> VisibilidadeConteudo : visibilidade
+Etapa --> AcaoSistemaEtapa : acaoSistema
+EtapaTrabalho --> AcaoSistemaEtapa : acaoSistema
