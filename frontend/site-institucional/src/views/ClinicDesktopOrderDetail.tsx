@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { NOTES, WORK_ORDERS, type WorkOrder } from '../data'
+import { useEffect, useMemo, useState } from 'react'
+import { getNotesByWorkId, getWorkOrderById, subscribeLabData, type WorkOrder } from '../data'
 import { NatureBadge } from '../components/ui'
 
 type DetailTab = 'resumo' | 'progresso' | 'informacao' | 'historico'
@@ -171,7 +171,20 @@ export default function ClinicDesktopOrderDetail({
   onBack,
 }: ClinicDesktopOrderDetailProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>('resumo')
-  const order = WORK_ORDERS.find(item => item.id === orderId && item.clienteId === clinicId)
+  const [refreshTick, setRefreshTick] = useState(0)
+
+  useEffect(() => {
+    const unsubscribe = subscribeLabData(() => setRefreshTick(value => value + 1))
+    return unsubscribe
+  }, [])
+
+  const order = useMemo(
+    () => {
+      const current = getWorkOrderById(orderId)
+      return current && current.clienteId === clinicId ? current : undefined
+    },
+    [clinicId, orderId, refreshTick],
+  )
 
   if (!order) {
     return (
@@ -191,7 +204,7 @@ export default function ClinicDesktopOrderDetail({
     month: 'long',
     year: 'numeric',
   })
-  const laboratoryNotes = NOTES.filter(note => note.workId === order.id && note.visibility === 'cliente')
+  const laboratoryNotes = getNotesByWorkId(order.id).filter(note => note.visibility === 'cliente')
 
   return (
     <div className="flex-1 overflow-y-auto">

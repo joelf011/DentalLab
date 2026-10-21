@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { User, WorkOrder } from '../data'
-import { CLIENTES, WORK_ORDERS } from '../data'
+import { CLIENTES, getWorkOrders, subscribeLabData } from '../data'
 import { NatureBadge } from '../components/ui'
 import ClinicDesktopNewOrder from './ClinicDesktopNewOrder'
 import ClinicDesktopOrderDetail from './ClinicDesktopOrderDetail'
@@ -75,8 +75,9 @@ export default function ClinicDesktopDashboard({
 }: ClinicDesktopDashboardProps) {
   const [creatingOrder, setCreatingOrder] = useState(false)
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>(getWorkOrders())
   const clinic = CLIENTES.find(item => item.email === user.email)
-  const clinicWorks = WORK_ORDERS.filter(order => order.clienteId === clinic?.id)
+  const clinicWorks = workOrders.filter(order => order.clienteId === clinic?.id)
   const recentOrders = clinicWorks.slice(0, 6)
   const starting = clinicWorks.filter(
     order => order.status === 'por_receber' || order.status === 'encaminhado',
@@ -92,6 +93,13 @@ export default function ClinicDesktopDashboard({
   useEffect(() => {
     setSelectedOrderId(null)
   }, [activeView])
+
+  useEffect(() => {
+    const unsubscribe = subscribeLabData(() => {
+      setWorkOrders([...getWorkOrders()])
+    })
+    return unsubscribe
+  }, [])
 
   if (selectedOrderId && clinic) {
     return (

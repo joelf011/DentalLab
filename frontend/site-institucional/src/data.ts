@@ -95,6 +95,17 @@ export interface InternalNote {
   visibility: 'interna' | 'cliente'
 }
 
+export interface WorkAttachment {
+  id: string
+  workId: string
+  fileName: string
+  category: 'stl' | 'foto' | 'documento'
+  uploadedAt: string
+  author: string
+  visibility: 'interna' | 'cliente'
+  sizeLabel?: string
+}
+
 export interface Cliente {
   id: string
   name: string
@@ -371,3 +382,257 @@ export const NOTES: InternalNote[] = [
   { id: 'n2', workId: 'w1', content: 'Atenção: paciente tem bruxismo severo. Reforçar espessura oclusal mínima 1.5mm.', author: 'Ana Martins', date: '2024-12-11T10:30', visibility: 'interna' },
   { id: 'n3', workId: 'w1', content: 'Trabalho em execução. Previsão de conclusão do enceramento: 12 Dez.', author: 'Ana Martins', date: '2024-12-11T08:05', visibility: 'cliente' },
 ]
+
+export const WORK_ATTACHMENTS: WorkAttachment[] = [
+  { id: 'a1', workId: 'w1', fileName: 'arco_superior.stl', category: 'stl', uploadedAt: '2024-12-10T09:20', author: 'Marta Oliveira', visibility: 'interna', sizeLabel: '4.2 MB' },
+  { id: 'a2', workId: 'w1', fileName: 'arco_inferior.stl', category: 'stl', uploadedAt: '2024-12-10T09:20', author: 'Marta Oliveira', visibility: 'interna', sizeLabel: '3.8 MB' },
+  { id: 'a3', workId: 'w1', fileName: 'foto_oclusal_01.jpg', category: 'foto', uploadedAt: '2024-12-11T08:10', author: 'Ana Martins', visibility: 'interna', sizeLabel: '2.4 MB' },
+  { id: 'a4', workId: 'w1', fileName: 'render_prova_final.jpg', category: 'foto', uploadedAt: '2024-12-12T17:30', author: 'Ana Martins', visibility: 'cliente', sizeLabel: '5.1 MB' },
+  { id: 'a5', workId: 'w3', fileName: 'mockup_dsd_v3.pdf', category: 'documento', uploadedAt: '2024-12-13T14:05', author: 'Pedro Santos', visibility: 'cliente', sizeLabel: '1.3 MB' },
+  { id: 'a6', workId: 'w3', fileName: 'design_planeamento.stl', category: 'stl', uploadedAt: '2024-12-12T16:20', author: 'Pedro Santos', visibility: 'interna', sizeLabel: '6.7 MB' },
+]
+
+type CompletionDecision = 'advance' | 'clinic_trial' | 'finalize' | 'standby'
+
+type LabState = {
+  workOrders: WorkOrder[]
+  notes: InternalNote[]
+  attachments: WorkAttachment[]
+}
+
+const LAB_STATE_STORAGE_KEY = 'dentallab.site.state.v1'
+
+function deepClone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
+function defaultLabState(): LabState {
+  return {
+    workOrders: deepClone(WORK_ORDERS),
+    notes: deepClone(NOTES),
+    attachments: deepClone(WORK_ATTACHMENTS),
+  }
+}
+
+function loadLabState(): LabState {
+  if (typeof window === 'undefined') return defaultLabState()
+  const raw = window.localStorage.getItem(LAB_STATE_STORAGE_KEY)
+  if (!raw) return defaultLabState()
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<LabState>
+    return {
+      workOrders: parsed.workOrders && Array.isArray(parsed.workOrders) ? parsed.workOrders : deepClone(WORK_ORDERS),
+      notes: parsed.notes && Array.isArray(parsed.notes) ? parsed.notes : deepClone(NOTES),
+      attachments: parsed.attachments && Array.isArray(parsed.attachments) ? parsed.attachments : deepClone(WORK_ATTACHMENTS),
+    }
+  } catch {
+    return defaultLabState()
+  }
+}
+
+let labState: LabState = loadLabState()
+const labStateListeners = new Set<() => void>()
+
+function emitLabState() {
+  labStateListeners.forEach(listener => listener())
+}
+
+function persistLabState() {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(LAB_STATE_STORAGE_KEY, JSON.stringify(labState))
+}
+
+function updateLabState(mutator: (state: LabState) => void) {
+  mutator(labState)
+  persistLabState()
+  emitLabState()
+}
+
+function nowIso() {
+  return new Date().toISOString()
+}
+
+function activeStepIndex(work: WorkOrder, stepId?: string) {
+  if (stepId) {
+    return work.steps.findIndex(step => step.id === stepId)
+  }
+  return work.steps.findIndex(step => step.status === 'em_execucao')
+}
+
+function markStepExecutionOwnership(step: WorkOrderStep, collaboratorId: string, collaboratorName: string) {
+  step.status = 'em_execucao'
+  step.collaboratorId = collaboratorId
+  step.collaboratorName = collaboratorName
+  step.startedAt = step.startedAt ?? nowIso()
+  step.standbyReason = undefined
+}
+
+export function subscribeLabData(listener: () => void) {
+  labStateListeners.add(listener)
+  return () => {
+    labStateListeners.delete(listener)
+  }
+}
+
+export function getWorkOrders() {
+  return labState.workOrders
+}
+
+export function getWorkOrderById(workId: string) {
+  return labState.workOrders.find(work => work.id === workId)
+}
+
+export function getNotesByWorkId(workId: string) {
+  return labState.notes.filter(note => note.workId === workId)
+}
+
+export function getAttachmentsByWorkId(workId: string) {
+  return labState.attachments.filter(file => file.workId === workId)
+}
+
+export function getClaimableStep(work: WorkOrder) {
+  return work.steps.find((step, index) => {
+    const candidate = step.status === 'nao_iniciado' || step.status === 'standby'
+    if (!candidate) return false
+    if (index === 0) return true
+    const previous = work.steps[index - 1]
+    return previous.status === 'concluida'
+  })
+}
+
+export function updateWorkOrder(workId: string, updater: (work: WorkOrder) => void) {
+  updateLabState(state => {
+    const target = state.workOrders.find(work => work.id === workId)
+    if (!target) return
+    updater(target)
+  })
+}
+
+export function assumeWorkStep(params: {
+  workId: string
+  stepId: string
+  collaboratorId: string
+  collaboratorName: string
+}) {
+  updateLabState(state => {
+    const work = state.workOrders.find(item => item.id === params.workId)
+    if (!work) return
+
+    const step = work.steps.find(item => item.id === params.stepId)
+    if (!step) return
+
+    markStepExecutionOwnership(step, params.collaboratorId, params.collaboratorName)
+    work.status = 'em_producao'
+    work.etapaAtual = step.name
+    work.responsavelId = params.collaboratorId
+    work.responsavelName = params.collaboratorName
+  })
+}
+
+export function completeWorkStepDecision(params: {
+  workId: string
+  collaboratorId: string
+  collaboratorName: string
+  action: CompletionDecision
+  stepId?: string
+  assignToId?: string
+  assignToName?: string
+  standbyReason?: string
+}) {
+  updateLabState(state => {
+    const work = state.workOrders.find(item => item.id === params.workId)
+    if (!work) return
+
+    const currentIndex = activeStepIndex(work, params.stepId)
+    if (currentIndex < 0) return
+
+    const currentStep = work.steps[currentIndex]
+    const timestamp = nowIso()
+
+    if (params.action === 'standby') {
+      currentStep.status = 'standby'
+      currentStep.standbyReason = params.standbyReason?.trim() || 'Sem motivo indicado'
+      work.status = 'em_standby'
+      work.etapaAtual = `${currentStep.name} (Standby)`
+      work.responsavelId = params.collaboratorId
+      work.responsavelName = params.collaboratorName
+      return
+    }
+
+    currentStep.status = 'concluida'
+    currentStep.completedAt = timestamp
+    currentStep.collaboratorId = currentStep.collaboratorId ?? params.collaboratorId
+    currentStep.collaboratorName = currentStep.collaboratorName ?? params.collaboratorName
+    currentStep.startedAt = currentStep.startedAt ?? timestamp
+    currentStep.standbyReason = undefined
+
+    if (params.action === 'clinic_trial') {
+      work.status = 'aguarda_aprovacao'
+      work.etapaAtual = 'Em prova'
+      return
+    }
+
+    if (params.action === 'finalize') {
+      work.steps.forEach(step => {
+        if (step.status !== 'concluida') {
+          step.status = 'concluida'
+          step.startedAt = step.startedAt ?? timestamp
+          step.completedAt = step.completedAt ?? timestamp
+          step.collaboratorId = step.collaboratorId ?? params.collaboratorId
+          step.collaboratorName = step.collaboratorName ?? params.collaboratorName
+          step.standbyReason = undefined
+        }
+      })
+      work.status = 'concluido'
+      work.etapaAtual = 'Entregue'
+      work.responsavelId = params.collaboratorId
+      work.responsavelName = params.collaboratorName
+      return
+    }
+
+    const nextStep = work.steps[currentIndex + 1]
+    if (!nextStep) {
+      work.status = 'concluido'
+      work.etapaAtual = 'Entregue'
+      return
+    }
+
+    const assigneeId = params.assignToId ?? params.collaboratorId
+    const assigneeName = params.assignToName ?? params.collaboratorName
+    markStepExecutionOwnership(nextStep, assigneeId, assigneeName)
+    work.status = 'em_producao'
+    work.etapaAtual = nextStep.name
+    work.responsavelId = assigneeId
+    work.responsavelName = assigneeName
+  })
+}
+
+export function addWorkNote(params: {
+  workId: string
+  content: string
+  author: string
+  visibility: 'interna' | 'cliente'
+}) {
+  const trimmed = params.content.trim()
+  if (!trimmed) return
+
+  updateLabState(state => {
+    state.notes.unshift({
+      id: `n${Date.now()}`,
+      workId: params.workId,
+      content: trimmed,
+      author: params.author,
+      date: nowIso(),
+      visibility: params.visibility,
+    })
+  })
+}
+
+export function toggleNoteVisibility(noteId: string) {
+  updateLabState(state => {
+    const note = state.notes.find(item => item.id === noteId)
+    if (!note) return
+    note.visibility = note.visibility === 'interna' ? 'cliente' : 'interna'
+  })
+}
