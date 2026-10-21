@@ -1,3 +1,24 @@
+@startuml modeloconceptual
+hide methods
+hide circle
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+
+' ---------- Utilizadores ----------
+
+class Cargo {
+  +designacao
+}
+
+class Utilizador {
+  +nome
+  +email
+  +password
+  +passwordTemporaria
+  +ativo
+  +dataAprovacao
+}
 
 class Cliente {
   +nome
@@ -8,40 +29,42 @@ class Cliente {
   +ativo
 }
 
-class Utilizador {
-  +nome
-  +email
-  +perfil
-  +ativo
-}
-
-class Colaborador {
-  +nome
-  +ativo
-}
+' ---------- Encomendas ----------
 
 class OrdemTrabalho {
-  +dataCriacao
-  +dataEnvio
-  +prazoEntrega
-  +estado
+  +nomeMedicoResponsavel
   +nomePaciente
+  +sexoPaciente
   +idadePaciente
+  +dataProximaConsulta
+  +observacoes
+  +prazoEntrega
+  +dataCriacao
   +dataAceitacao
+  +dataInicio
   +dataConclusao
+  +dataEntrega
   +motivoEspera
   +motivoRejeicao
 }
 
+class EstadoOrdem {
+  +designacao
+}
+
+class MaterialRecebido {
+  +descricao
+  +observacoes
+  +dataRececao
+}
+
 class Trabalho {
-  +nomeMedicoResponsavel
   +natureza
   +cor
-  +estado
-  +dataInicio
-  +dataConclusao
-  +dataEntrega
+  +dentes
 }
+
+' ---------- Modelos de trabalho (geridos pelo Admin) ----------
 
 class TipoTrabalho {
   +nome
@@ -49,63 +72,45 @@ class TipoTrabalho {
   +ativo
 }
 
-class Dente {
-  +numeroFDI
-}
-
 class Etapa {
   +nome
   +descricao
-  +acaoSistema
   +ativa
 }
 
 class EtapaTipoTrabalho {
-  +ordemSequencia
-  +obrigatoria
+  +ordem
 }
 
 class EtapaTrabalho {
-  +nomeEtapa
-  +ordemSequencia
-  +acaoSistema
-  +estado
+  +nome
+  +ordem
   +dataInicio
   +dataConclusao
-  +motivoSalto
 }
 
-class HistoricoResponsabilidade {
-  +dataAtribuicao
-  +dataFim
-  +observacoes
-}
-
-class MaterialRecebido {
-  +descricao
-  +observacoes
-}
+' ---------- Documentação e comunicação ----------
 
 class Ficheiro {
   +nome
   +localizacao
-  +tipo
-  +visibilidade
   +dataCarregamento
 }
 
-class Fotografia {
-  +localizacao
-  +descricao
-  +visibilidade
-  +dataCarregamento
+class TipoFicheiro {
+  +designacao
 }
 
 class Comentario {
   +conteudo
-  +visibilidade
   +dataCriacao
   +dataEdicao
+}
+
+class Notificacao {
+  +mensagem
+  +dataCriacao
+  +dataLeitura
 }
 
 class RegistoAuditoria {
@@ -116,304 +121,76 @@ class RegistoAuditoria {
   +valoresPosteriores
 }
 
-class PerfilUtilizador {
-  <<enumeration>>
-  ADMIN
-  COLABORADOR
-  CLIENTE
-}
+' ---------- Associações ----------
 
-class EstadoOrdem {
-  <<enumeration>>
-  INICIADA
-  EM_PROCESSAMENTO
-  EM_ESPERA
-  CONCLUIDA
-  REJEITADA
-}
+Cargo "1" -- "0..*" Utilizador : tem
+Cliente "0..1" -- "0..*" Utilizador : contas
+Utilizador "0..1" -- "0..*" Utilizador : aprova
 
-class EstadoTrabalho {
-  <<enumeration>>
-  EM_AVALIACAO
-  POR_INICIAR
-  EM_PROCESSAMENTO
-  EM_PROVA
-  CONCLUIDO
-  ENTREGUE
-}
-
-class EstadoEtapa {
-  <<enumeration>>
-  POR_INICIAR
-  EM_PROCESSAMENTO
-  CONCLUIDA
-  SALTADA
-}
-
-class NaturezaTrabalho {
-  <<enumeration>>
-  FISICO
-  DIGITAL
-}
-
-class VisibilidadeConteudo {
-  <<enumeration>>
-  INTERNA
-  EXTERNA
-}
-
-class AcaoSistemaEtapa {
-  <<enumeration>>
-  NORMAL
-  INICIAR_PROVA
-  FATURACAO
-  EMBALAMENTO_ENVIO_FINAL
-}
-
-Cliente "1" -- "0..*" OrdemTrabalho : corresponde
+Cliente "1" -- "0..*" OrdemTrabalho : encomenda
 Utilizador "1" -- "0..*" OrdemTrabalho : cria
-
-Cliente "1" -- "1" Utilizador : contaPartilhada
-Colaborador "1" -- "1" Utilizador : loginIndividual
+Utilizador "0..1" -- "0..*" OrdemTrabalho : aceita
+EstadoOrdem "1" -- "0..*" OrdemTrabalho : estado
+OrdemTrabalho "1" *-- "0..*" MaterialRecebido : regista
 
 OrdemTrabalho "1" *-- "1..*" Trabalho : contem
 TipoTrabalho "1" -- "0..*" Trabalho : classifica
-Trabalho "0..*" -- "0..*" Dente : abrange
 
 TipoTrabalho "1" *-- "1..*" EtapaTipoTrabalho : configura
-Etapa "1" -- "0..*" EtapaTipoTrabalho : define
+Etapa "1" -- "0..*" EtapaTipoTrabalho : integra
+
 Trabalho "1" *-- "1..*" EtapaTrabalho : percorre
-Etapa "0..1" -- "0..*" EtapaTrabalho : modeloOrigem
+Etapa "0..1" -- "0..*" EtapaTrabalho : copiadaDe
+Utilizador "0..1" -- "0..*" EtapaTrabalho : responsavel
 
-Colaborador "0..1" -- "0..*" EtapaTrabalho : responsavelAtual
-EtapaTrabalho "1" *-- "0..*" HistoricoResponsabilidade : historico
-Colaborador "1" -- "0..*" HistoricoResponsabilidade : atribuido
+TipoFicheiro "1" -- "0..*" Ficheiro : tipo
+OrdemTrabalho "0..1" -- "0..*" Ficheiro : partilhado
+Trabalho "0..1" -- "0..*" Ficheiro : interno
+Utilizador "1" -- "0..*" Ficheiro : carrega
 
-Trabalho "1" *-- "0..*" MaterialRecebido : regista
-Trabalho "1" *-- "0..*" Ficheiro : inclui
-Trabalho "1" *-- "0..*" Fotografia : inclui
-Trabalho "1" *-- "0..*" Comentario : recebe
+OrdemTrabalho "0..1" -- "0..*" Comentario : partilhado
+Trabalho "0..1" -- "0..*" Comentario : interno
 Utilizador "1" -- "0..*" Comentario : publica
-Comentario "0..1" --> "0..*" Comentario : resposta
 
-Utilizador "1" -- "0..*" RegistoAuditoria : executa
+Utilizador "1" -- "0..*" Notificacao : recebe
+OrdemTrabalho "0..1" -- "0..*" Notificacao : refere
+Trabalho "0..1" -- "0..*" Notificacao : refere
 
-Utilizador --> PerfilUtilizador : perfil
-OrdemTrabalho --> EstadoOrdem : estado
-Trabalho --> EstadoTrabalho : estado
-EtapaTrabalho --> EstadoEtapa : estado
-Trabalho --> NaturezaTrabalho : natureza
-Ficheiro --> VisibilidadeConteudo : visibilidade
-Fotografia --> VisibilidadeConteudo : visibilidade
-Comentario --> VisibilidadeConteudo : visibilidade
-Etapa --> AcaoSistemaEtapa : acaoSistema
-EtapaTrabalho --> AcaoSistemaEtapa : acaoSistema
-class Cliente {
-  +nome
-  +NIF
-  +moradaFaturacao
-  +email
-  +telefone
-  +ativo
-}
+Utilizador "0..1" -- "0..*" RegistoAuditoria : executa
 
-class Utilizador {
-  +nome
-  +email
-  +perfil
-  +ativo
-}
+note right of Utilizador
+  Admin e Colaborador: internos, sem Cliente.
+  Cliente: cada clínica é um utilizador
+  ligado à sua entidade Cliente.
+  Contas criadas pela clínica ficam pendentes
+  até o Admin as aprovar. Contas recusadas ou
+  desativadas podem ser reativadas.
+end note
 
-class Colaborador {
-  +nome
-  +ativo
-}
+note right of Trabalho
+  natureza: FISICO ou DIGITAL
+  cor: escala VITA (ex.: A2)
+  dentes: 1 ou mais números FDI (odontograma)
+  As datas de início e fim pertencem à Ordem.
+end note
 
-class OrdemTrabalho {
-  +dataCriacao
-  +dataEnvio
-  +prazoEntrega
-  +estado
-  +nomePaciente
-  +idadePaciente
-  +dataAceitacao
-  +dataConclusao
-  +motivoEspera
-  +motivoRejeicao
-}
+note right of EstadoOrdem
+  Visível pela clínica. O progresso interno
+  de cada Trabalho é dado pelas suas etapas.
+end note
 
-class Trabalho {
-  +nomeMedicoResponsavel
-  +natureza
-  +cor
-  +estado
-  +dataInicio
-  +dataConclusao
-  +dataEntrega
-}
+note bottom of Ficheiro
+  Pertence à Ordem (partilhado com a clínica)
+  OU ao Trabalho (interno) — nunca aos dois.
+  O mesmo se aplica ao Comentario.
+end note
 
-class TipoTrabalho {
-  +nome
-  +descricao
-  +ativo
-}
+note bottom of EtapaTrabalho
+  Cópia das etapas do TipoTrabalho no momento
+  da criação do Trabalho. Alterações posteriores
+  ao modelo não afetam trabalhos já criados.
+  Etapa atual = primeira etapa por concluir.
+  Visível apenas para o laboratório.
+end note
 
-class Dente {
-  +numeroFDI
-}
-
-class Etapa {
-  +nome
-  +descricao
-  +acaoSistema
-  +ativa
-}
-
-class EtapaTipoTrabalho {
-  +ordemSequencia
-  +obrigatoria
-}
-
-class EtapaTrabalho {
-  +nomeEtapa
-  +ordemSequencia
-  +acaoSistema
-  +estado
-  +dataInicio
-  +dataConclusao
-  +motivoSalto
-}
-
-class HistoricoResponsabilidade {
-  +dataAtribuicao
-  +dataFim
-  +observacoes
-}
-
-class MaterialRecebido {
-  +descricao
-  +observacoes
-}
-
-class Ficheiro {
-  +nome
-  +localizacao
-  +tipo
-  +visibilidade
-  +dataCarregamento
-}
-
-class Fotografia {
-  +localizacao
-  +descricao
-  +visibilidade
-  +dataCarregamento
-}
-
-class Comentario {
-  +conteudo
-  +visibilidade
-  +dataCriacao
-  +dataEdicao
-}
-
-class RegistoAuditoria {
-  +acao
-  +entidadeAfetada
-  +dataHora
-  +valoresAnteriores
-  +valoresPosteriores
-}
-
-class PerfilUtilizador {
-  <<enumeration>>
-  ADMIN
-  COLABORADOR
-  CLIENTE
-}
-
-class EstadoOrdem {
-  <<enumeration>>
-  INICIADA
-  EM_PROCESSAMENTO
-  EM_ESPERA
-  CONCLUIDA
-  REJEITADA
-}
-
-class EstadoTrabalho {
-  <<enumeration>>
-  EM_AVALIACAO
-  POR_INICIAR
-  EM_PROCESSAMENTO
-  EM_PROVA
-  CONCLUIDO
-  ENTREGUE
-}
-
-class EstadoEtapa {
-  <<enumeration>>
-  POR_INICIAR
-  EM_PROCESSAMENTO
-  CONCLUIDA
-  SALTADA
-}
-
-class NaturezaTrabalho {
-  <<enumeration>>
-  FISICO
-  DIGITAL
-}
-
-class VisibilidadeConteudo {
-  <<enumeration>>
-  INTERNA
-  EXTERNA
-}
-
-class AcaoSistemaEtapa {
-  <<enumeration>>
-  NORMAL
-  INICIAR_PROVA
-  FATURACAO
-  EMBALAMENTO_ENVIO_FINAL
-}
-
-Cliente "1" -- "0..*" OrdemTrabalho : corresponde
-Utilizador "1" -- "0..*" OrdemTrabalho : cria
-
-Cliente "1" -- "1" Utilizador : contaPartilhada
-Colaborador "1" -- "1" Utilizador : loginIndividual
-
-OrdemTrabalho "1" *-- "1..*" Trabalho : contem
-TipoTrabalho "1" -- "0..*" Trabalho : classifica
-Trabalho "0..*" -- "0..*" Dente : abrange
-
-TipoTrabalho "1" *-- "1..*" EtapaTipoTrabalho : configura
-Etapa "1" -- "0..*" EtapaTipoTrabalho : define
-Trabalho "1" *-- "1..*" EtapaTrabalho : percorre
-Etapa "0..1" -- "0..*" EtapaTrabalho : modeloOrigem
-
-Colaborador "0..1" -- "0..*" EtapaTrabalho : responsavelAtual
-EtapaTrabalho "1" *-- "0..*" HistoricoResponsabilidade : historico
-Colaborador "1" -- "0..*" HistoricoResponsabilidade : atribuido
-
-Trabalho "1" *-- "0..*" MaterialRecebido : regista
-Trabalho "1" *-- "0..*" Ficheiro : inclui
-Trabalho "1" *-- "0..*" Fotografia : inclui
-Trabalho "1" *-- "0..*" Comentario : recebe
-Utilizador "1" -- "0..*" Comentario : publica
-Comentario "0..1" --> "0..*" Comentario : resposta
-
-Utilizador "1" -- "0..*" RegistoAuditoria : executa
-
-Utilizador --> PerfilUtilizador : perfil
-OrdemTrabalho --> EstadoOrdem : estado
-Trabalho --> EstadoTrabalho : estado
-EtapaTrabalho --> EstadoEtapa : estado
-Trabalho --> NaturezaTrabalho : natureza
-Ficheiro --> VisibilidadeConteudo : visibilidade
-Fotografia --> VisibilidadeConteudo : visibilidade
-Comentario --> VisibilidadeConteudo : visibilidade
-Etapa --> AcaoSistemaEtapa : acaoSistema
-EtapaTrabalho --> AcaoSistemaEtapa : acaoSistema
+@enduml
