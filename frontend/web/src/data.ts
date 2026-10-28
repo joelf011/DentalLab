@@ -1,0 +1,948 @@
+import {
+  LAB_PROCESSES,
+  LAB_WORK_TYPES,
+  alignLaboratoryWork,
+  alignLaboratoryDemoText,
+} from './laboratoryCatalog'
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type UserRole = 'admin' | 'colaborador' | 'clinica'
+export type WorkStatus =
+  | 'por_receber'
+  | 'em_producao'
+  | 'em_standby'
+  | 'concluido'
+  | 'aguarda_aprovacao'
+  | 'encaminhado'
+export type WorkNature = 'fisico' | 'digital'
+export type StepStatus =
+  'nao_iniciado' | 'em_execucao' | 'concluida' | 'standby' | 'cancelada'
+export type ClientStatus = 'ativo' | 'suspenso' | 'aguarda_validacao'
+export type ColabStatus = 'disponivel' | 'ocupado' | 'ausente'
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  avatar?: string
+}
+
+export interface ProcessStep {
+  id: string
+  name: string
+  order: number
+}
+
+export interface Process {
+  id: string
+  name: string
+  active: boolean
+  steps: ProcessStep[]
+  workTypes: string[]
+}
+
+export interface WorkType {
+  id: string
+  name: string
+  processId?: string
+  nature: WorkNature
+}
+
+export interface WorkOrderStep {
+  id: string
+  stepId: string
+  name: string
+  status: StepStatus
+  collaboratorId?: string
+  collaboratorName?: string
+  startedAt?: string
+  completedAt?: string
+  notes?: string
+  standbyReason?: string
+}
+
+export interface WorkOrder {
+  id: string
+  ref: string
+  clienteId: string
+  clienteName: string
+  medico: string
+  requisitadoPor: string
+  identificadorPaciente: string
+  sexo: 'M' | 'F'
+  idade: number
+  tipoId: string
+  tipoName: string
+  natureza: WorkNature
+  material: string
+  cor: string
+  proximaConsulta: string
+  prazo: string
+  status: WorkStatus
+  etapaAtual: string
+  responsavelId?: string
+  responsavelName?: string
+  dentes: number[]
+  descricao: string
+  criadoEm: string
+  processId: string
+  steps: WorkOrderStep[]
+}
+
+export interface TimelineEvent {
+  visibility?: 'interna' | 'cliente'
+  id: string
+  workId: string
+  type:
+    | 'criado'
+    | 'aceite'
+    | 'prazo_definido'
+    | 'etapa_iniciada'
+    | 'nota_adicionada'
+    | 'etapa_concluida'
+    | 'encaminhado'
+    | 'standby'
+    | 'retomado'
+    | 'concluido'
+  description: string
+  actor: string
+  date: string
+}
+
+export interface InternalNote {
+  authorRole?: 'clinica' | 'laboratorio'
+  id: string
+  workId: string
+  content: string
+  author: string
+  date: string
+  visibility: 'interna' | 'cliente'
+}
+
+export interface Cliente {
+  id: string
+  name: string
+  nif: string
+  email: string
+  phone: string
+  address: string
+  status: ClientStatus
+  activeWorks: number
+  registeredAt: string
+}
+
+export interface Colaborador {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  status: ColabStatus
+  activeWorks: number
+  completedThisMonth: number
+  joinedAt: string
+  deletedAt?: string
+}
+
+// ─── Mock Data ─────────────────────────────────────────────────────────────────
+
+export const CURRENT_USER: User = {
+  id: 'u1',
+  name: 'Catarina Domingos',
+  email: 'catarina@lcd.pt',
+  role: 'admin',
+}
+
+export const PROCESSES: Process[] = LAB_PROCESSES.map((process) => ({
+  ...process,
+  steps: [...process.steps],
+  workTypes: [...process.workTypes],
+}))
+
+export const WORK_TYPES: WorkType[] = LAB_WORK_TYPES.map((type) => ({
+  ...type,
+}))
+
+export const CLIENTES: Cliente[] = [
+  {
+    id: 'c1',
+    name: 'Clínica Dental Horizonte',
+    nif: '512 345 678',
+    email: 'geral@horizonte.pt',
+    phone: '226 000 111',
+    address: 'Rua das Flores 42, 4050-123 Porto',
+    status: 'ativo',
+    activeWorks: 8,
+    registeredAt: '2021-03-10',
+  },
+  {
+    id: 'c2',
+    name: 'Consultório Dr. Lopes',
+    nif: '507 891 234',
+    email: 'slopesclinica@gmail.com',
+    phone: '912 345 678',
+    address: 'Av. da República 18, 4100-150 Porto',
+    status: 'ativo',
+    activeWorks: 2,
+    registeredAt: '2022-07-15',
+  },
+  {
+    id: 'c3',
+    name: 'Clínica Sorrisão',
+    nif: '509 012 345',
+    email: 'info@sorrisao.pt',
+    phone: '213 456 789',
+    address: 'Rua do Ouro 77, 1100-300 Lisboa',
+    status: 'ativo',
+    activeWorks: 3,
+    registeredAt: '2020-01-22',
+  },
+  {
+    id: 'c4',
+    name: 'Oral Clinic Porto',
+    nif: '510 234 567',
+    email: 'oralclinicporto@pt',
+    phone: '222 111 000',
+    address: 'Praça Mouzinho 5, 4050-400 Porto',
+    status: 'ativo',
+    activeWorks: 4,
+    registeredAt: '2023-09-01',
+  },
+  {
+    id: 'c5',
+    name: 'Centro Odontológico Lisboa',
+    nif: '511 345 678',
+    email: 'col@cliboa.pt',
+    phone: '213 999 888',
+    address: 'Av. Almirante Reis 200, 1000-050 Lisboa',
+    status: 'suspenso',
+    activeWorks: 1,
+    registeredAt: '2021-11-30',
+  },
+  {
+    id: 'c6',
+    name: 'SmilePro Dental',
+    nif: '513 456 789',
+    email: 'geral@smilepro.pt',
+    phone: '225 444 333',
+    address: 'Rua de Cedofeita 11, 4050-100 Porto',
+    status: 'aguarda_validacao',
+    activeWorks: 0,
+    registeredAt: '2024-12-01',
+  },
+]
+
+export const COLABORADORES: Colaborador[] = [
+  {
+    id: 'col1',
+    name: 'Ana Martins',
+    email: 'ana@lcd.pt',
+    role: 'colaborador',
+    status: 'disponivel',
+    activeWorks: 3,
+    completedThisMonth: 12,
+    joinedAt: '2019-04-01',
+  },
+  {
+    id: 'col2',
+    name: 'Pedro Santos',
+    email: 'pedro@lcd.pt',
+    role: 'colaborador',
+    status: 'disponivel',
+    activeWorks: 2,
+    completedThisMonth: 9,
+    joinedAt: '2021-06-15',
+  },
+  {
+    id: 'col3',
+    name: 'Jorge Vieira',
+    email: 'jorge@lcd.pt',
+    role: 'colaborador',
+    status: 'ocupado',
+    activeWorks: 2,
+    completedThisMonth: 7,
+    joinedAt: '2018-02-20',
+  },
+  {
+    id: 'col4',
+    name: 'Marta Oliveira',
+    email: 'marta@lcd.pt',
+    role: 'colaborador',
+    status: 'disponivel',
+    activeWorks: 1,
+    completedThisMonth: 11,
+    joinedAt: '2020-09-01',
+  },
+  {
+    id: 'col5',
+    name: 'Ricardo Ferreira',
+    email: 'ricardo@lcd.pt',
+    role: 'colaborador',
+    status: 'ausente',
+    activeWorks: 0,
+    completedThisMonth: 5,
+    joinedAt: '2023-03-12',
+  },
+  {
+    id: 'col6',
+    name: 'Catarina Domingos',
+    email: 'catarina@lcd.pt',
+    role: 'admin',
+    status: 'disponivel',
+    activeWorks: 0,
+    completedThisMonth: 0,
+    joinedAt: '2015-01-01',
+  },
+]
+
+export const WORK_ORDERS: WorkOrder[] = [
+  {
+    id: 'w1',
+    ref: `LCD-${new Date().getFullYear()}-0847`,
+    clienteId: 'c1',
+    clienteName: 'Clínica Dental Horizonte',
+    medico: 'Dr. Rui Figueiredo',
+    requisitadoPor: 'Enfermeira Carla',
+    identificadorPaciente: '#PAC-0847',
+    sexo: 'M',
+    idade: 54,
+    tipoId: 'wt1',
+    tipoName: 'Coroa',
+    natureza: 'fisico',
+    material: 'Cerâmica e-max',
+    cor: 'A2',
+    proximaConsulta: '2024-12-19',
+    prazo: '2024-12-18',
+    status: 'em_producao',
+    etapaAtual: 'Enceramento',
+    responsavelId: 'col1',
+    responsavelName: 'Ana Martins',
+    dentes: [15],
+    descricao:
+      'Coroa unitária cerâmica sobre implante. Verificar oclusão cuidadosamente.',
+    criadoEm: '2024-12-10',
+    processId: 'p1',
+    steps: [
+      {
+        id: 'ws1',
+        stepId: 's1',
+        name: 'Receção',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-10T09:00',
+        completedAt: '2024-12-10T09:30',
+      },
+      {
+        id: 'ws2',
+        stepId: 's2',
+        name: 'Análise Técnica',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-10T09:30',
+        completedAt: '2024-12-10T11:00',
+      },
+      {
+        id: 'ws3',
+        stepId: 's3',
+        name: 'Enceramento',
+        status: 'em_execucao',
+        collaboratorId: 'col1',
+        collaboratorName: 'Ana Martins',
+        startedAt: '2024-12-11T08:00',
+      },
+      {
+        id: 'ws4',
+        stepId: 's4',
+        name: 'Fundição / Fresagem',
+        status: 'nao_iniciado',
+      },
+      { id: 'ws5', stepId: 's5', name: 'Acabamento', status: 'nao_iniciado' },
+      {
+        id: 'ws6',
+        stepId: 's6',
+        name: 'Controlo de Qualidade',
+        status: 'nao_iniciado',
+      },
+      {
+        id: 'ws7',
+        stepId: 's7',
+        name: 'Embalagem / Expedição',
+        status: 'nao_iniciado',
+      },
+    ],
+  },
+  {
+    id: 'w2',
+    ref: `LCD-${new Date().getFullYear()}-0848`,
+    clienteId: 'c2',
+    clienteName: 'Consultório Dr. Lopes',
+    medico: 'Dr. Sérgio Lopes',
+    requisitadoPor: 'Dr. Sérgio Lopes',
+    identificadorPaciente: '#PAC-0914',
+    sexo: 'F',
+    idade: 67,
+    tipoId: 'wt4',
+    tipoName: 'Prótese Parcial Removível',
+    natureza: 'fisico',
+    material: 'Cromo-Cobalto',
+    cor: 'A3',
+    proximaConsulta: '2024-12-23',
+    prazo: '2024-12-22',
+    status: 'em_standby',
+    etapaAtual: 'Aguarda impressão',
+    dentes: [14, 15, 16, 17, 24, 25, 26],
+    descricao: 'PPR superior. Aguardar nova impressão do paciente.',
+    criadoEm: '2024-12-13',
+    processId: 'p3',
+    steps: [
+      {
+        id: 'ws8',
+        stepId: 's14',
+        name: 'Receção',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-13T09:00',
+        completedAt: '2024-12-13T09:30',
+      },
+      {
+        id: 'ws9',
+        stepId: 's15',
+        name: 'Gesso',
+        status: 'standby',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-13T10:00',
+        standbyReason: 'Impressão com defeito. Cliente a remarcar.',
+      },
+      {
+        id: 'ws10',
+        stepId: 's16',
+        name: 'Estrutura Metálica',
+        status: 'nao_iniciado',
+      },
+      {
+        id: 'ws11',
+        stepId: 's17',
+        name: 'Montagem de Dentes',
+        status: 'nao_iniciado',
+      },
+      { id: 'ws12', stepId: 's18', name: 'Prova', status: 'nao_iniciado' },
+      { id: 'ws13', stepId: 's19', name: 'Acabamento', status: 'nao_iniciado' },
+      { id: 'ws14', stepId: 's20', name: 'Expedição', status: 'nao_iniciado' },
+    ],
+  },
+  {
+    id: 'w3',
+    ref: `LCD-${new Date().getFullYear()}-0849`,
+    clienteId: 'c3',
+    clienteName: 'Clínica Sorrisão',
+    medico: 'Dra. Mariana Costa',
+    requisitadoPor: 'Dra. Mariana Costa',
+    identificadorPaciente: '#PAC-1092',
+    sexo: 'M',
+    idade: 38,
+    tipoId: 'wt8',
+    tipoName: 'Planeamento Digital DSD',
+    natureza: 'digital',
+    material: 'Digital — DICOM/STL',
+    cor: '—',
+    proximaConsulta: '2024-12-17',
+    prazo: '2024-12-16',
+    status: 'aguarda_aprovacao',
+    etapaAtual: 'Revisão / Aprovação',
+    responsavelId: 'col2',
+    responsavelName: 'Pedro Santos',
+    dentes: [11, 12, 13, 21, 22, 23],
+    descricao:
+      'Design do sorriso digital. Cliente a aguardar aprovação do mockup.',
+    criadoEm: '2024-12-10',
+    processId: 'p2',
+    steps: [
+      {
+        id: 'ws15',
+        stepId: 's8',
+        name: 'Receção de Ficheiros',
+        status: 'concluida',
+        collaboratorId: 'col2',
+        collaboratorName: 'Pedro Santos',
+        startedAt: '2024-12-10T14:00',
+        completedAt: '2024-12-10T15:00',
+      },
+      {
+        id: 'ws16',
+        stepId: 's9',
+        name: 'Modelação CAD',
+        status: 'concluida',
+        collaboratorId: 'col2',
+        collaboratorName: 'Pedro Santos',
+        startedAt: '2024-12-11T08:00',
+        completedAt: '2024-12-12T17:00',
+      },
+      {
+        id: 'ws17',
+        stepId: 's10',
+        name: 'Revisão / Aprovação',
+        status: 'em_execucao',
+        collaboratorId: 'col2',
+        collaboratorName: 'Pedro Santos',
+        startedAt: '2024-12-13T09:00',
+      },
+      { id: 'ws18', stepId: 's11', name: 'Fresagem', status: 'nao_iniciado' },
+      {
+        id: 'ws19',
+        stepId: 's12',
+        name: 'Acabamento Digital',
+        status: 'nao_iniciado',
+      },
+      { id: 'ws20', stepId: 's13', name: 'Expedição', status: 'nao_iniciado' },
+    ],
+  },
+  {
+    id: 'w4',
+    ref: `LCD-${new Date().getFullYear()}-0844`,
+    clienteId: 'c1',
+    clienteName: 'Clínica Dental Horizonte',
+    medico: 'Dr. Rui Figueiredo',
+    requisitadoPor: 'Enfermeira Carla',
+    identificadorPaciente: '#PAC-0765',
+    sexo: 'F',
+    idade: 45,
+    tipoId: 'wt6',
+    tipoName: 'Faceta',
+    natureza: 'fisico',
+    material: 'Cerâmica feldspática',
+    cor: 'B1',
+    proximaConsulta: '2024-12-15',
+    prazo: '2024-12-14',
+    status: 'concluido',
+    etapaAtual: 'Entregue',
+    responsavelId: 'col1',
+    responsavelName: 'Ana Martins',
+    dentes: [11, 12, 21, 22],
+    descricao:
+      'Facetas cerâmicas para melhoramento estético. Cor B1 máxima claridade.',
+    criadoEm: '2024-12-05',
+    processId: 'p1',
+    steps: [
+      {
+        id: 'ws21',
+        stepId: 's1',
+        name: 'Receção',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-05T09:00',
+        completedAt: '2024-12-05T09:30',
+      },
+      {
+        id: 'ws22',
+        stepId: 's2',
+        name: 'Análise Técnica',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-05T09:30',
+        completedAt: '2024-12-05T11:00',
+      },
+      {
+        id: 'ws23',
+        stepId: 's3',
+        name: 'Enceramento',
+        status: 'concluida',
+        collaboratorId: 'col1',
+        collaboratorName: 'Ana Martins',
+        startedAt: '2024-12-06T08:00',
+        completedAt: '2024-12-07T16:00',
+      },
+      {
+        id: 'ws24',
+        stepId: 's4',
+        name: 'Fundição / Fresagem',
+        status: 'concluida',
+        collaboratorId: 'col3',
+        collaboratorName: 'Jorge Vieira',
+        startedAt: '2024-12-09T08:00',
+        completedAt: '2024-12-10T12:00',
+      },
+      {
+        id: 'ws25',
+        stepId: 's5',
+        name: 'Acabamento',
+        status: 'concluida',
+        collaboratorId: 'col1',
+        collaboratorName: 'Ana Martins',
+        startedAt: '2024-12-11T08:00',
+        completedAt: '2024-12-12T16:00',
+      },
+      {
+        id: 'ws26',
+        stepId: 's6',
+        name: 'Controlo de Qualidade',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-13T09:00',
+        completedAt: '2024-12-13T10:00',
+      },
+      {
+        id: 'ws27',
+        stepId: 's7',
+        name: 'Embalagem / Expedição',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-14T09:00',
+        completedAt: '2024-12-14T10:00',
+      },
+    ],
+  },
+  {
+    id: 'w5',
+    ref: `LCD-${new Date().getFullYear()}-0850`,
+    clienteId: 'c4',
+    clienteName: 'Oral Clinic Porto',
+    medico: 'Dra. Sofia Almeida',
+    requisitadoPor: 'Dra. Sofia Almeida',
+    identificadorPaciente: '#PAC-1138',
+    sexo: 'M',
+    idade: 61,
+    tipoId: 'wt2',
+    tipoName: 'Ponte',
+    natureza: 'fisico',
+    material: 'Metal-cerâmica',
+    cor: 'A3',
+    proximaConsulta: '2024-12-21',
+    prazo: '2024-12-20',
+    status: 'em_producao',
+    etapaAtual: 'Fundição / Fresagem',
+    responsavelId: 'col3',
+    responsavelName: 'Jorge Vieira',
+    dentes: [35, 36, 37],
+    descricao: 'Ponte de 3 elementos — 35 a 37. Pilar 35 e 37, pôntico 36.',
+    criadoEm: '2024-12-13',
+    processId: 'p1',
+    steps: [
+      {
+        id: 'ws28',
+        stepId: 's1',
+        name: 'Receção',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-13T09:00',
+        completedAt: '2024-12-13T09:30',
+      },
+      {
+        id: 'ws29',
+        stepId: 's2',
+        name: 'Análise Técnica',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-13T09:30',
+        completedAt: '2024-12-13T11:00',
+      },
+      {
+        id: 'ws30',
+        stepId: 's3',
+        name: 'Enceramento',
+        status: 'concluida',
+        collaboratorId: 'col1',
+        collaboratorName: 'Ana Martins',
+        startedAt: '2024-12-14T08:00',
+        completedAt: '2024-12-15T16:00',
+      },
+      {
+        id: 'ws31',
+        stepId: 's4',
+        name: 'Fundição / Fresagem',
+        status: 'em_execucao',
+        collaboratorId: 'col3',
+        collaboratorName: 'Jorge Vieira',
+        startedAt: '2024-12-16T08:00',
+      },
+      { id: 'ws32', stepId: 's5', name: 'Acabamento', status: 'nao_iniciado' },
+      {
+        id: 'ws33',
+        stepId: 's6',
+        name: 'Controlo de Qualidade',
+        status: 'nao_iniciado',
+      },
+      {
+        id: 'ws34',
+        stepId: 's7',
+        name: 'Embalagem / Expedição',
+        status: 'nao_iniciado',
+      },
+    ],
+  },
+  {
+    id: 'w6',
+    ref: `LCD-${new Date().getFullYear()}-0851`,
+    clienteId: 'c3',
+    clienteName: 'Clínica Sorrisão',
+    medico: 'Dr. Carlos Neves',
+    requisitadoPor: 'Dr. Carlos Neves',
+    identificadorPaciente: '#PAC-1204',
+    sexo: 'F',
+    idade: 29,
+    tipoId: 'wt3',
+    tipoName: 'Guia Cirúrgico',
+    natureza: 'digital',
+    material: 'Resina impressa',
+    cor: '—',
+    proximaConsulta: '2024-12-25',
+    prazo: '2024-12-24',
+    status: 'encaminhado',
+    etapaAtual: 'Aguarda ficheiros',
+    responsavelId: 'col1',
+    responsavelName: 'Ana Martins',
+    dentes: [36, 46],
+    descricao: 'Guia cirúrgico para implantologia bilateral. Aguardar DICOM.',
+    criadoEm: '2024-12-14',
+    processId: 'p2',
+    steps: [
+      {
+        id: 'ws35',
+        stepId: 's8',
+        name: 'Receção de Ficheiros',
+        status: 'nao_iniciado',
+      },
+      {
+        id: 'ws36',
+        stepId: 's9',
+        name: 'Modelação CAD',
+        status: 'nao_iniciado',
+      },
+      {
+        id: 'ws37',
+        stepId: 's10',
+        name: 'Revisão / Aprovação',
+        status: 'nao_iniciado',
+      },
+      { id: 'ws38', stepId: 's11', name: 'Fresagem', status: 'nao_iniciado' },
+      {
+        id: 'ws39',
+        stepId: 's12',
+        name: 'Acabamento Digital',
+        status: 'nao_iniciado',
+      },
+      { id: 'ws40', stepId: 's13', name: 'Expedição', status: 'nao_iniciado' },
+    ],
+  },
+  {
+    id: 'w7',
+    ref: `LCD-${new Date().getFullYear()}-0845`,
+    clienteId: 'c5',
+    clienteName: 'Centro Odontológico Lisboa',
+    medico: 'Dra. Beatriz Tavares',
+    requisitadoPor: 'Dra. Beatriz Tavares',
+    identificadorPaciente: '#PAC-0981',
+    sexo: 'M',
+    idade: 72,
+    tipoId: 'wt4',
+    tipoName: 'Prótese Parcial Removível',
+    natureza: 'fisico',
+    material: 'Acrílico',
+    cor: 'A3.5',
+    proximaConsulta: '2024-12-20',
+    prazo: '2024-12-19',
+    status: 'em_producao',
+    etapaAtual: 'Montagem de Dentes',
+    responsavelId: 'col4',
+    responsavelName: 'Marta Oliveira',
+    dentes: [11, 12, 13, 14, 15, 21, 22, 23, 24],
+    descricao: 'PT superior. Rebase total. Verificar dimensão vertical.',
+    criadoEm: '2024-12-11',
+    processId: 'p3',
+    steps: [
+      {
+        id: 'ws41',
+        stepId: 's14',
+        name: 'Receção',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-11T09:00',
+        completedAt: '2024-12-11T09:30',
+      },
+      {
+        id: 'ws42',
+        stepId: 's15',
+        name: 'Gesso',
+        status: 'concluida',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-11T10:00',
+        completedAt: '2024-12-12T12:00',
+      },
+      {
+        id: 'ws43',
+        stepId: 's16',
+        name: 'Estrutura Metálica',
+        status: 'concluida',
+        collaboratorId: 'col3',
+        collaboratorName: 'Jorge Vieira',
+        startedAt: '2024-12-12T13:00',
+        completedAt: '2024-12-14T16:00',
+      },
+      {
+        id: 'ws44',
+        stepId: 's17',
+        name: 'Montagem de Dentes',
+        status: 'em_execucao',
+        collaboratorId: 'col4',
+        collaboratorName: 'Marta Oliveira',
+        startedAt: '2024-12-15T08:00',
+      },
+      { id: 'ws45', stepId: 's18', name: 'Prova', status: 'nao_iniciado' },
+      { id: 'ws46', stepId: 's19', name: 'Acabamento', status: 'nao_iniciado' },
+      { id: 'ws47', stepId: 's20', name: 'Expedição', status: 'nao_iniciado' },
+    ],
+  },
+  {
+    id: 'w8',
+    ref: `LCD-${new Date().getFullYear()}-0846`,
+    clienteId: 'c4',
+    clienteName: 'Oral Clinic Porto',
+    medico: 'Dra. Sofia Almeida',
+    requisitadoPor: 'Rita',
+    identificadorPaciente: '#PAC-0816',
+    sexo: 'F',
+    idade: 42,
+    tipoId: 'wt1',
+    tipoName: 'Coroa',
+    natureza: 'fisico',
+    material: 'Zircónia',
+    cor: 'A2',
+    proximaConsulta: '2024-12-14',
+    prazo: '2024-12-13',
+    status: 'concluido',
+    etapaAtual: 'Entregue',
+    responsavelId: 'col2',
+    responsavelName: 'Pedro Santos',
+    dentes: [16, 17],
+    descricao: 'Inlays cerâmicos — zircónia monolítica.',
+    criadoEm: '2024-12-08',
+    processId: 'p1',
+    steps: [],
+  },
+]
+
+export const TIMELINE_EVENTS: TimelineEvent[] = [
+  {
+    id: 'e1',
+    workId: 'w1',
+    type: 'criado',
+    description: 'Trabalho criado',
+    actor: 'Marta Oliveira',
+    date: '2024-12-10T09:00',
+  },
+  {
+    id: 'e2',
+    workId: 'w1',
+    type: 'prazo_definido',
+    description: 'Prazo definido: 18 Dez 2024',
+    actor: 'Catarina Domingos',
+    date: '2024-12-10T09:05',
+  },
+  {
+    id: 'e3',
+    workId: 'w1',
+    type: 'aceite',
+    description: 'Trabalho aceite e processo atribuído',
+    actor: 'Catarina Domingos',
+    date: '2024-12-10T09:10',
+  },
+  {
+    id: 'e4',
+    workId: 'w1',
+    type: 'etapa_iniciada',
+    description: 'Etapa "Receção" iniciada',
+    actor: 'Marta Oliveira',
+    date: '2024-12-10T09:00',
+  },
+  {
+    id: 'e5',
+    workId: 'w1',
+    type: 'etapa_concluida',
+    description: 'Etapa "Receção" concluída',
+    actor: 'Marta Oliveira',
+    date: '2024-12-10T09:30',
+  },
+  {
+    id: 'e6',
+    workId: 'w1',
+    type: 'etapa_iniciada',
+    description: 'Etapa "Análise Técnica" iniciada',
+    actor: 'Marta Oliveira',
+    date: '2024-12-10T09:30',
+  },
+  {
+    id: 'e7',
+    workId: 'w1',
+    type: 'etapa_concluida',
+    description: 'Etapa "Análise Técnica" concluída',
+    actor: 'Marta Oliveira',
+    date: '2024-12-10T11:00',
+  },
+  {
+    id: 'e8',
+    workId: 'w1',
+    type: 'encaminhado',
+    description: 'Trabalho encaminhado para Ana Martins',
+    actor: 'Marta Oliveira',
+    date: '2024-12-10T11:05',
+  },
+  {
+    id: 'e9',
+    workId: 'w1',
+    type: 'etapa_iniciada',
+    description: 'Etapa "Enceramento" iniciada',
+    actor: 'Ana Martins',
+    date: '2024-12-11T08:00',
+  },
+  {
+    id: 'e10',
+    workId: 'w1',
+    type: 'nota_adicionada',
+    description: 'Nota interna adicionada',
+    actor: 'Ana Martins',
+    date: '2024-12-11T10:30',
+  },
+]
+
+export const NOTES: InternalNote[] = [
+  {
+    id: 'n1',
+    workId: 'w1',
+    content:
+      'Impressão de qualidade excelente. Sem bolhas ou distorções na zona cervical.',
+    author: 'Marta Oliveira',
+    date: '2024-12-10T09:25',
+    visibility: 'interna',
+  },
+  {
+    id: 'n2',
+    workId: 'w1',
+    content:
+      'Atenção: paciente tem bruxismo severo. Reforçar espessura oclusal mínima 1.5mm.',
+    author: 'Ana Martins',
+    date: '2024-12-11T10:30',
+    visibility: 'interna',
+  },
+  {
+    id: 'n3',
+    workId: 'w1',
+    content: 'Trabalho em execução na etapa atual.',
+    author: 'Ana Martins',
+    date: '2024-12-11T08:05',
+    visibility: 'cliente',
+  },
+]
+
+WORK_ORDERS.forEach(alignLaboratoryWork)
+alignLaboratoryDemoText(NOTES, TIMELINE_EVENTS)
