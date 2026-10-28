@@ -1,0 +1,229 @@
+@startuml modelo_concetual
+hide methods
+hide circle
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+
+' Versão revista de ModelosBaseDeDados/modeloconceptual.plantuml.
+' Alterações: identificadores de cada entidade (<pi> identificador primário,
+' <ai> identificador alternativo, notação do PowerDesigner) e atributos que
+' existiam no modelo físico sem correspondência no concetual
+' (Utilizador.criadoEm, Cliente.criadoEm, MaterialRecebido.dataRegisto,
+' RegistoAuditoria.idEntidadeAfetada). Entidades e associações mantêm-se.
+
+' ---------- Utilizadores ----------
+
+class Cargo {
+  +id <pi>
+  +designacao <ai>
+}
+
+class Utilizador {
+  +id <pi>
+  +nome
+  +email <ai>
+  +password
+  +passwordTemporaria
+  +ativo
+  +dataAprovacao
+  +criadoEm
+}
+
+class Cliente {
+  +id <pi>
+  +nome
+  +NIF <ai>
+  +moradaFaturacao
+  +email
+  +telefone
+  +ativo
+  +criadoEm
+}
+
+' ---------- Encomendas ----------
+
+class OrdemTrabalho {
+  +id <pi>
+  +nomeMedicoResponsavel
+  +nomePaciente
+  +sexoPaciente
+  +idadePaciente
+  +dataProximaConsulta
+  +observacoes
+  +prazoEntrega
+  +dataCriacao
+  +dataAceitacao
+  +dataInicio
+  +dataConclusao
+  +dataEntrega
+  +motivoEspera
+  +motivoRejeicao
+}
+
+class EstadoOrdem {
+  +id <pi>
+  +designacao <ai>
+}
+
+class MaterialRecebido {
+  +id <pi>
+  +descricao
+  +observacoes
+  +dataRegisto
+  +dataRececao
+}
+
+class Trabalho {
+  +id <pi>
+  +natureza
+  +cor
+  +dentes [1..*]
+}
+
+' ---------- Modelos de trabalho (geridos pelo Admin) ----------
+
+class TipoTrabalho {
+  +id <pi>
+  +nome <ai>
+  +descricao
+  +ativo
+}
+
+class Etapa {
+  +id <pi>
+  +nome <ai>
+  +descricao
+  +ativa
+}
+
+class EtapaTipoTrabalho {
+  +ordem <pi>
+}
+
+class EtapaTrabalho {
+  +id <pi>
+  +nome
+  +ordem
+  +dataInicio
+  +dataConclusao
+}
+
+' ---------- Documentação e comunicação ----------
+
+class Ficheiro {
+  +id <pi>
+  +nome
+  +localizacao
+  +dataCarregamento
+}
+
+class TipoFicheiro {
+  +id <pi>
+  +designacao <ai>
+}
+
+class Comentario {
+  +id <pi>
+  +conteudo
+  +dataCriacao
+  +dataEdicao
+}
+
+class Notificacao {
+  +id <pi>
+  +mensagem
+  +dataCriacao
+  +dataLeitura
+}
+
+class RegistoAuditoria {
+  +id <pi>
+  +acao
+  +entidadeAfetada
+  +idEntidadeAfetada
+  +dataHora
+  +valoresAnteriores
+  +valoresPosteriores
+}
+
+' ---------- Associações ----------
+
+Cargo "1" -- "0..*" Utilizador : tem
+Cliente "0..1" -- "0..*" Utilizador : contas
+Utilizador "0..1" -- "0..*" Utilizador : aprova
+
+Cliente "1" -- "0..*" OrdemTrabalho : encomenda
+Utilizador "1" -- "0..*" OrdemTrabalho : cria
+Utilizador "0..1" -- "0..*" OrdemTrabalho : aceita
+EstadoOrdem "1" -- "0..*" OrdemTrabalho : estado
+OrdemTrabalho "1" *-- "0..*" MaterialRecebido : regista
+
+OrdemTrabalho "1" *-- "1..*" Trabalho : contem
+TipoTrabalho "1" -- "0..*" Trabalho : classifica
+
+TipoTrabalho "1" *-- "1..*" EtapaTipoTrabalho : configura
+Etapa "1" -- "0..*" EtapaTipoTrabalho : integra
+
+Trabalho "1" *-- "1..*" EtapaTrabalho : percorre
+Etapa "0..1" -- "0..*" EtapaTrabalho : copiadaDe
+Utilizador "0..1" -- "0..*" EtapaTrabalho : responsavel
+
+TipoFicheiro "1" -- "0..*" Ficheiro : tipo
+OrdemTrabalho "0..1" -- "0..*" Ficheiro : partilhado
+Trabalho "0..1" -- "0..*" Ficheiro : interno
+Utilizador "1" -- "0..*" Ficheiro : carrega
+
+OrdemTrabalho "0..1" -- "0..*" Comentario : partilhado
+Trabalho "0..1" -- "0..*" Comentario : interno
+Utilizador "1" -- "0..*" Comentario : publica
+
+Utilizador "1" -- "0..*" Notificacao : recebe
+OrdemTrabalho "0..1" -- "0..*" Notificacao : refere
+Trabalho "0..1" -- "0..*" Notificacao : refere
+
+Utilizador "0..1" -- "0..*" RegistoAuditoria : executa
+
+note right of Utilizador
+  Admin e Colaborador: internos, sem Cliente.
+  Cliente: cada clínica é um utilizador
+  ligado à sua entidade Cliente.
+  Contas criadas pela clínica ficam pendentes
+  até o Admin as aprovar. Contas recusadas ou
+  desativadas podem ser reativadas.
+end note
+
+note right of Trabalho
+  natureza: FISICO ou DIGITAL
+  cor: escala VITA (ex.: A2)
+  dentes: atributo multivalor, 1 ou mais
+  números FDI (odontograma); no modelo
+  físico dá origem à tabela trabalho_dente.
+  As datas de início e fim pertencem à Ordem.
+end note
+
+note right of EstadoOrdem
+  Visível pela clínica. O progresso interno
+  de cada Trabalho é dado pelas suas etapas.
+end note
+
+note bottom of Ficheiro
+  Pertence à Ordem (partilhado com a clínica)
+  OU ao Trabalho (interno) — nunca aos dois.
+  O mesmo se aplica ao Comentario.
+end note
+
+note bottom of EtapaTrabalho
+  Cópia das etapas do TipoTrabalho no momento
+  da criação do Trabalho. Alterações posteriores
+  ao modelo não afetam trabalhos já criados.
+  Etapa atual = primeira etapa por concluir.
+  Visível apenas para o laboratório.
+end note
+
+note bottom of EtapaTipoTrabalho
+  Identificada pelo TipoTrabalho
+  e pela ordem (entidade dependente).
+end note
+
+@enduml
