@@ -144,6 +144,27 @@ unlinked_spec.ds
 **/linux/flutter/generated_plugin_registrant.h
 **/linux/flutter/generated_plugins.cmake
 
+# Flutter extra (app_mobile)
+.pub-cache/
+.swiftpm/
+.atom/
+.svn/
+migrate_working_dir/
+.fvm/flutter_sdk
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+**/android/app/.cxx/
+**/android/.kotlin/
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+
+# Obfuscation related
+app.*.map.json
+
 # Coverage
 coverage/
 
@@ -157,3 +178,5 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+# pubspec.lock deve ser versionado numa app Flutter (anula o *.lock acima)
+!**/pubspec.lock
