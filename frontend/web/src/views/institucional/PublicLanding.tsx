@@ -1,15 +1,26 @@
-import HERO_IMAGE from '../../assets/laboratoryHero.svg'
-import { useState, type FormEvent } from 'react'
-import { ThemeToggle } from '../../theme'
+import HERO_IMAGE from '../../assets/hero.jpg'
+import mobileLightImg from '../../assets/mobileClaro.jpeg'
+import mobileDarkImg from '../../assets/mobileEscuro.jpeg'
+import { useEffect, useState, type FormEvent } from 'react'
+import { ThemeToggle, useTheme } from '../../theme'
 import BrandLogo from '../../components/BrandLogo'
 import { AppIcon } from '../../components/icons'
 import { WORK_TYPES } from '../../data'
 import '../PublicLanding.css'
 
 export default function PublicLanding({ onPortal }: { onPortal: () => void }) {
+  const { theme } = useTheme()
+  const currentMobileScreenshot =
+    theme === 'dark' ? mobileDarkImg : mobileLightImg
   const [submitted, setSubmitted] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
   const [privacy, setPrivacy] = useState(false)
+  useEffect(() => {
+    const lightImage = new Image()
+    const darkImage = new Image()
+    lightImage.src = mobileLightImg
+    darkImage.src = mobileDarkImg
+  }, [])
   const go = (id: string) =>
     document
       .getElementById(id)
@@ -87,7 +98,6 @@ export default function PublicLanding({ onPortal }: { onPortal: () => void }) {
             <figcaption>
               <span>Da clínica ao laboratório.</span>
               <strong>Cuidado em cada etapa.</strong>
-              <small>Fotografia ilustrativa · Cosmin Ursea / Unsplash</small>
             </figcaption>
           </figure>
         </section>
@@ -122,49 +132,32 @@ export default function PublicLanding({ onPortal }: { onPortal: () => void }) {
               </ul>
             </div>
             <figure className="lab-app-visual">
-              <div className="w-full max-w-[460px] rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-5 shadow-[0_18px_50px_rgba(17,24,39,0.08)]">
-                <div className="mb-5 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-[var(--muted)]">
-                      Dashboard
-                    </p>
-                    <h3 className="mt-1 text-base font-semibold text-[var(--ink)]">
-                      Fluxo ativo
-                    </h3>
-                  </div>
-                  <span className="rounded-full bg-[var(--gold-soft)] px-2 py-1 text-[10px] font-semibold text-[var(--gold-ink)]">
-                    8 em curso
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {[
-                    ['Gestão', '4 encomendas'],
-                    ['Modelação', '2 em revisão'],
-                    ['Expedição', '2 a preparar'],
-                  ].map(([label, value]) => (
-                    <div
-                      key={label}
-                      className="rounded-xl border border-[var(--line)] bg-[var(--paper)] p-3"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-[11px] text-[var(--muted)]">
-                          {label}
-                        </span>
-                        <span className="text-[10px] font-semibold text-[var(--ink)]">
-                          {value}
-                        </span>
-                      </div>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--line)]">
-                        <div className="h-full w-2/3 rounded-full bg-[var(--gold)]" />
-                      </div>
-                    </div>
-                  ))}
+              <div
+                className="lab-live-phone"
+                role="img"
+                aria-label="Ecrã inicial da aplicação da clínica"
+              >
+                <div
+                  className="mobile-device-frame lab-live-device"
+                  aria-hidden="true"
+                  style={{ padding: 0, overflow: 'hidden' }}
+                >
+                  <img
+                    src={currentMobileScreenshot}
+                    alt="Ecrã inicial da aplicação"
+                    decoding="async"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      objectPosition: 'top',
+                      display: 'block',
+                    }}
+                  />
                 </div>
               </div>
               <figcaption className="lab-preview-caption">
-                Plataforma web desktop, tablet e browser para acompanhamento em
-                tempo real.
+                Ecrã inicial da aplicação da clínica.
               </figcaption>
             </figure>
           </div>
