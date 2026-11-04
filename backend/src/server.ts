@@ -3,6 +3,7 @@ import fastifyJwt from '@fastify/jwt';
 import Fastify, { type FastifyError } from 'fastify';
 import { config } from './config.ts';
 import { bd } from './db.ts';
+import { mensagemErroDados } from './erros.ts';
 import { rotasAuth } from './rotas/auth.ts';
 import { rotasCargos } from './rotas/cargos.ts';
 
@@ -14,16 +15,13 @@ const app = Fastify({
 // Quando uma rota dá erro, vem parar aqui.
 // Todas as respostas de erro têm o mesmo formato: { "erro": "mensagem" }
 app.setErrorHandler((erro: FastifyError, request, reply) => {
-  // Erro lançado por uma função da BD com RAISE EXCEPTION (ex.: "O cargo 9 não existe").
-  // A mensagem já vem em português, por isso mostra-se tal como está.
-  if (erro.code === 'P0001') {
-    return reply.code(400).send({ erro: erro.message });
+  // Erro nos dados enviados: RAISE EXCEPTION das funções, regras das tabelas, formato errado...
+  // A mensagem para o utilizador vem de erros.ts.
+  const mensagem = mensagemErroDados(erro);
+  if (mensagem !== null) {
+    return reply.code(400).send({ erro: mensagem });
   }
-  // Valor com formato errado para a BD (ex.: /api/cargos/abc, quando o id tem de ser um número).
-  if (erro.code === '22P02') {
-    return reply.code(400).send({ erro: 'Há um valor com formato inválido.' });
-  }
-  // Erros do próprio Fastify com código conhecido (ex.: JSON mal escrito no corpo do pedido).
+  // Outros erros do próprio Fastify com código conhecido (ex.: pedido demasiado grande).
   if (erro.statusCode !== undefined && erro.statusCode < 500) {
     return reply.code(erro.statusCode).send({ erro: erro.message });
   }
