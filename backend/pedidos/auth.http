@@ -22,6 +22,17 @@ Content-Type: application/json
 GET {{api}}/auth/eu
 Authorization: Bearer {{token}}
 
+### Mudar a palavra-passe de quem está ligado
+# ATENÇÃO: muda mesmo a palavra-passe! Depois, troca a "password" do pedido de login lá em cima pela nova.
+PUT {{api}}/auth/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "password_atual": "Admin#2026",
+  "password_nova": "escreve_aqui_a_nova"
+}
+
 ### Erro: palavra-passe errada
 POST {{api}}/auth/login
 Content-Type: application/json
