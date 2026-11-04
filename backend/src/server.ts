@@ -1,6 +1,9 @@
+import fastifyCors from '@fastify/cors';
+import fastifyJwt from '@fastify/jwt';
 import Fastify, { type FastifyError } from 'fastify';
 import { config } from './config.ts';
 import { bd } from './db.ts';
+import { rotasAuth } from './rotas/auth.ts';
 import { rotasCargos } from './rotas/cargos.ts';
 
 // Cria o servidor. O logger mostra no terminal cada pedido que chega.
@@ -45,8 +48,27 @@ app.get('/api/health', async (request, reply) => {
   }
 });
 
+// CORS: autoriza os sites React (CORS_ORIGENS no .env) a usar a API a partir do navegador.
+// Sem isto, o navegador bloqueia os pedidos do React (localhost:5173) para a API (localhost:3000).
+// A app Flutter não é um navegador, por isso não precisa disto.
+app.register(fastifyCors, {
+  origin: config.corsOrigens,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+});
+
+// Login com tokens (JWT). A partir daqui passam a existir app.jwt.sign() (cria um token)
+// e request.jwtVerify() (verifica o token de um pedido; usado em autenticacao.ts).
+app.register(fastifyJwt, {
+  secret: config.jwt.segredo,
+  sign: { expiresIn: config.jwt.validade },
+});
+
 // Cada grupo de rotas está num ficheiro da pasta rotas/.
+app.register(rotasAuth);
 app.register(rotasCargos);
 
 // Arranca o servidor.
-await app.listen({ port: config.porta });
+// host '0.0.0.0' = aceita pedidos de qualquer rede do PC, e não só do próprio PC (localhost).
+// É o que permite ao emulador Android e aos telemóveis na mesma rede Wi-Fi chegarem à API.
+// Ao arrancar, o terminal mostra os endereços: o que não é 127.0.0.1 é o que se usa no telemóvel.
+await app.listen({ port: config.porta, host: '0.0.0.0' });

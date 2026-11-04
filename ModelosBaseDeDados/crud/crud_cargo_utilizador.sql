@@ -185,3 +185,33 @@ BEGIN
     RETURN v_id;
 END;
 $BODY$;
+
+
+-- login
+
+-- Devolve os dados de que a API precisa para o login, incluindo o password_hash.
+-- É a única forma de ler o password_hash (a vw_utilizador esconde-o de propósito).
+-- O email não distingue maiúsculas de minúsculas. Se não existir, não devolve nenhuma linha.
+-- A API compara a palavra-passe com o hash e depois decide pelo "ativo" e pelo "aprovado".
+CREATE OR REPLACE FUNCTION public.fn_utilizador_login(
+    p_email character varying)
+RETURNS TABLE (
+    id                  bigint,
+    nome                character varying,
+    email               character varying,
+    cargo               character varying,
+    cliente_id          bigint,
+    password_hash       character varying,
+    password_temporaria boolean,
+    ativo               boolean,
+    aprovado            boolean)
+LANGUAGE 'sql'
+AS $BODY$
+    SELECT u.id, u.nome, u.email,
+           c.designacao,
+           u.cliente_id, u.password_hash, u.password_temporaria, u.ativo,
+           u.data_aprovacao IS NOT NULL
+    FROM utilizador u
+    JOIN cargo c ON c.id = u.cargo_id
+    WHERE lower(u.email) = lower(p_email);
+$BODY$;
