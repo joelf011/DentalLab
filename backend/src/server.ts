@@ -1,3 +1,4 @@
+import fastifyJwt from '@fastify/jwt';
 import Fastify, { type FastifyError } from 'fastify';
 import { config } from './config.ts';
 import { bd } from './db.ts';
@@ -43,6 +44,13 @@ app.get('/api/health', async (request, reply) => {
     request.log.error(erro);
     return reply.code(503).send({ api: 'ok', bd: 'sem ligação' });
   }
+});
+
+// Login com tokens (JWT). A partir daqui passam a existir app.jwt.sign() (cria um token)
+// e request.jwtVerify() (verifica o token de um pedido; usado em autenticacao.ts).
+app.register(fastifyJwt, {
+  secret: config.jwt.segredo,
+  sign: { expiresIn: config.jwt.validade },
 });
 
 // Cada grupo de rotas está num ficheiro da pasta rotas/.
