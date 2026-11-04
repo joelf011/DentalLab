@@ -6,6 +6,7 @@ import { bd } from './db.ts';
 import { mensagemErroDados } from './erros.ts';
 import { rotasAuth } from './rotas/auth.ts';
 import { rotasCargos } from './rotas/cargos.ts';
+import { rotasClientes } from './rotas/clientes.ts';
 
 // Cria o servidor. O logger mostra no terminal cada pedido que chega.
 const app = Fastify({
@@ -64,6 +65,7 @@ app.register(fastifyJwt, {
 // Cada grupo de rotas está num ficheiro da pasta rotas/.
 app.register(rotasAuth);
 app.register(rotasCargos);
+app.register(rotasClientes);
 
 // Arranca o servidor.
 // host '0.0.0.0' = aceita pedidos de qualquer rede do PC, e não só do próprio PC (localhost).

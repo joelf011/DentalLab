@@ -10,6 +10,8 @@ FROM cliente c;
 -- CREATE, UPDATE e DELETE; devolve o id do registo afetado.
 -- Em UPDATE, os parâmetros a NULL mantêm o valor atual.
 -- DELETE desativa o cliente (ativo = FALSE); UPDATE com p_ativo = TRUE reativa-o.
+-- As contas de acesso da clínica (utilizadores com este cliente_id) são desativadas
+-- e reativadas ao mesmo tempo que a clínica.
 CREATE OR REPLACE FUNCTION public.fn_cliente_crud(
     p_operacao         character varying,
     p_id               bigint,
@@ -63,11 +65,17 @@ BEGIN
             telefone         = COALESCE(p_telefone, telefone),
             ativo            = COALESCE(p_ativo, ativo)
         WHERE id = p_id;
+        -- ao desativar ou reativar a clínica, as contas de acesso dela acompanham
+        IF p_ativo IS NOT NULL THEN
+            UPDATE utilizador SET ativo = p_ativo WHERE cliente_id = p_id;
+        END IF;
         v_id := p_id;
 
     ELSIF v_operacao = 'DELETE' THEN
         -- o cliente mantém-se por causa do histórico de ordens
         UPDATE cliente SET ativo = FALSE WHERE id = p_id;
+        -- as contas de acesso da clínica deixam de poder entrar
+        UPDATE utilizador SET ativo = FALSE WHERE cliente_id = p_id;
         v_id := p_id;
 
     ELSE

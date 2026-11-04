@@ -188,6 +188,11 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 | `POST /api/cargos` | Cria um cargo: `{ "designacao": "..." }` (Administrador) |
 | `PUT /api/cargos/:id` | Altera um cargo: `{ "designacao": "..." }` (Administrador) |
 | `DELETE /api/cargos/:id` | Apaga um cargo, só se não tiver utilizadores (Administrador) |
+| `GET /api/clientes` | Lista as clínicas (Administrador) |
+| `GET /api/clientes/:id` | Mostra uma clínica (Administrador; uma clínica só a sua) |
+| `POST /api/clientes` | Cria uma clínica, sem conta de acesso: `{ "nome", "nif", "morada_faturacao", "email", "telefone" }` (Administrador) |
+| `PUT /api/clientes/:id` | Altera uma clínica; `"ativo": false/true` desativa ou reativa a clínica e as contas dela (Administrador) |
+| `DELETE /api/clientes/:id` | Desativa a clínica e as contas dela (Administrador) |
 
 ## Comandos
 

@@ -1,0 +1,82 @@
+# Pedidos de teste para as rotas dos clientes (clínicas).
+# Precisa da extensão "REST Client" do VS Code e da API a correr (npm run dev).
+# Carrega em "Send Request", que aparece por cima de cada pedido.
+#
+# Todas estas rotas são do Administrador. Uma clínica só pode ver os seus dados (GET /api/clientes/:id).
+# Faz primeiro o pedido "Login"; o token fica guardado e os outros pedidos usam-no.
+
+@api = http://localhost:3000/api
+@token = {{login.response.body.$.token}}
+
+### Login do administrador (se já mudaste a palavra-passe, escreve aqui a nova)
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@dentallab.local",
+  "password": "Admin#2026"
+}
+
+### Listar as clínicas
+GET {{api}}/clientes
+Authorization: Bearer {{token}}
+
+### Criar uma clínica (a resposta traz o id; usa-o nos pedidos de baixo)
+POST {{api}}/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Clínica Dentária Sorriso",
+  "nif": "501234567",
+  "morada_faturacao": "Rua Direita 10, Viseu",
+  "email": "geral@sorriso.pt",
+  "telefone": "232000000"
+}
+
+### Ver uma clínica (troca o 1 pelo id que recebeste)
+GET {{api}}/clientes/1
+Authorization: Bearer {{token}}
+
+### Alterar uma clínica (só os campos que mudam; o Administrador também pode mudar o NIF)
+PUT {{api}}/clientes/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "telefone": "232111111"
+}
+
+### Desativar uma clínica (as contas dela deixam de poder entrar)
+DELETE {{api}}/clientes/1
+Authorization: Bearer {{token}}
+
+### Reativar uma clínica (as contas dela voltam a poder entrar)
+PUT {{api}}/clientes/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ativo": true
+}
+
+### Erro: NIF com letras
+POST {{api}}/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Clínica Errada",
+  "nif": "50123456A"
+}
+
+### Erro: NIF repetido (corre depois de criar a clínica de cima)
+POST {{api}}/clientes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Outra Clínica",
+  "nif": "501234567"
+}
