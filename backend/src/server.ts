@@ -2,6 +2,7 @@ import fastifyJwt from '@fastify/jwt';
 import Fastify, { type FastifyError } from 'fastify';
 import { config } from './config.ts';
 import { bd } from './db.ts';
+import { rotasAuth } from './rotas/auth.ts';
 import { rotasCargos } from './rotas/cargos.ts';
 
 // Cria o servidor. O logger mostra no terminal cada pedido que chega.
@@ -54,6 +55,7 @@ app.register(fastifyJwt, {
 });
 
 // Cada grupo de rotas está num ficheiro da pasta rotas/.
+app.register(rotasAuth);
 app.register(rotasCargos);
 
 // Arranca o servidor.

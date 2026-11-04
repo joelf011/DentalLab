@@ -53,6 +53,8 @@ As mensagens das funções da BD (`RAISE EXCEPTION`) chegam tal como foram escri
 | Rota | O que faz |
 | --- | --- |
 | `GET /api/health` | Verifica a API e a ligação à BD |
+| `POST /api/auth/login` | Login: `{ "email": "...", "password": "..." }`. Devolve `{ token, utilizador }` |
+| `GET /api/auth/eu` | Quem está ligado (precisa de login) |
 | `GET /api/cargos` | Lista os cargos |
 | `GET /api/cargos/:id` | Mostra um cargo |
 | `POST /api/cargos` | Cria um cargo: `{ "designacao": "..." }` |

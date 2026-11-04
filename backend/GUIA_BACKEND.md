@@ -331,19 +331,18 @@ Authorization: Bearer <token>
 
 ### 5.4 Ficheiro de testes `.http`
 
-Copia [`pedidos/cargos.http`](pedidos/cargos.http). Para rotas protegidas, faz primeiro o login e usa o token:
+Copia [`pedidos/cargos.http`](pedidos/cargos.http). Para rotas protegidas, faz primeiro o login. O REST Client guarda sozinho o token da resposta (ver [`pedidos/auth.http`](pedidos/auth.http)):
 
 ```http
 @api = http://localhost:3000/api
+@token = {{login.response.body.$.token}}
 
-### Login (copia o "token" da resposta para a linha de baixo)
+### Login (faz este pedido primeiro; o token fica guardado em {{token}})
+# @name login
 POST {{api}}/auth/login
 Content-Type: application/json
 
 { "email": "admin@dentallab.local", "password": "Admin#2026" }
-
-###
-@token = cola_aqui_o_token
 
 ### Criar um tipo de trabalho
 POST {{api}}/tipos-trabalho
