@@ -1,3 +1,4 @@
+import fastifyCors from '@fastify/cors';
 import fastifyJwt from '@fastify/jwt';
 import Fastify, { type FastifyError } from 'fastify';
 import { config } from './config.ts';
@@ -45,6 +46,14 @@ app.get('/api/health', async (request, reply) => {
     request.log.error(erro);
     return reply.code(503).send({ api: 'ok', bd: 'sem ligação' });
   }
+});
+
+// CORS: autoriza os sites React (CORS_ORIGENS no .env) a usar a API a partir do navegador.
+// Sem isto, o navegador bloqueia os pedidos do React (localhost:5173) para a API (localhost:3000).
+// A app Flutter não é um navegador, por isso não precisa disto.
+app.register(fastifyCors, {
+  origin: config.corsOrigens,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
 });
 
 // Login com tokens (JWT). A partir daqui passam a existir app.jwt.sign() (cria um token)

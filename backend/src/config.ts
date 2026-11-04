@@ -16,6 +16,12 @@ if (!process.env.JWT_SEGREDO) {
 // Todas as definições da aplicação ficam aqui, num só sítio.
 export const config = {
   porta: Number(process.env.PORT ?? 3000),
+  // Sites React que podem usar a API. No .env estão separados por vírgulas;
+  // aqui ficam numa lista: ['http://localhost:5173', 'http://localhost:5174']
+  corsOrigens: (process.env.CORS_ORIGENS ?? '')
+    .split(',')
+    .map((origem) => origem.trim())
+    .filter((origem) => origem !== ''),
   bd: {
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT ?? 5432),
