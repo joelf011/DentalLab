@@ -1,0 +1,63 @@
+# Pedidos de teste para as rotas dos cargos.
+# Precisa da extensão "REST Client" do VS Code e da API a correr (npm run dev).
+# Carrega em "Send Request", que aparece por cima de cada pedido.
+#
+# Todas as rotas precisam de login. Ver: qualquer cargo. Criar, alterar e apagar: só Administrador.
+# Faz primeiro o pedido "Login"; o token fica guardado e os outros pedidos usam-no.
+
+@api = http://localhost:3000/api
+@token = {{login.response.body.$.token}}
+
+### Login do administrador (se já mudaste a palavra-passe, escreve aqui a nova)
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@dentallab.local",
+  "password": "Admin#2026"
+}
+
+### Listar todos os cargos
+GET {{api}}/cargos
+Authorization: Bearer {{token}}
+
+### Ver um cargo
+GET {{api}}/cargos/1
+Authorization: Bearer {{token}}
+
+### Criar um cargo (a resposta traz o id novo)
+POST {{api}}/cargos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "designacao": "Técnico"
+}
+
+### Alterar um cargo (troca o 4 pelo id que recebeste ao criar)
+PUT {{api}}/cargos/4
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "designacao": "Técnico de prótese"
+}
+
+### Apagar um cargo (troca o 4 pelo id que recebeste ao criar)
+DELETE {{api}}/cargos/4
+Authorization: Bearer {{token}}
+
+### Erro: apagar um cargo com utilizadores
+DELETE {{api}}/cargos/1
+Authorization: Bearer {{token}}
+
+### Erro: criar sem designação
+POST {{api}}/cargos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Erro: listar sem login (401)
+GET {{api}}/cargos
