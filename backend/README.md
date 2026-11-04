@@ -35,7 +35,9 @@ No **Query Tool** da base de dados `dentallab`, correr por esta ordem:
 2. Os ficheiros de `ModelosBaseDeDados/alteracoes/`, por ordem de número (tabelas acrescentadas depois; cada um corre-se uma só vez)
 3. Os ficheiros de `ModelosBaseDeDados/crud/` (vistas e funções; podem voltar a correr-se sempre que mudam)
 
-Os ficheiros de `ModelosBaseDeDados/testes/` experimentam as funções e desfazem tudo no fim (`ROLLBACK`). Os resultados aparecem no separador **Messages** do Query Tool.
+Os ficheiros `teste_*.sql` de `ModelosBaseDeDados/testes/` experimentam as funções e desfazem tudo no fim (`ROLLBACK`). Os resultados aparecem no separador **Messages** do Query Tool.
+
+O `dados_teste_clinica.sql` é diferente: **deixa na BD** uma clínica com a conta já aprovada, para experimentar a API como clínica (`clinica.teste@dentallab.local` / `Clinica#2026`).
 
 ## Organização
 
@@ -193,6 +195,11 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 | `POST /api/clientes` | Cria uma clínica, sem conta de acesso: `{ "nome", "nif", "morada_faturacao", "email", "telefone" }` (Administrador) |
 | `PUT /api/clientes/:id` | Altera uma clínica; `"ativo": false/true` desativa ou reativa a clínica e as contas dela (Administrador) |
 | `DELETE /api/clientes/:id` | Desativa a clínica e as contas dela (Administrador) |
+| `POST /api/alteracoes-cliente` | A clínica pede para mudar os seus dados: `{ "nome", "morada_faturacao", "email", "telefone" }`, só os que mudam (Cliente) |
+| `GET /api/alteracoes-cliente` | Pedidos de alteração; `?estado=pendente` só os que estão à espera (Administrador: todos; Cliente: os seus) |
+| `GET /api/alteracoes-cliente/:id` | Um pedido de alteração (Administrador; Cliente: só os seus) |
+| `POST /api/alteracoes-cliente/:id/aprovar` | Aprova: os dados novos passam para a clínica (Administrador) |
+| `POST /api/alteracoes-cliente/:id/rejeitar` | Rejeita: `{ "motivo_rejeicao": "..." }` (Administrador) |
 
 ## Comandos
 
