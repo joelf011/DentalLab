@@ -313,7 +313,7 @@ app.post('/api/tipos-trabalho', { preHandler: exigirCargo('Administrador') }, as
 app.post('/api/ordens/:id/aceitar', { preHandler: exigirCargo('Administrador', 'Colaborador') }, async (request) => { ... });
 ```
 
-Dentro de uma rota protegida, `request.user` é quem fez login:
+Dentro de uma rota protegida, `request.user` é quem fez login. Os dados vêm da BD em cada pedido: se o Administrador mudar o cargo de alguém, conta logo o novo; se desativar a conta, o pedido dá 401.
 
 ```ts
 request.user.id          // id do utilizador (para criado_por, responsavel_id, ...)
