@@ -56,11 +56,11 @@ As mensagens das funções da BD (`RAISE EXCEPTION`) chegam tal como foram escri
 | `POST /api/auth/login` | Login: `{ "email": "...", "password": "..." }`. Devolve `{ token, utilizador }` |
 | `GET /api/auth/eu` | Quem está ligado (precisa de login) |
 | `PUT /api/auth/password` | Muda a palavra-passe de quem está ligado: `{ "password_atual": "...", "password_nova": "..." }` |
-| `GET /api/cargos` | Lista os cargos |
-| `GET /api/cargos/:id` | Mostra um cargo |
-| `POST /api/cargos` | Cria um cargo: `{ "designacao": "..." }` |
-| `PUT /api/cargos/:id` | Altera um cargo: `{ "designacao": "..." }` |
-| `DELETE /api/cargos/:id` | Apaga um cargo (só se não tiver utilizadores) |
+| `GET /api/cargos` | Lista os cargos (login) |
+| `GET /api/cargos/:id` | Mostra um cargo (login) |
+| `POST /api/cargos` | Cria um cargo: `{ "designacao": "..." }` (Administrador) |
+| `PUT /api/cargos/:id` | Altera um cargo: `{ "designacao": "..." }` (Administrador) |
+| `DELETE /api/cargos/:id` | Apaga um cargo, só se não tiver utilizadores (Administrador) |
 
 ## Comandos
 
