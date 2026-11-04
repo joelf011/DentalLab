@@ -32,7 +32,8 @@ npm run dev     # arranca a API na porta 3000 (reinicia sozinha quando gravas um
 No **Query Tool** da base de dados `dentallab`, correr por esta ordem:
 
 1. `ModelosBaseDeDados/modelofisico.sql` (tabelas e dados iniciais)
-2. Os quatro ficheiros de `ModelosBaseDeDados/crud/` (vistas e funções)
+2. Os ficheiros de `ModelosBaseDeDados/alteracoes/`, por ordem de número (tabelas acrescentadas depois; cada um corre-se uma só vez)
+3. Os ficheiros de `ModelosBaseDeDados/crud/` (vistas e funções; podem voltar a correr-se sempre que mudam)
 
 ## Organização
 
@@ -42,6 +43,7 @@ src/
   config.ts         lê o ficheiro .env
   db.ts             ligação à base de dados
   autenticacao.ts   proteção das rotas com login (exigirLogin, exigirCargo)
+  erros.ts          mensagens em português para os erros dos dados (regras da BD, formato errado...)
   rotas/            um ficheiro por entidade (auth.ts, cargos.ts, ...)
 pedidos/       pedidos de teste (.http) para a extensão REST Client do VS Code
 ```
