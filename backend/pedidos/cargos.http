@@ -1,0 +1,39 @@
+# Pedidos de teste para as rotas dos cargos.
+# Precisa da extensão "REST Client" do VS Code e da API a correr (npm run dev).
+# Carrega em "Send Request", que aparece por cima de cada pedido.
+
+@api = http://localhost:3000/api
+
+### Listar todos os cargos
+GET {{api}}/cargos
+
+### Ver um cargo
+GET {{api}}/cargos/1
+
+### Criar um cargo (a resposta traz o id novo)
+POST {{api}}/cargos
+Content-Type: application/json
+
+{
+  "designacao": "Técnico"
+}
+
+### Alterar um cargo (troca o 4 pelo id que recebeste ao criar)
+PUT {{api}}/cargos/4
+Content-Type: application/json
+
+{
+  "designacao": "Técnico de prótese"
+}
+
+### Apagar um cargo (troca o 4 pelo id que recebeste ao criar)
+DELETE {{api}}/cargos/4
+
+### Erro: apagar um cargo com utilizadores
+DELETE {{api}}/cargos/1
+
+### Erro: criar sem designação
+POST {{api}}/cargos
+Content-Type: application/json
+
+{}

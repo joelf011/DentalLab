@@ -1,26 +1,22 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "dentallab-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API do DentalLab (Node.js + Fastify + PostgreSQL)",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsx watch src/server.ts"
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "dotenv": "^18.0.8",
     "fastify": "^5.12.7",
     "pg": "^8.23.1",
-    "pg-hstore": "^2.3.4",
-    "sequelize": "^6.37.8"
+    "pino-pretty": "^13.2.0"
   },
   "devDependencies": {
-    "@types/node": "^26.6.5",
-    "@types/validator": "^13.15.10",
+    "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
