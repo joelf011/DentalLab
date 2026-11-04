@@ -35,6 +35,8 @@ No **Query Tool** da base de dados `dentallab`, correr por esta ordem:
 2. Os ficheiros de `ModelosBaseDeDados/alteracoes/`, por ordem de número (tabelas acrescentadas depois; cada um corre-se uma só vez)
 3. Os ficheiros de `ModelosBaseDeDados/crud/` (vistas e funções; podem voltar a correr-se sempre que mudam)
 
+Os ficheiros de `ModelosBaseDeDados/testes/` experimentam as funções e desfazem tudo no fim (`ROLLBACK`). Os resultados aparecem no separador **Messages** do Query Tool.
+
 ## Organização
 
 ```text
