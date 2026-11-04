@@ -20,7 +20,7 @@ DECLARE
     v_linha   record;
 BEGIN
     -- 1. Clínica de teste, com a sua conta
-    v_cliente := fn_registar_clinica('Clínica Teste', '501234567', 'Rua A, Viseu', '232000000', 'teste@clinica.pt', 'HASH');
+    v_cliente := fn_registar_clinica('Clínica Teste', '509990101', 'Rua A, Viseu', '232000000', 'teste@clinica.pt', 'HASH');
     SELECT id INTO v_conta FROM vw_utilizador WHERE email = 'teste@clinica.pt';
     SELECT id INTO v_admin FROM vw_utilizador WHERE cargo = 'Administrador' AND ativo ORDER BY id LIMIT 1;
     RAISE NOTICE '1. Clínica % criada (conta %). Administrador: %', v_cliente, v_conta, v_admin;

@@ -8,6 +8,7 @@ import { rotasAlteracoesCliente } from './rotas/alteracoes-cliente.ts';
 import { rotasAuth } from './rotas/auth.ts';
 import { rotasCargos } from './rotas/cargos.ts';
 import { rotasClientes } from './rotas/clientes.ts';
+import { rotasUtilizadores } from './rotas/utilizadores.ts';
 
 // Cria o servidor. O logger mostra no terminal cada pedido que chega.
 const app = Fastify({
@@ -68,6 +69,7 @@ app.register(rotasAuth);
 app.register(rotasCargos);
 app.register(rotasClientes);
 app.register(rotasAlteracoesCliente);
+app.register(rotasUtilizadores);
 
 // Arranca o servidor.
 // host '0.0.0.0' = aceita pedidos de qualquer rede do PC, e não só do próprio PC (localhost).

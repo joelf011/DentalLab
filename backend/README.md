@@ -200,6 +200,12 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 | `GET /api/alteracoes-cliente/:id` | Um pedido de alteração (Administrador; Cliente: só os seus) |
 | `POST /api/alteracoes-cliente/:id/aprovar` | Aprova: os dados novos passam para a clínica (Administrador) |
 | `POST /api/alteracoes-cliente/:id/rejeitar` | Rejeita: `{ "motivo_rejeicao": "..." }` (Administrador) |
+| `GET /api/utilizadores` | Lista as contas; `?por_aprovar=true` só as que estão à espera de aprovação (Administrador) |
+| `GET /api/utilizadores/:id` | Mostra uma conta (Administrador) |
+| `POST /api/utilizadores` | Cria uma conta já aprovada: `{ "nome", "email", "cargo_id", "cliente_id", "password" }`; a palavra-passe é temporária (Administrador) |
+| `PUT /api/utilizadores/:id` | Altera uma conta (só os campos que vierem); com `"password"`, define uma nova palavra-passe temporária (Administrador) |
+| `DELETE /api/utilizadores/:id` | Desativa uma conta ou recusa um registo; não pode ser a própria (Administrador) |
+| `POST /api/utilizadores/:id/aprovar` | Aprova uma conta à espera (Administrador) |
 
 ## Comandos
 

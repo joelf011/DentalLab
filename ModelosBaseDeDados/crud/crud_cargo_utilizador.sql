@@ -270,3 +270,34 @@ BEGIN
     RETURN v_cliente_id;
 END;
 $BODY$;
+
+
+-- aprovação de contas
+
+-- O Administrador aprova uma conta que está à espera (ex.: uma clínica que se registou sozinha).
+-- Só aprova contas ativas e ainda por aprovar. Devolve o id do utilizador.
+-- Quem aprova tem de ser um administrador ativo (verificado pela fn_utilizador_crud).
+-- Para recusar um registo, desativa-se a conta (fn_utilizador_crud com DELETE).
+CREATE OR REPLACE FUNCTION public.fn_aprovar_utilizador(
+    p_id           bigint,
+    p_aprovado_por bigint)
+RETURNS bigint
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+    v_conta utilizador%ROWTYPE;
+BEGIN
+    SELECT * INTO v_conta FROM utilizador WHERE id = p_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'O utilizador % não existe', p_id;
+    END IF;
+    IF v_conta.data_aprovacao IS NOT NULL THEN
+        RAISE EXCEPTION 'Esta conta já está aprovada';
+    END IF;
+    IF NOT v_conta.ativo THEN
+        RAISE EXCEPTION 'Esta conta está desativada; reative-a antes de a aprovar';
+    END IF;
+
+    RETURN fn_utilizador_crud(p_operacao => 'UPDATE', p_id => p_id, p_aprovado_por => p_aprovado_por);
+END;
+$BODY$;

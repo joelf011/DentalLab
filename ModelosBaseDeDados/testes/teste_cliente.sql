@@ -16,7 +16,7 @@ DECLARE
     v_conta   record;
 BEGIN
     -- 1. Clínica de teste, com a sua conta
-    v_cliente := fn_registar_clinica('Clínica Teste', '501234567', 'Rua A, Viseu', NULL, 'teste@clinica.pt', 'HASH');
+    v_cliente := fn_registar_clinica('Clínica Teste', '509990101', 'Rua A, Viseu', NULL, 'teste@clinica.pt', 'HASH');
     SELECT * INTO v_conta FROM vw_utilizador WHERE cliente_id = v_cliente;
     RAISE NOTICE '1. Clínica % criada. Conta ativa: %', v_cliente, v_conta.ativo;
 

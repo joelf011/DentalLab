@@ -1,0 +1,96 @@
+# Pedidos de teste para as rotas das contas de acesso (utilizadores).
+# Precisa da extensão "REST Client" do VS Code e da API a correr (npm run dev).
+#
+# Todas estas rotas são do Administrador. Faz primeiro o pedido "Login"; o token fica guardado.
+# Os cargo_id estão em GET /api/cargos (normalmente 1 = Administrador, 2 = Colaborador, 3 = Cliente).
+# Os cliente_id estão em GET /api/clientes.
+
+@api = http://localhost:3000/api
+@token = {{login.response.body.$.token}}
+
+### Login do administrador (se já mudaste a palavra-passe, escreve aqui a nova)
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@dentallab.local",
+  "password": "Admin#2026"
+}
+
+### Listar todas as contas
+GET {{api}}/utilizadores
+Authorization: Bearer {{token}}
+
+### Listar as contas à espera de aprovação (ex.: clínicas que se registaram)
+GET {{api}}/utilizadores?por_aprovar=true
+Authorization: Bearer {{token}}
+
+### Criar a conta de um colaborador (fica aprovada; a palavra-passe é temporária)
+POST {{api}}/utilizadores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Ana Técnica",
+  "email": "ana@dentallab.local",
+  "cargo_id": 2,
+  "password": "Temporaria#1"
+}
+
+### Criar a conta de acesso de uma clínica (troca o cliente_id pelo da clínica)
+POST {{api}}/utilizadores
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Clínica Dentária Sorriso",
+  "email": "geral@sorriso.pt",
+  "cargo_id": 3,
+  "cliente_id": 1,
+  "password": "Temporaria#1"
+}
+
+### Ver uma conta (troca o 2 pelo id)
+GET {{api}}/utilizadores/2
+Authorization: Bearer {{token}}
+
+### Alterar uma conta: nome e email de login (troca o 2 pelo id)
+PUT {{api}}/utilizadores/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "nome": "Ana Silva",
+  "email": "ana.silva@dentallab.local"
+}
+
+### Definir uma nova palavra-passe temporária (a pessoa esqueceu-se da dela)
+PUT {{api}}/utilizadores/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "password": "OutraTemporaria#2"
+}
+
+### Aprovar uma conta à espera (troca o 2 pelo id que aparece em "por_aprovar")
+POST {{api}}/utilizadores/2/aprovar
+Authorization: Bearer {{token}}
+
+### Desativar uma conta (ou recusar um registo)
+DELETE {{api}}/utilizadores/2
+Authorization: Bearer {{token}}
+
+### Reativar uma conta
+PUT {{api}}/utilizadores/2
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "ativo": true
+}
+
+### Erro: o administrador tenta desativar a própria conta
+DELETE {{api}}/utilizadores/1
+Authorization: Bearer {{token}}
