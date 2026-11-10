@@ -1,7 +1,7 @@
--- Teste da fn_cliente_crud (crud/crud_cliente_etapa_trabalho.sql):
+-- Teste da fn_cliente_crud (03_funcoes.sql):
 -- ao desativar ou reativar uma clínica, as contas de acesso dela acompanham.
 --
--- Como usar: abrir no Query Tool da BD dentallab e correr tudo (F5).
+-- Como usar: abrir no Query Tool da BD abd_lab_cd e correr tudo (F5).
 -- Os resultados aparecem no separador "Messages".
 -- No fim, tudo é desfeito (ROLLBACK): a BD fica exatamente como estava.
 

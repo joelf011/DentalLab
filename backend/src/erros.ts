@@ -2,7 +2,7 @@
 // Usado pelo tratamento de erros do server.ts.
 
 // Mensagens para as regras das tabelas (CHECK e UNIQUE) que o utilizador pode violar.
-// A chave é o nome da regra, tal como está no modelofisico.sql ou nos ficheiros de alteracoes/.
+// A chave é o nome da regra, tal como está em ModelosBaseDeDados/sql/01_tabelas.sql.
 // Uma regra que não esteja aqui usa a mensagem genérica. Quem criar uma regra nova, acrescenta-a aqui.
 const mensagensRegras: Record<string, string> = {
   // cliente e utilizador

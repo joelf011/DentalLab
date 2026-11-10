@@ -1,6 +1,6 @@
--- Teste da fn_aprovar_utilizador (crud/crud_cargo_utilizador.sql).
+-- Teste da fn_aprovar_utilizador (03_funcoes.sql).
 --
--- Como usar: abrir no Query Tool da BD dentallab e correr tudo (F5).
+-- Como usar: abrir no Query Tool da BD abd_lab_cd e correr tudo (F5).
 -- Os resultados aparecem no separador "Messages".
 -- No fim, tudo é desfeito (ROLLBACK): a BD fica exatamente como estava.
 
