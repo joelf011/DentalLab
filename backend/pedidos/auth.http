@@ -1,0 +1,78 @@
+# Pedidos de teste para o login.
+# Precisa da extensão "REST Client" do VS Code e da API a correr (npm run dev).
+# Carrega em "Send Request", que aparece por cima de cada pedido.
+
+@api = http://localhost:3000/api
+
+# O token da resposta do login fica guardado aqui automaticamente.
+# Faz primeiro o pedido "Login do administrador"; depois os outros já o usam.
+@token = {{login.response.body.$.token}}
+
+### Login do administrador (conta criada pelo modelofisico.sql)
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@dentallab.local",
+  "password": "Admin#2026"
+}
+
+### Quem está ligado (usa o token do login)
+GET {{api}}/auth/eu
+Authorization: Bearer {{token}}
+
+### Mudar a palavra-passe de quem está ligado
+# ATENÇÃO: muda mesmo a palavra-passe! Depois, troca a "password" do pedido de login lá em cima pela nova.
+PUT {{api}}/auth/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "password_atual": "Admin#2026",
+  "password_nova": "escreve_aqui_a_nova"
+}
+
+### Registo de uma clínica (rota pública; a conta fica à espera de aprovação)
+# Depois: o login desta clínica dá 403 até o Administrador a aprovar
+# (pedidos/utilizadores.http: "Listar as contas à espera de aprovação" e "Aprovar").
+POST {{api}}/auth/registo
+Content-Type: application/json
+
+{
+  "nome": "Clínica Dentária do Centro",
+  "nif": "509990301",
+  "morada_faturacao": "Rua do Comércio 5, Viseu",
+  "telefone": "232222222",
+  "email": "geral@clinicadocentro.pt",
+  "password": "Centro#2026"
+}
+
+### Login da clínica registada (403 enquanto não for aprovada; 200 depois)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "geral@clinicadocentro.pt",
+  "password": "Centro#2026"
+}
+
+### Erro: palavra-passe errada
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@dentallab.local",
+  "password": "errada"
+}
+
+### Erro: sem palavra-passe
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@dentallab.local"
+}
+
+### Erro: "quem está ligado" sem token
+GET {{api}}/auth/eu

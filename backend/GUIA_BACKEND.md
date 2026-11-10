@@ -87,7 +87,8 @@ backend/
 2. `git pull` do ramo `backend`.
 3. No pgAdmin, criar a base de dados `dentallab`. No **Query Tool** dessa BD, correr por esta ordem:
    1. `ModelosBaseDeDados/modelofisico.sql`
-   2. todos os ficheiros de `ModelosBaseDeDados/crud/`
+   2. os ficheiros de `ModelosBaseDeDados/alteracoes/`, por ordem de número (cada um só uma vez)
+   3. todos os ficheiros de `ModelosBaseDeDados/crud/`
 4. Em `backend/`, copiar `.env.example` para `.env` e pôr em `DB_PASSWORD` a palavra-passe do PostgreSQL.
 5. No terminal, dentro de `backend/`, correr `npm install` e depois `npm run dev`.
 6. Abrir http://localhost:3000/api/health. Deve aparecer `{"api":"ok","bd":"ok"}`.
@@ -124,7 +125,7 @@ O `modelofisico.sql` cria uma conta de administrador: `admin@dentallab.local`, c
 9. **Todo o SQL fica num ficheiro do repositório.** O que se cria no pgAdmin vive só na BD local de quem o criou.
    - Vistas e funções de uma entidade ficam em `ModelosBaseDeDados/crud/crud_<entidade>.sql` e usam `CREATE OR REPLACE`.
    - Para mudar uma vista ou função, edita-se o ficheiro, volta-se a correr no pgAdmin e avisa-se a outra pessoa.
-   - **Alterar tabelas** (`ALTER TABLE`) só depois de combinar com a outra pessoa. O SQL vai para um ficheiro numerado em `ModelosBaseDeDados/alteracoes/` (ex.: `001_cliente_cliente_id_na_vista.sql`).
+   - **Criar ou alterar tabelas** (`CREATE TABLE`, `ALTER TABLE`) só depois de combinar com a outra pessoa. O SQL vai para um ficheiro numerado em `ModelosBaseDeDados/alteracoes/`, com o número seguinte ao último que lá estiver (ex.: `002_trabalho_observacoes.sql`). Ver o `001_alteracao_cliente.sql` como exemplo.
 10. **Cuidados com o `CREATE OR REPLACE`:**
     - Se mudares os **parâmetros** de uma função, primeiro faz `DROP FUNCTION fn_x(tipos...)`. Senão o PostgreSQL cria uma segunda função com o mesmo nome e as chamadas deixam de funcionar.
     - Numa **vista** só podes acrescentar colunas **no fim**. Para tirar ou reordenar colunas, faz `DROP VIEW` e cria-a outra vez.
@@ -312,7 +313,7 @@ app.post('/api/tipos-trabalho', { preHandler: exigirCargo('Administrador') }, as
 app.post('/api/ordens/:id/aceitar', { preHandler: exigirCargo('Administrador', 'Colaborador') }, async (request) => { ... });
 ```
 
-Dentro de uma rota protegida, `request.user` é quem fez login:
+Dentro de uma rota protegida, `request.user` é quem fez login. Os dados vêm da BD em cada pedido: se o Administrador mudar o cargo de alguém, conta logo o novo; se desativar a conta, o pedido dá 401.
 
 ```ts
 request.user.id          // id do utilizador (para criado_por, responsavel_id, ...)
@@ -331,19 +332,18 @@ Authorization: Bearer <token>
 
 ### 5.4 Ficheiro de testes `.http`
 
-Copia [`pedidos/cargos.http`](pedidos/cargos.http). Para rotas protegidas, faz primeiro o login e usa o token:
+Copia [`pedidos/cargos.http`](pedidos/cargos.http). Para rotas protegidas, faz primeiro o login. O REST Client guarda sozinho o token da resposta (ver [`pedidos/auth.http`](pedidos/auth.http)):
 
 ```http
 @api = http://localhost:3000/api
+@token = {{login.response.body.$.token}}
 
-### Login (copia o "token" da resposta para a linha de baixo)
+### Login (faz este pedido primeiro; o token fica guardado em {{token}})
+# @name login
 POST {{api}}/auth/login
 Content-Type: application/json
 
 { "email": "admin@dentallab.local", "password": "Admin#2026" }
-
-###
-@token = cola_aqui_o_token
 
 ### Criar um tipo de trabalho
 POST {{api}}/tipos-trabalho
@@ -388,6 +388,7 @@ Cada pessoa só mexe nos seus ficheiros. Assim não há conflitos no Git.
 
 **Exceções:**
 - A Pessoa B pode acrescentar, no `server.ts`, só as linhas de `import` e de `app.register(...)` das suas rotas.
+- Em `src/erros.ts`, qualquer pessoa pode acrescentar mensagens à lista `mensagensRegras`. A lista tem a mensagem em português de cada regra `CHECK` ou `UNIQUE` das tabelas, pelo nome da regra. Quem criar uma regra nova numa tabela acrescenta lá a sua mensagem.
 - A tabela de rotas do README é dos dois. Cada pessoa acrescenta as suas linhas.
 - O `crud_cliente_etapa_trabalho.sql` tem uma parte de cada pessoa: a parte de `cliente` é da A e a de `etapa_trabalho` é da B. Quem lhe mexer avisa o outro.
 
@@ -556,7 +557,7 @@ Estão aqui para a Pessoa B saber o que vai receber.
 3. Faz commits pequenos e frequentes, com mensagens em português: `Rotas das etapas`.
 4. No fim da tarefa (ver as [regras 17 a 19](#antes-de-dar-uma-tarefa-como-feita)), faz `git push` e abre um **Pull Request para `backend`**. A outra pessoa dá uma vista de olhos e faz merge.
 5. Depois de cada `git pull`:
-   - Se apareceram ficheiros novos ou alterados em `ModelosBaseDeDados/`, corre-os no pgAdmin (`crud/` e `alteracoes/`, por ordem).
+   - Se apareceram ficheiros novos ou alterados em `ModelosBaseDeDados/`, corre-os no pgAdmin: primeiro os novos de `alteracoes/` (por ordem de número, cada um só uma vez), depois os de `crud/`.
    - Se o `package.json` mudou, corre `npm install`.
 6. O `.env` **nunca** vai para o Git. Se alguém acrescentar uma variável, acrescenta-a também ao `.env.example` e avisa.
 

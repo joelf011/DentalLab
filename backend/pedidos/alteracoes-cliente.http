@@ -1,0 +1,65 @@
+# Pedidos de teste para os pedidos de alteração dos dados de uma clínica.
+# Precisa da extensão "REST Client" do VS Code e da API a correr (npm run dev).
+#
+# Há dois logins: o da clínica (pede alterações) e o do administrador (aprova ou rejeita).
+# A clínica de teste cria-se no pgAdmin com ModelosBaseDeDados/testes/dados_teste_clinica.sql.
+# Faz os dois logins primeiro; os tokens ficam guardados.
+
+@api = http://localhost:3000/api
+@tokenClinica = {{loginClinica.response.body.$.token}}
+@tokenAdmin = {{loginAdmin.response.body.$.token}}
+
+### Login da clínica de teste
+# @name loginClinica
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "clinica.teste@dentallab.local",
+  "password": "Clinica#2026"
+}
+
+### Login do administrador (se já mudaste a palavra-passe, escreve aqui a nova)
+# @name loginAdmin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@dentallab.local",
+  "password": "Admin#2026"
+}
+
+### CLÍNICA: pedir nova morada e novo telefone (só os campos que mudam)
+POST {{api}}/alteracoes-cliente
+Authorization: Bearer {{tokenClinica}}
+Content-Type: application/json
+
+{
+  "morada_faturacao": "Avenida Nova 25, Viseu",
+  "telefone": "232111111"
+}
+
+### CLÍNICA: ver os meus pedidos
+GET {{api}}/alteracoes-cliente
+Authorization: Bearer {{tokenClinica}}
+
+### ADMINISTRADOR: ver os pedidos à espera de aprovação
+GET {{api}}/alteracoes-cliente?estado=pendente
+Authorization: Bearer {{tokenAdmin}}
+
+### ADMINISTRADOR: aprovar (troca o 1 pelo id do pedido)
+POST {{api}}/alteracoes-cliente/1/aprovar
+Authorization: Bearer {{tokenAdmin}}
+
+### ADMINISTRADOR: rejeitar com motivo (troca o 1 pelo id do pedido)
+POST {{api}}/alteracoes-cliente/1/rejeitar
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "motivo_rejeicao": "A morada tem de ser a do registo comercial."
+}
+
+### Erro: a clínica tenta aprovar o próprio pedido
+POST {{api}}/alteracoes-cliente/1/aprovar
+Authorization: Bearer {{tokenClinica}}

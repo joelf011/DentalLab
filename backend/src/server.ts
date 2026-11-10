@@ -1,7 +1,14 @@
+import fastifyCors from '@fastify/cors';
+import fastifyJwt from '@fastify/jwt';
 import Fastify, { type FastifyError } from 'fastify';
 import { config } from './config.ts';
 import { bd } from './db.ts';
+import { mensagemErroDados } from './erros.ts';
+import { rotasAlteracoesCliente } from './rotas/alteracoes-cliente.ts';
+import { rotasAuth } from './rotas/auth.ts';
 import { rotasCargos } from './rotas/cargos.ts';
+import { rotasClientes } from './rotas/clientes.ts';
+import { rotasUtilizadores } from './rotas/utilizadores.ts';
 
 // Cria o servidor. O logger mostra no terminal cada pedido que chega.
 const app = Fastify({
@@ -11,16 +18,13 @@ const app = Fastify({
 // Quando uma rota dá erro, vem parar aqui.
 // Todas as respostas de erro têm o mesmo formato: { "erro": "mensagem" }
 app.setErrorHandler((erro: FastifyError, request, reply) => {
-  // Erro lançado por uma função da BD com RAISE EXCEPTION (ex.: "O cargo 9 não existe").
-  // A mensagem já vem em português, por isso mostra-se tal como está.
-  if (erro.code === 'P0001') {
-    return reply.code(400).send({ erro: erro.message });
+  // Erro nos dados enviados: RAISE EXCEPTION das funções, regras das tabelas, formato errado...
+  // A mensagem para o utilizador vem de erros.ts.
+  const mensagem = mensagemErroDados(erro);
+  if (mensagem !== null) {
+    return reply.code(400).send({ erro: mensagem });
   }
-  // Valor com formato errado para a BD (ex.: /api/cargos/abc, quando o id tem de ser um número).
-  if (erro.code === '22P02') {
-    return reply.code(400).send({ erro: 'Há um valor com formato inválido.' });
-  }
-  // Erros do próprio Fastify com código conhecido (ex.: JSON mal escrito no corpo do pedido).
+  // Outros erros do próprio Fastify com código conhecido (ex.: pedido demasiado grande).
   if (erro.statusCode !== undefined && erro.statusCode < 500) {
     return reply.code(erro.statusCode).send({ erro: erro.message });
   }
@@ -45,8 +49,30 @@ app.get('/api/health', async (request, reply) => {
   }
 });
 
+// CORS: autoriza os sites React (CORS_ORIGENS no .env) a usar a API a partir do navegador.
+// Sem isto, o navegador bloqueia os pedidos do React (localhost:5173) para a API (localhost:3000).
+// A app Flutter não é um navegador, por isso não precisa disto.
+app.register(fastifyCors, {
+  origin: config.corsOrigens,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+});
+
+// Login com tokens (JWT). A partir daqui passam a existir app.jwt.sign() (cria um token)
+// e request.jwtVerify() (verifica o token de um pedido; usado em autenticacao.ts).
+app.register(fastifyJwt, {
+  secret: config.jwt.segredo,
+  sign: { expiresIn: config.jwt.validade },
+});
+
 // Cada grupo de rotas está num ficheiro da pasta rotas/.
+app.register(rotasAuth);
 app.register(rotasCargos);
+app.register(rotasClientes);
+app.register(rotasAlteracoesCliente);
+app.register(rotasUtilizadores);
 
 // Arranca o servidor.
-await app.listen({ port: config.porta });
+// host '0.0.0.0' = aceita pedidos de qualquer rede do PC, e não só do próprio PC (localhost).
+// É o que permite ao emulador Android e aos telemóveis na mesma rede Wi-Fi chegarem à API.
+// Ao arrancar, o terminal mostra os endereços: o que não é 127.0.0.1 é o que se usa no telemóvel.
+await app.listen({ port: config.porta, host: '0.0.0.0' });
