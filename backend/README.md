@@ -182,6 +182,7 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 | Rota | O que faz |
 | --- | --- |
 | `GET /api/health` | Verifica a API e a ligação à BD |
+| `POST /api/auth/registo` | Público. Uma clínica regista-se: `{ "nome", "nif", "morada_faturacao", "telefone", "email", "password" }`. A conta fica à espera de aprovação |
 | `POST /api/auth/login` | Login: `{ "email": "...", "password": "..." }`. Devolve `{ token, utilizador }` |
 | `GET /api/auth/eu` | Quem está ligado (precisa de login) |
 | `PUT /api/auth/password` | Muda a palavra-passe de quem está ligado: `{ "password_atual": "...", "password_nova": "..." }` |

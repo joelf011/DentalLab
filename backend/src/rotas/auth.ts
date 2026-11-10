@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { exigirLogin, type UtilizadorLogin } from '../autenticacao.ts';
 import { bd } from '../db.ts';
 
-// Rotas do login.
+// Rotas do login e do registo de clínicas.
 // Os dados vêm da função fn_utilizador_login (a única que lê o password_hash) e da vista vw_utilizador.
 
 // O que o frontend envia no login
@@ -18,7 +18,41 @@ interface DadosPassword {
   password_nova?: string;
 }
 
+// O que a clínica envia no registo
+interface DadosRegisto {
+  nome?: string;
+  nif?: string;
+  morada_faturacao?: string;
+  telefone?: string;
+  email?: string; // é o email de contacto da clínica e o email de login
+  password?: string;
+}
+
 export async function rotasAuth(app: FastifyInstance) {
+  // POST /api/auth/registo: uma clínica regista-se sozinha (rota pública, sem login)
+  // Cria a clínica e a conta de acesso, que fica à espera de aprovação do Administrador.
+  // Até ser aprovada, o login responde 403 "A sua conta ainda não foi aprovada pelo laboratório."
+  app.post('/api/auth/registo', async (request, reply) => {
+    const dados = request.body as DadosRegisto | undefined;
+    // A BD só recebe o hash, por isso a regra da palavra-passe fica aqui.
+    if (!dados?.password || dados.password.length < 8) {
+      return reply.code(400).send({ erro: 'A palavra-passe tem de ter pelo menos 8 caracteres.' });
+    }
+    // As outras validações (nome, NIF, email repetido...) são da função na BD.
+    const resultado = await bd.query(
+      `SELECT fn_registar_clinica(
+         p_nome             => $1,
+         p_nif              => $2,
+         p_morada_faturacao => $3,
+         p_telefone         => $4,
+         p_email            => $5,
+         p_password_hash    => $6
+       ) AS id`,
+      [dados.nome, dados.nif, dados.morada_faturacao, dados.telefone, dados.email, await bcrypt.hash(dados.password, 12)],
+    );
+    return reply.code(201).send(resultado.rows[0]);
+  });
+
   // POST /api/auth/login com { "email": "...", "password": "..." }
   // Devolve o token (para enviar nos pedidos seguintes) e os dados do utilizador.
   app.post('/api/auth/login', async (request, reply) => {
