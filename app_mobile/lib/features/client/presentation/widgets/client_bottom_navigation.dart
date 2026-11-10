@@ -11,82 +11,38 @@ class ClientBottomNavigation extends StatelessWidget {
   final ValueChanged<int> onDestinationSelected;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: Colors.white,
-    elevation: 8,
-    child: SizedBox(
-      height: 64,
-      child: Row(
-        children: [
-          _item(0, 'Início', Icons.grid_view_outlined),
-          _item(1, 'Pedidos', Icons.inventory_2_outlined),
-          _item(2, 'Novo', Icons.add),
-          _item(3, 'Alertas', Icons.notifications_none_outlined, showDot: true),
-          _item(4, 'Conta', Icons.person_outline),
-        ],
+  Widget build(BuildContext context) => NavigationBar(
+    selectedIndex: selectedIndex,
+    onDestinationSelected: onDestinationSelected,
+    backgroundColor: Colors.white,
+    indicatorColor: const Color(0xFFF7F2E7),
+    labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+    destinations: const [
+      NavigationDestination(
+        icon: Icon(Icons.grid_view_outlined),
+        selectedIcon: Icon(Icons.grid_view),
+        label: 'Início',
       ),
-    ),
+      NavigationDestination(
+        icon: Icon(Icons.inventory_2_outlined),
+        selectedIcon: Icon(Icons.inventory_2),
+        label: 'Pedidos',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.add_circle_outline),
+        selectedIcon: Icon(Icons.add_circle),
+        label: 'Novo',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.notifications_none_outlined),
+        selectedIcon: Icon(Icons.notifications),
+        label: 'Alertas',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.person_outline),
+        selectedIcon: Icon(Icons.person),
+        label: 'Conta',
+      ),
+    ],
   );
-
-  Widget _item(int index, String label, IconData icon, {bool showDot = false}) {
-    final selected = selectedIndex == index;
-    final isNew = index == 2;
-    final color = isNew
-        ? const Color(0xFF1F2937)
-        : selected
-        ? const Color(0xFF8B6A36)
-        : const Color(0xFF64748B);
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: Material(
-          color: isNew
-              ? const Color(0xFFC9A45E)
-              : selected
-              ? const Color(0xFFF7F2E7)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => onDestinationSelected(index),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 64),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Icon(icon, size: isNew ? 28 : 22, color: color),
-                      if (showDot)
-                        const Positioned(
-                          right: -2,
-                          top: -2,
-                          child: CircleAvatar(
-                            radius: 3,
-                            backgroundColor: Color(0xFFC9A45E),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: color,
-                      fontWeight: selected || isNew
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

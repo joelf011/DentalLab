@@ -1,14 +1,20 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../auth/data/auth_service.dart';
 import '../data/client_demo_data.dart';
+import '../../../app_router.dart';
 import 'client_dashboard_page.dart';
 import 'widgets/client_bottom_navigation.dart';
 import 'widgets/client_order_card.dart';
 
 class ClientShell extends StatefulWidget {
-  const ClientShell({super.key, required this.clinic});
+  const ClientShell({super.key, required this.session});
 
-  final ClientClinic clinic;
+  final AuthSession session;
+  ClientClinic get clinic => session.clinic!;
 
   @override
   State<ClientShell> createState() => _ClientShellState();
@@ -21,49 +27,7 @@ class _ClientShellState extends State<ClientShell> {
       demoOrders.where((order) => order.clinicId == widget.clinic.id).toList();
 
   void _showOrder(ClientOrder order) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  order.reference,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(order.type, style: const TextStyle(fontSize: 16)),
-                const SizedBox(height: 8),
-                Text(
-                  'Paciente: ${order.patient}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Estado: ${order.statusLabel}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Etapa: ${order.stage}',
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    unawaited(context.push<void>(AppRoutes.clientOrder, extra: order));
   }
 
   @override
@@ -89,7 +53,7 @@ class _ClientShellState extends State<ClientShell> {
       ),
       _AccountPage(
         clinic: widget.clinic,
-        onSignOut: () => Navigator.of(context).pop(),
+        onSignOut: () => context.go(AppRoutes.login),
       ),
     ];
 

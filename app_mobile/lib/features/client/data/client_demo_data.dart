@@ -1,15 +1,7 @@
 // Dados locais do protótipo. Substituir por dados da API quando estiver disponível.
-class ClientClinic {
-  const ClientClinic({
-    required this.id,
-    required this.name,
-    required this.email,
-  });
+import 'client_clinic.dart';
 
-  final String id;
-  final String name;
-  final String email;
-}
+export 'client_clinic.dart';
 
 class ClientOrder {
   const ClientOrder({
@@ -21,6 +13,15 @@ class ClientOrder {
     required this.status,
     required this.stage,
     this.delivery,
+    this.doctor,
+    this.material,
+    this.shade,
+    this.nature = 'Físico',
+    this.description,
+    this.teeth = const [],
+    this.steps = const [],
+    this.events = const [],
+    this.messages = const [],
   });
 
   final String id;
@@ -31,6 +32,15 @@ class ClientOrder {
   final String status;
   final String stage;
   final String? delivery;
+  final String? doctor;
+  final String? material;
+  final String? shade;
+  final String nature;
+  final String? description;
+  final List<int> teeth;
+  final List<ClientOrderStep> steps;
+  final List<ClientOrderEvent> events;
+  final List<ClientOrderMessage> messages;
 
   String get statusLabel => switch (status) {
     'por_receber' => 'Por receber',
@@ -41,6 +51,39 @@ class ClientOrder {
     'concluido' => 'Concluído',
     _ => status,
   };
+}
+
+class ClientOrderStep {
+  const ClientOrderStep({required this.name, this.completed = false});
+
+  final String name;
+  final bool completed;
+}
+
+class ClientOrderEvent {
+  const ClientOrderEvent({
+    required this.description,
+    required this.actor,
+    required this.date,
+  });
+
+  final String description;
+  final String actor;
+  final String date;
+}
+
+class ClientOrderMessage {
+  const ClientOrderMessage({
+    required this.author,
+    required this.text,
+    required this.date,
+    this.fromClinic = false,
+  });
+
+  final String author;
+  final String text;
+  final String date;
+  final bool fromClinic;
 }
 
 const demoClinics = [
@@ -66,6 +109,44 @@ const demoOrders = [
     status: 'em_producao',
     stage: 'Enceramento',
     delivery: '03/11',
+    doctor: 'Dr. Rui Figueiredo',
+    material: 'Zircónia',
+    shade: 'A2',
+    description: 'Coroa unitária. Verificar a oclusão cuidadosamente.',
+    teeth: [15],
+    steps: [
+      ClientOrderStep(name: 'Receção', completed: true),
+      ClientOrderStep(name: 'Análise técnica', completed: true),
+      ClientOrderStep(name: 'Enceramento'),
+      ClientOrderStep(name: 'Fresagem'),
+      ClientOrderStep(name: 'Acabamento'),
+      ClientOrderStep(name: 'Controlo de qualidade'),
+      ClientOrderStep(name: 'Expedição'),
+    ],
+    events: [
+      ClientOrderEvent(
+        description: 'Encomenda recebida',
+        actor: 'Laboratório',
+        date: '10/12/2024',
+      ),
+      ClientOrderEvent(
+        description: 'Encomenda encaminhada para produção',
+        actor: 'Laboratório',
+        date: '10/12/2024',
+      ),
+      ClientOrderEvent(
+        description: 'Enceramento iniciado',
+        actor: 'Laboratório',
+        date: '11/12/2024',
+      ),
+    ],
+    messages: [
+      ClientOrderMessage(
+        author: 'Laboratório',
+        text: 'Trabalho em execução. O enceramento já foi iniciado.',
+        date: '11/12/2024',
+      ),
+    ],
   ),
   ClientOrder(
     id: 'w2',
@@ -75,6 +156,19 @@ const demoOrders = [
     patient: '#PAC-0914',
     status: 'em_standby',
     stage: 'Aguarda impressão',
+    doctor: 'Dr. Sérgio Lopes',
+    material: 'Cromo-Cobalto',
+    shade: 'A3',
+    description:
+        'Prótese parcial removível superior. A aguardar nova impressão.',
+    teeth: [14, 15, 16, 17, 24, 25, 26],
+    steps: [
+      ClientOrderStep(name: 'Receção', completed: true),
+      ClientOrderStep(name: 'Gesso'),
+      ClientOrderStep(name: 'Estrutura metálica'),
+      ClientOrderStep(name: 'Montagem de dentes'),
+      ClientOrderStep(name: 'Expedição'),
+    ],
   ),
   ClientOrder(
     id: 'w4',
@@ -85,6 +179,32 @@ const demoOrders = [
     status: 'concluido',
     stage: 'Entregue',
     delivery: '31/10',
+    doctor: 'Dr. Rui Figueiredo',
+    material: 'Cerâmica feldspática',
+    shade: 'B1',
+    description: 'Trabalho cerâmico para melhoramento estético.',
+    teeth: [11, 12, 21, 22],
+    steps: [
+      ClientOrderStep(name: 'Receção', completed: true),
+      ClientOrderStep(name: 'Análise técnica', completed: true),
+      ClientOrderStep(name: 'Enceramento', completed: true),
+      ClientOrderStep(name: 'Fresagem', completed: true),
+      ClientOrderStep(name: 'Acabamento', completed: true),
+      ClientOrderStep(name: 'Controlo de qualidade', completed: true),
+      ClientOrderStep(name: 'Expedição', completed: true),
+    ],
+    events: [
+      ClientOrderEvent(
+        description: 'Encomenda recebida',
+        actor: 'Laboratório',
+        date: '05/12/2024',
+      ),
+      ClientOrderEvent(
+        description: 'Trabalho concluído',
+        actor: 'Laboratório',
+        date: '14/12/2024',
+      ),
+    ],
   ),
   ClientOrder(
     id: 'demo-1',

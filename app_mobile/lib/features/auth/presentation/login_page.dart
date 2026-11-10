@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../client/data/client_demo_data.dart';
-import '../../client/presentation/client_shell.dart';
+import '../data/auth_service.dart';
+import '../../../app_router.dart';
 
 enum _Screen { login, register, pending }
 
@@ -11,7 +12,9 @@ const _muted = Color(0xFF64748B);
 const _border = Color(0xFFE5E7EB);
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({super.key, required this.authService});
+
+  final AuthService authService;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -58,45 +61,35 @@ class _LoginPageState extends State<LoginPage> {
       _loading = true;
       _error = null;
     });
-    await Future<void>.delayed(const Duration(milliseconds: 800));
+    AuthSession? session;
+    try {
+      session = await widget.authService.signIn(_email.text, _password.text);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Não foi possível iniciar sessão. Tente novamente.';
+      });
+      return;
+    }
     if (!mounted) return;
-    final email = _email.text.trim().toLowerCase();
-    final password = _password.text;
-    final temporaryClinicLogin = email == 'clinica' && password == '123';
-    final valid =
-        temporaryClinicLogin ||
-        (['geral@horizonte.pt', 'slopesclinica@gmail.com'].contains(email) &&
-            password == 'clinica') ||
-        ([
-              'ana@lcd.pt',
-              'pedro@lcd.pt',
-              'jorge@lcd.pt',
-              'marta@lcd.pt',
-            ].contains(email) &&
-            password == 'colaborador') ||
-        (email == 'catarina@lcd.pt' && password == 'admin');
+    if (session?.role == AuthRole.client && session?.clinic == null) {
+      setState(() {
+        _loading = false;
+        _error = 'Não foi possível obter os dados da clínica.';
+      });
+      return;
+    }
     setState(() {
       _loading = false;
-      if (!valid) _error = 'Credenciais inválidas.';
+      if (session == null) _error = 'Credenciais inválidas.';
     });
-    if (valid) {
-      final clinic = temporaryClinicLogin
-          ? demoClinics.first
-          : demoClinics.where((item) => item.email == email).firstOrNull;
-      if (clinic != null) {
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => ClientShell(clinic: clinic)),
-        );
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Acesso de demonstração validado. A área autenticada ainda não está ligada.',
-          ),
-        ),
-      );
-    }
+    if (session == null) return;
+    final destination = switch (session.role) {
+      AuthRole.client => AppRoutes.client,
+      AuthRole.collaborator => AppRoutes.staff,
+    };
+    context.go(destination, extra: session);
   }
 
   void _next() {
@@ -171,7 +164,7 @@ class _LoginPageState extends State<LoginPage> {
                       _field(
                         'E-mail ou utilizador',
                         _email,
-                        hint: 'nome@email.pt ou clinica',
+                        hint: 'E-mail, clinica ou colaborador',
                         keyboard: TextInputType.emailAddress,
                         validator: _loginIdentifierValidator,
                       ),
@@ -560,7 +553,9 @@ class _LoginPageState extends State<LoginPage> {
       (value?.trim().isEmpty ?? true) ? 'Preencha este campo.' : null;
 
   String? _loginIdentifierValidator(String? value) {
-    if (value?.trim().toLowerCase() == 'clinica') return null;
+    if (['clinica', 'colaborador'].contains(value?.trim().toLowerCase())) {
+      return null;
+    }
     return _emailValidator(value);
   }
 
