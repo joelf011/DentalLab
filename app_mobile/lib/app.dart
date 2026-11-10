@@ -1,42 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
-import 'core/theme/app_theme.dart';
-import 'features/auth/data/auth_service.dart';
-import 'features/auth/data/demo_auth.dart';
-import 'app_router.dart';
+import 'package:app_mobile/app_go_router.dart';
+import 'package:app_mobile/comum/tema/tema_app.dart';
 
-class LabApp extends StatefulWidget {
-  const LabApp({super.key, this.authService = const DemoAuth()});
-
-  final AuthService authService;
-
-  @override
-  State<LabApp> createState() => _LabAppState();
-}
-
-class _LabAppState extends State<LabApp> {
-  late final GoRouter _router;
-
-  @override
-  void initState() {
-    super.initState();
-    _router = createAppRouter(authService: widget.authService);
-  }
-
-  @override
-  void dispose() {
-    _router.dispose();
-    super.dispose();
-  }
+// Configuração geral da aplicação: título, tema e rotas.
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Laboratório',
+      title: 'Laboratório Catarina Domingos',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      routerConfig: _router,
+      theme: TemaApp.claro,
+      routerConfig: rotas,
     );
   }
 }
