@@ -16,7 +16,7 @@ Plataforma digital para centralizar a informação do laboratório e acompanhar 
 | --- | --- | --- |
 | Portal de Backoffice | Gestão de clientes, colaboradores e trabalhos (Administrador, Colaborador e Cliente) | `frontend/` |
 | Website institucional | Página de apresentação do laboratório | `frontend/` |
-| Aplicação móvel | Criação e acompanhamento de trabalhos (planeada) | — |
+| Aplicação móvel | Vista da clínica (encomendas e acompanhamento) e vista do colaborador (execução das etapas) | `app_mobile/` |
 | Backend / API | Serviço de dados da plataforma | `backend/` |
 | Base de dados | Modelo conceptual e modelo físico | `ModelosBaseDeDados/` |
 
@@ -25,4 +25,4 @@ Plataforma digital para centralizar a informação do laboratório e acompanhar 
 - **Frontend:** React, TypeScript, Vite, Tailwind CSS
 - **Backend:** Node.js, Fastify, TypeScript
 - **Base de dados:** PostgreSQL
-- **Aplicação móvel:** Flutter (planeada)
+- **Aplicação móvel:** Flutter (Dart), go_router, http
