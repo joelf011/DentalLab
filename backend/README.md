@@ -32,7 +32,12 @@ npm run dev     # arranca a API na porta 3000 (reinicia sozinha quando gravas um
 No **Query Tool** da base de dados `dentallab`, correr por esta ordem:
 
 1. `ModelosBaseDeDados/modelofisico.sql` (tabelas e dados iniciais)
-2. Os quatro ficheiros de `ModelosBaseDeDados/crud/` (vistas e funções)
+2. Os ficheiros de `ModelosBaseDeDados/alteracoes/`, por ordem de número (tabelas acrescentadas depois; cada um corre-se uma só vez)
+3. Os ficheiros de `ModelosBaseDeDados/crud/` (vistas e funções; podem voltar a correr-se sempre que mudam)
+
+Os ficheiros `teste_*.sql` de `ModelosBaseDeDados/testes/` experimentam as funções e desfazem tudo no fim (`ROLLBACK`). Os resultados aparecem no separador **Messages** do Query Tool.
+
+O `dados_teste_clinica.sql` é diferente: **deixa na BD** uma clínica com a conta já aprovada, para experimentar a API como clínica (`clinica.teste@dentallab.local` / `Clinica#2026`).
 
 ## Organização
 
@@ -42,6 +47,7 @@ src/
   config.ts         lê o ficheiro .env
   db.ts             ligação à base de dados
   autenticacao.ts   proteção das rotas com login (exigirLogin, exigirCargo)
+  erros.ts          mensagens em português para os erros dos dados (regras da BD, formato errado...)
   rotas/            um ficheiro por entidade (auth.ts, cargos.ts, ...)
 pedidos/       pedidos de teste (.http) para a extensão REST Client do VS Code
 ```
@@ -176,6 +182,7 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 | Rota | O que faz |
 | --- | --- |
 | `GET /api/health` | Verifica a API e a ligação à BD |
+| `POST /api/auth/registo` | Público. Uma clínica regista-se: `{ "nome", "nif", "morada_faturacao", "telefone", "email", "password" }`. A conta fica à espera de aprovação |
 | `POST /api/auth/login` | Login: `{ "email": "...", "password": "..." }`. Devolve `{ token, utilizador }` |
 | `GET /api/auth/eu` | Quem está ligado (precisa de login) |
 | `PUT /api/auth/password` | Muda a palavra-passe de quem está ligado: `{ "password_atual": "...", "password_nova": "..." }` |
@@ -184,6 +191,22 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 | `POST /api/cargos` | Cria um cargo: `{ "designacao": "..." }` (Administrador) |
 | `PUT /api/cargos/:id` | Altera um cargo: `{ "designacao": "..." }` (Administrador) |
 | `DELETE /api/cargos/:id` | Apaga um cargo, só se não tiver utilizadores (Administrador) |
+| `GET /api/clientes` | Lista as clínicas (Administrador) |
+| `GET /api/clientes/:id` | Mostra uma clínica (Administrador; uma clínica só a sua) |
+| `POST /api/clientes` | Cria uma clínica, sem conta de acesso: `{ "nome", "nif", "morada_faturacao", "email", "telefone" }` (Administrador) |
+| `PUT /api/clientes/:id` | Altera uma clínica; `"ativo": false/true` desativa ou reativa a clínica e as contas dela (Administrador) |
+| `DELETE /api/clientes/:id` | Desativa a clínica e as contas dela (Administrador) |
+| `POST /api/alteracoes-cliente` | A clínica pede para mudar os seus dados: `{ "nome", "morada_faturacao", "email", "telefone" }`, só os que mudam (Cliente) |
+| `GET /api/alteracoes-cliente` | Pedidos de alteração; `?estado=pendente` só os que estão à espera (Administrador: todos; Cliente: os seus) |
+| `GET /api/alteracoes-cliente/:id` | Um pedido de alteração (Administrador; Cliente: só os seus) |
+| `POST /api/alteracoes-cliente/:id/aprovar` | Aprova: os dados novos passam para a clínica (Administrador) |
+| `POST /api/alteracoes-cliente/:id/rejeitar` | Rejeita: `{ "motivo_rejeicao": "..." }` (Administrador) |
+| `GET /api/utilizadores` | Lista as contas; `?por_aprovar=true` só as que estão à espera de aprovação (Administrador) |
+| `GET /api/utilizadores/:id` | Mostra uma conta (Administrador) |
+| `POST /api/utilizadores` | Cria uma conta já aprovada: `{ "nome", "email", "cargo_id", "cliente_id", "password" }`; a palavra-passe é temporária (Administrador) |
+| `PUT /api/utilizadores/:id` | Altera uma conta (só os campos que vierem); com `"password"`, define uma nova palavra-passe temporária (Administrador) |
+| `DELETE /api/utilizadores/:id` | Desativa uma conta ou recusa um registo; não pode ser a própria (Administrador) |
+| `POST /api/utilizadores/:id/aprovar` | Aprova uma conta à espera (Administrador) |
 
 ## Comandos
 

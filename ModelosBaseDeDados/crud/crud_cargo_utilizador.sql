@@ -69,12 +69,15 @@ $BODY$;
 -- utilizador
 
 -- Não mostra o password_hash.
+-- cargo_id e cliente_id estão no fim porque foram acrescentados depois
+-- (o CREATE OR REPLACE VIEW só aceita colunas novas no fim).
 CREATE OR REPLACE VIEW vw_utilizador AS
 SELECT u.id, u.nome, u.email,
        c.designacao AS cargo,
        cl.nome      AS cliente,
        u.password_temporaria, u.ativo,
-       u.aprovado_por, u.data_aprovacao, u.criado_em
+       u.aprovado_por, u.data_aprovacao, u.criado_em,
+       u.cargo_id, u.cliente_id
 FROM utilizador u
 JOIN cargo c         ON c.id = u.cargo_id
 LEFT JOIN cliente cl ON cl.id = u.cliente_id;
@@ -214,4 +217,87 @@ AS $BODY$
     FROM utilizador u
     JOIN cargo c ON c.id = u.cargo_id
     WHERE lower(u.email) = lower(p_email);
+$BODY$;
+
+
+-- registo de clínica
+
+-- Registo feito pela própria clínica, na página pública de registo.
+-- Cria o cliente e a conta de acesso (cargo Cliente) de uma só vez:
+-- se uma das partes falhar (ex.: email já usado), não fica nada criado.
+-- A conta usa o mesmo nome e email da clínica e fica por aprovar até o Administrador a aprovar.
+-- A password chega já em hash (gerado pela API). Devolve o id do cliente criado.
+CREATE OR REPLACE FUNCTION public.fn_registar_clinica(
+    p_nome             character varying,
+    p_nif              character varying,
+    p_morada_faturacao character varying,
+    p_telefone         character varying,
+    p_email            character varying,
+    p_password_hash    character varying)
+RETURNS bigint
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+    v_cargo_id   bigint;
+    v_cliente_id bigint;
+BEGIN
+    IF p_email IS NULL OR trim(p_email) = '' THEN
+        RAISE EXCEPTION 'Tem de indicar o email';
+    END IF;
+
+    SELECT id INTO v_cargo_id FROM cargo WHERE designacao = 'Cliente';
+
+    -- as validações (nome, NIF repetido, email repetido...) são as das funções CRUD
+    v_cliente_id := fn_cliente_crud(
+        p_operacao         => 'CREATE',
+        p_id               => NULL,
+        p_nome             => p_nome,
+        p_nif              => p_nif,
+        p_morada_faturacao => p_morada_faturacao,
+        p_email            => p_email,
+        p_telefone         => p_telefone);
+
+    -- sem p_aprovado_por: a conta fica por aprovar
+    PERFORM fn_utilizador_crud(
+        p_operacao      => 'CREATE',
+        p_id            => NULL,
+        p_cargo_id      => v_cargo_id,
+        p_cliente_id    => v_cliente_id,
+        p_nome          => p_nome,
+        p_email         => p_email,
+        p_password_hash => p_password_hash);
+
+    RETURN v_cliente_id;
+END;
+$BODY$;
+
+
+-- aprovação de contas
+
+-- O Administrador aprova uma conta que está à espera (ex.: uma clínica que se registou sozinha).
+-- Só aprova contas ativas e ainda por aprovar. Devolve o id do utilizador.
+-- Quem aprova tem de ser um administrador ativo (verificado pela fn_utilizador_crud).
+-- Para recusar um registo, desativa-se a conta (fn_utilizador_crud com DELETE).
+CREATE OR REPLACE FUNCTION public.fn_aprovar_utilizador(
+    p_id           bigint,
+    p_aprovado_por bigint)
+RETURNS bigint
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+    v_conta utilizador%ROWTYPE;
+BEGIN
+    SELECT * INTO v_conta FROM utilizador WHERE id = p_id;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'O utilizador % não existe', p_id;
+    END IF;
+    IF v_conta.data_aprovacao IS NOT NULL THEN
+        RAISE EXCEPTION 'Esta conta já está aprovada';
+    END IF;
+    IF NOT v_conta.ativo THEN
+        RAISE EXCEPTION 'Esta conta está desativada; reative-a antes de a aprovar';
+    END IF;
+
+    RETURN fn_utilizador_crud(p_operacao => 'UPDATE', p_id => p_id, p_aprovado_por => p_aprovado_por);
+END;
 $BODY$;

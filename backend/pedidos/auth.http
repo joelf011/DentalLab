@@ -33,6 +33,30 @@ Content-Type: application/json
   "password_nova": "escreve_aqui_a_nova"
 }
 
+### Registo de uma clínica (rota pública; a conta fica à espera de aprovação)
+# Depois: o login desta clínica dá 403 até o Administrador a aprovar
+# (pedidos/utilizadores.http: "Listar as contas à espera de aprovação" e "Aprovar").
+POST {{api}}/auth/registo
+Content-Type: application/json
+
+{
+  "nome": "Clínica Dentária do Centro",
+  "nif": "509990301",
+  "morada_faturacao": "Rua do Comércio 5, Viseu",
+  "telefone": "232222222",
+  "email": "geral@clinicadocentro.pt",
+  "password": "Centro#2026"
+}
+
+### Login da clínica registada (403 enquanto não for aprovada; 200 depois)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "geral@clinicadocentro.pt",
+  "password": "Centro#2026"
+}
+
 ### Erro: palavra-passe errada
 POST {{api}}/auth/login
 Content-Type: application/json
