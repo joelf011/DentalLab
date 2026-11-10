@@ -73,12 +73,12 @@ function ColHeader({
   return (
     <button
       onClick={() => onSort(sortKey)}
-      className="flex items-center gap-1 text-[10px] font-mono text-[#6B7280] uppercase tracking-wider hover:text-[#C9A227] transition-colors group"
+      className="flex items-center gap-1 text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider hover:text-[var(--gold)] transition-colors group"
     >
       {label}
       <span
         className={`text-[8px] ${
-          active ? 'text-[#C9A227]' : 'opacity-0 group-hover:opacity-40'
+          active ? 'text-[var(--gold)]' : 'opacity-0 group-hover:opacity-40'
         }`}
       >
         {active && dir === 'asc' ? '↑' : '↓'}
@@ -187,9 +187,9 @@ export default function Trabalhos({ onSelectWork, canEdit = false }: Props) {
   ].filter(Boolean).length
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden bg-[var(--background)]">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-4 md:px-7 py-4 border-b border-[#E5E7EB] flex-shrink-0 flex-wrap gap-y-2">
+      <div className="flex items-center gap-3 px-4 md:px-7 py-4 border-b border-[var(--line)] flex-shrink-0 flex-wrap gap-y-2 bg-[var(--surface)]">
         <div className="flex-1 min-w-36 max-w-xs">
           <SearchInput
             value={search}
@@ -204,13 +204,13 @@ export default function Trabalhos({ onSelectWork, canEdit = false }: Props) {
           onClick={() => setShowFilters((f) => !f)}
           className={`flex items-center gap-1.5 px-3 py-2 text-[12px] border rounded-sm transition-colors ${
             showFilters || activeFilters > 0
-              ? 'border-[#C9A227]/40 text-[#C9A227] bg-[#C9A227]/8'
-              : 'border-[#E5E7EB] text-[#475569] hover:text-[#1F2937] hover:border-[#9CA3AF]'
+              ? 'border-[var(--gold)]/40 text-[var(--gold)] bg-[var(--gold-soft)]'
+              : 'border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--muted)]'
           }`}
         >
           ⊟ Filtros{' '}
           {activeFilters > 0 && (
-            <span className="bg-[#C9A227] text-[#1F2937] text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+            <span className="bg-[var(--gold)] text-[var(--primary-foreground)] text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
               {activeFilters}
             </span>
           )}
@@ -228,14 +228,14 @@ export default function Trabalhos({ onSelectWork, canEdit = false }: Props) {
 
       {/* Filters */}
       {showFilters && (
-        <div className="flex items-center gap-3 px-7 py-3 border-b border-[#E5E7EB] bg-[#FFFFFF] flex-shrink-0 flex-wrap gap-y-2">
+        <div className="flex items-center gap-3 px-7 py-3 border-b border-[var(--line)] bg-[var(--surface)] flex-shrink-0 flex-wrap gap-y-2">
           <select
             value={filterStatus}
             onChange={(e) => {
               setFilterStatus(e.target.value as WorkStatus | '')
               setPage(1)
             }}
-            className="px-3 py-1.5 bg-[#FFFFFF] border border-[#E5E7EB] rounded-sm text-[12px] text-[#1F2937] focus:border-[#C9A227]/50 focus:outline-none"
+            className="px-3 py-1.5 bg-[var(--surface)] border border-[var(--input-line)] rounded-sm text-[12px] text-[var(--ink)] focus:border-[var(--gold-ink)] focus:outline-none"
           >
             {STATUS_OPTS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -249,7 +249,7 @@ export default function Trabalhos({ onSelectWork, canEdit = false }: Props) {
               setFilterNat(e.target.value as WorkNature | '')
               setPage(1)
             }}
-            className="px-3 py-1.5 bg-[#FFFFFF] border border-[#E5E7EB] rounded-sm text-[12px] text-[#1F2937] focus:border-[#C9A227]/50 focus:outline-none"
+            className="px-3 py-1.5 bg-[var(--surface)] border border-[var(--input-line)] rounded-sm text-[12px] text-[var(--ink)] focus:border-[var(--gold-ink)] focus:outline-none"
           >
             {NAT_OPTS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -263,7 +263,7 @@ export default function Trabalhos({ onSelectWork, canEdit = false }: Props) {
               setFilterCliente(e.target.value)
               setPage(1)
             }}
-            className="px-3 py-1.5 bg-[#FFFFFF] border border-[#E5E7EB] rounded-sm text-[12px] text-[#1F2937] focus:border-[#C9A227]/50 focus:outline-none"
+            className="px-3 py-1.5 bg-[var(--surface)] border border-[var(--input-line)] rounded-sm text-[12px] text-[var(--ink)] focus:border-[var(--gold-ink)] focus:outline-none"
           >
             <option value="">Todos os clientes</option>
             {CLIENTES.map((c) => (
@@ -306,21 +306,21 @@ export default function Trabalhos({ onSelectWork, canEdit = false }: Props) {
                 setFilterDeadline('')
                 setPage(1)
               }}
-              className="text-[11px] text-[#64748B] hover:text-red-700 transition-colors"
+              className="text-[11px] text-[var(--muted)] hover:text-[var(--badge-standby-text)] transition-colors"
             >
               ✕ Limpar filtros
             </button>
           )}
-          <span className="ml-auto text-[11px] text-[#64748B] font-mono">
+          <span className="ml-auto text-[11px] text-[var(--muted)] font-mono">
             {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
           </span>
         </div>
       )}
 
       {/* Table */}
-      <div className="flex-1 overflow-y-auto bg-white">
+      <div className="flex-1 overflow-y-auto bg-[var(--background)]">
         {loading ? (
-          <div className="divide-y divide-[#E5E7EB]">
+          <div className="divide-y divide-[var(--line)]">
             {Array.from({ length: 6 }).map((_, i) => (
               <SkeletonRow key={i} />
             ))}
@@ -328,7 +328,7 @@ export default function Trabalhos({ onSelectWork, canEdit = false }: Props) {
         ) : (
           <>
             {/* Desktop header — hidden on narrow screens */}
-            <div className="hidden md:flex items-center gap-2 px-5 py-2.5 border-b border-[#E5E7EB] bg-[#FFFFFF] sticky top-0 z-10">
+            <div className="hidden md:flex items-center gap-2 px-5 py-2.5 border-b border-[var(--line)] bg-[var(--surface)] sticky top-0 z-10">
               <div className="w-[110px] flex-shrink-0">
                 <ColHeader
                   label="Nº"
@@ -339,23 +339,23 @@ export default function Trabalhos({ onSelectWork, canEdit = false }: Props) {
                 />
               </div>
               <div className="flex-1 min-w-0 grid grid-cols-3 gap-2">
-                <span className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
+                <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
                   Cliente · Médico
                 </span>
-                <span className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
+                <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
                   Identificador
                 </span>
-                <span className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
+                <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
                   Tipo · Natureza
                 </span>
               </div>
               <div className="w-[130px] flex-shrink-0 hidden lg:block">
-                <span className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
+                <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
                   Etapa atual
                 </span>
               </div>
               <div className="w-[110px] flex-shrink-0 hidden xl:block">
-                <span className="text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
+                <span className="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
                   Responsável
                 </span>
               </div>
@@ -387,7 +387,7 @@ export default function Trabalhos({ onSelectWork, canEdit = false }: Props) {
                 />
               </div>
               {canEdit && (
-                <div className="w-16 flex-shrink-0 text-[10px] font-mono text-[#6B7280] uppercase tracking-wider">
+                <div className="w-16 flex-shrink-0 text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider">
                   Ações
                 </div>
               )}
@@ -459,29 +459,29 @@ function WorkCard({
   return (
     <div
       onClick={onSelect}
-      className="flex gap-3 px-4 py-3.5 cursor-pointer hover:bg-slate-50 transition-colors border-b border-[#E5E7EB] last:border-b-0"
+      className="flex gap-3 px-4 py-3.5 cursor-pointer bg-[var(--surface)] hover:bg-[var(--soft)] transition-colors border-b border-[var(--line)] last:border-b-0"
     >
       <div className="flex-1 min-w-0 space-y-1.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] font-mono text-[#64748B]">
+          <span className="text-[10px] font-mono text-[var(--muted)]">
             {order.ref}
           </span>
           <StatusBadge status={order.status} stage={order.etapaAtual} />
           <NatureBadge natureza={order.natureza} />
         </div>
-        <p className="text-[13px] text-[#1F2937] font-mono font-medium truncate">
+        <p className="text-[13px] text-[var(--ink)] font-mono font-medium truncate">
           {order.identificadorPaciente}
         </p>
-        <p className="text-[11px] text-[#475569] truncate">
+        <p className="text-[11px] text-[var(--muted)] truncate">
           {order.clienteName} · {order.medico}
         </p>
-        <p className="text-[11px] text-[#64748B]">
+        <p className="text-[11px] text-[var(--muted)]">
           {order.tipoName} · {order.etapaAtual}
         </p>
       </div>
       <div className="flex flex-col items-end justify-between flex-shrink-0">
         <DeadlineBadge prazo={order.prazo} status={order.status} />
-        <span className="text-[#6B7280] text-sm mt-2">›</span>
+        <span className="text-[var(--muted)] text-sm mt-2">›</span>
       </div>
     </div>
   )
@@ -502,52 +502,52 @@ function WorkRow({
   const isLate = order.status !== 'concluido' && days < 0
   const isUrgent = order.status !== 'concluido' && !isLate && days <= 2
   const rowBg = isLate
-    ? 'bg-red-500/4 hover:bg-red-500/7'
+    ? 'bg-red-500/10 hover:bg-red-500/20'
     : isUrgent
-      ? 'bg-orange-400/4 hover:bg-orange-400/7'
-      : 'hover:bg-slate-50'
+      ? 'bg-orange-400/10 hover:bg-orange-400/20'
+      : 'bg-[var(--surface)] hover:bg-[var(--soft)]'
   return (
     <div
       onClick={onSelect}
-      className={`flex items-center gap-2 px-5 py-3 cursor-pointer transition-colors border-b border-[#E5E7EB] last:border-b-0 ${rowBg}`}
+      className={`flex items-center gap-2 px-5 py-3 cursor-pointer transition-colors border-b border-[var(--line)] last:border-b-0 ${rowBg}`}
     >
       <div className="w-[110px] flex-shrink-0">
-        <span className="text-[11px] font-mono text-[#64748B]">
+        <span className="text-[11px] font-mono text-[var(--muted)]">
           {order.ref}
         </span>
       </div>
       <div className="flex-1 min-w-0 grid grid-cols-3 gap-2">
         <div className="min-w-0">
-          <p className="text-[12px] text-[#1F2937] truncate">
+          <p className="text-[12px] text-[var(--ink)] truncate">
             {order.clienteName}
           </p>
-          <p className="text-[11px] text-[#64748B] truncate">{order.medico}</p>
+          <p className="text-[11px] text-[var(--muted)] truncate">{order.medico}</p>
         </div>
         <div className="min-w-0">
-          <p className="text-[12px] text-[#1F2937] font-mono truncate">
+          <p className="text-[12px] text-[var(--ink)] font-mono truncate">
             {order.identificadorPaciente}
           </p>
-          <p className="text-[11px] text-[#64748B] truncate font-mono">
+          <p className="text-[11px] text-[var(--muted)] truncate font-mono">
             {order.sexo} · {order.idade}a
           </p>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
           <NatureBadge natureza={order.natureza} />
-          <span className="text-[11px] text-[#475569]">{order.tipoName}</span>
+          <span className="text-[11px] text-[var(--muted)]">{order.tipoName}</span>
         </div>
       </div>
       <div className="w-[130px] flex-shrink-0 hidden lg:block">
-        <p className="text-[11px] text-[#475569] truncate">
+        <p className="text-[11px] text-[var(--muted)] truncate">
           {order.etapaAtual}
         </p>
       </div>
       <div className="w-[110px] flex-shrink-0 hidden xl:block">
         {order.responsavelName ? (
-          <p className="text-[11px] text-[#475569] truncate">
+          <p className="text-[11px] text-[var(--muted)] truncate">
             {order.responsavelName.split(' ')[0]}
           </p>
         ) : (
-          <span className="text-[11px] text-[#9CA3AF]">—</span>
+          <span className="text-[11px] text-[var(--muted)]">—</span>
         )}
       </div>
       <div className="w-20 flex-shrink-0">
@@ -557,7 +557,7 @@ function WorkRow({
         <StatusBadge status={order.status} stage={order.etapaAtual} />
       </div>
       <div className="w-[90px] flex-shrink-0 hidden xl:block">
-        <span className="text-[11px] font-mono text-[#6B7280]">
+        <span className="text-[11px] font-mono text-[var(--muted)]">
           {new Date(order.criadoEm).toLocaleDateString('pt-PT', {
             day: '2-digit',
             month: 'short',
