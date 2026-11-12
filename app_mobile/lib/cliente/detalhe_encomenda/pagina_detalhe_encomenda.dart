@@ -52,6 +52,16 @@ class _PaginaDetalheEncomendaState extends State<PaginaDetalheEncomenda> {
                 ),
               ),
               Text(encomenda.tipo, style: const TextStyle(fontSize: 16)),
+              if (encomenda.descricao != null && encomenda.descricao!.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  encomenda.descricao!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: CoresApp.textoSuave,
+                  ),
+                ),
+              ],
             ],
           ),
           actions: [
