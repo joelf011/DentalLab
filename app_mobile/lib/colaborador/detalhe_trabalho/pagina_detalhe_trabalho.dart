@@ -41,13 +41,13 @@ class _PaginaDetalheTrabalhoState extends State<PaginaDetalheTrabalho> {
   Widget build(BuildContext context) {
     final trabalho = widget.trabalho;
     return Scaffold(
-      appBar: AppBar(title: Text(trabalho.referencia)),
+      appBar: AppBar(title: Text('Trabalho n.º ${trabalho.id}')),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           EmConstrucao(
-            titulo: trabalho.descricao,
-            descricao: 'Etapa atual: ${trabalho.etapaAtual}',
+            titulo: trabalho.tipoTrabalho,
+            descricao: 'Etapa atual: ${trabalho.etapaAtual?.nome ?? '—'}',
           ),
           // Provisório: botões para testar as 4 janelas.
           Wrap(
