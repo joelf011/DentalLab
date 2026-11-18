@@ -41,11 +41,7 @@ class _PaginaOsMeusState extends State<PaginaOsMeus> {
         if (snapshot.hasData) {
           final eu = Sessao.atual!.id;
           final meus = snapshot.data!
-              .where(
-                (trabalho) =>
-                    trabalho.responsavelId == eu &&
-                    trabalho.estado != 'concluido',
-              )
+              .where((trabalho) => trabalho.eDe(eu))
               .toList();
           return _lista(meus);
         } else if (snapshot.hasError) {

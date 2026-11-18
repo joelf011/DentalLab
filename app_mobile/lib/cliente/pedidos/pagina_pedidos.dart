@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:app_mobile/app_go_router.dart';
-import 'package:app_mobile/autenticacao/dados/sessao.dart';
 import 'package:app_mobile/cliente/dados/encomenda.dart';
 import 'package:app_mobile/cliente/dados/servidor_cliente.dart';
 import 'package:app_mobile/cliente/pedidos/widget_cartao_encomenda.dart';
@@ -24,7 +23,7 @@ class _PaginaPedidosState extends State<PaginaPedidos> {
   @override
   void initState() {
     super.initState();
-    _futuro = _servidor.obterEncomendas(Sessao.atual!.clinica!.id);
+    _futuro = _servidor.obterEncomendas();
   }
 
   void _abrirEncomenda(Encomenda encomenda) {

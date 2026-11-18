@@ -1,52 +1,53 @@
-// Dados preenchidos na Nova encomenda, antes de serem enviados.
+// Dados preenchidos na Nova encomenda, antes de serem enviados
+// (POST /api/ordens e POST /api/ordens/:id/trabalhos).
 
-// Um tipo de trabalho do catálogo do laboratório.
+// Um tipo de trabalho do catálogo (vista vw_tipo_trabalho).
 class TipoTrabalho {
-  const TipoTrabalho({
-    required this.id,
-    required this.nome,
-    required this.natureza,
-  });
+  const TipoTrabalho({required this.id, required this.nome, this.descricao});
 
-  final String id;
+  final int id;
   final String nome;
-  final String natureza; // Físico | Digital
+  final String? descricao;
 }
 
-// A encomenda: um paciente com um ou mais trabalhos.
+// A encomenda (ordem_trabalho): um paciente com um ou mais trabalhos.
+// Os ficheiros e as fotografias ficam ligados à ordem, para a clínica
+// continuar a vê-los (os ficheiros de um trabalho são internos do laboratório).
 class EncomendaNova {
   const EncomendaNova({
-    required this.clinicaId,
     required this.medico,
-    required this.paciente,
     required this.trabalhos,
-    this.idade,
-    this.sexo,
-  });
-
-  final String clinicaId;
-  final String medico;
-  final String paciente; // identificação
-  final int? idade;
-  final String? sexo; // masculino | feminino | outro
-  final List<TrabalhoNovo> trabalhos;
-}
-
-// Um trabalho dentro da encomenda.
-class TrabalhoNovo {
-  const TrabalhoNovo({
-    required this.tipo,
-    this.cor,
-    this.dentes = const [],
-    this.descricao,
+    this.paciente,
+    this.sexoPaciente,
+    this.idadePaciente,
+    this.dataProximaConsulta,
+    this.observacoes,
     this.ficheiros = const [],
     this.fotografias = const [],
   });
 
-  final TipoTrabalho tipo;
-  final String? cor;
-  final List<int> dentes;
-  final String? descricao;
+  final String medico; // nome_medico_responsavel (obrigatório)
+  final String? paciente; // nome_paciente
+  final String? sexoPaciente; // M | F
+  final int? idadePaciente; // 0 a 130
+  final DateTime? dataProximaConsulta;
+  final String? observacoes;
+  final List<TrabalhoNovo> trabalhos;
   final List<String> ficheiros; // caminhos dos ficheiros STL / ZIP
   final List<String> fotografias; // caminhos das fotografias
+}
+
+// Um trabalho dentro da encomenda (tabela trabalho).
+class TrabalhoNovo {
+  const TrabalhoNovo({
+    required this.tipo,
+    required this.natureza,
+    this.cor,
+    this.dentes = const [],
+  });
+
+  final TipoTrabalho tipo;
+  final String natureza; // FISICO | DIGITAL
+  final String? cor; // até 10 caracteres, ex.: A2
+  final List<int> dentes; // numeração FDI
 }

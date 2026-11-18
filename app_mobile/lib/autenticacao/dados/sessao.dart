@@ -3,23 +3,23 @@ import 'package:app_mobile/cliente/dados/clinica.dart';
 // As duas vistas da app. O Administrador entra na vista do colaborador.
 enum Perfil { cliente, colaborador }
 
-// Quem tem a sessão iniciada.
+// Quem tem a sessão iniciada (dados devolvidos por POST /api/auth/login).
 class Sessao {
   const Sessao({
     required this.id,
     required this.nome,
     required this.email,
+    required this.cargo,
     required this.perfil,
-    this.cargo = '',
     this.clinica,
     this.token,
   });
 
-  final String id;
+  final int id; // id do utilizador
   final String nome;
   final String email;
+  final String cargo; // Administrador | Colaborador | Cliente (tabela cargo)
   final Perfil perfil;
-  final String cargo; // Cliente | Colaborador | Administrador
   final Clinica? clinica; // só no perfil cliente
   final String? token; // enviado nos pedidos à API
 
