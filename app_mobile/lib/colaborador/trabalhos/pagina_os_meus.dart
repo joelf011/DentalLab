@@ -9,6 +9,7 @@ import 'package:app_mobile/colaborador/detalhe_trabalho/janela_concluir_etapa.da
 import 'package:app_mobile/colaborador/detalhe_trabalho/janela_standby.dart';
 import 'package:app_mobile/colaborador/trabalhos/widget_cartao_trabalho.dart';
 import 'package:app_mobile/comum/widgets/widget_estado_vazio.dart';
+import 'package:app_mobile/comum/tema/cores_app.dart';
 
 // Separador "Os Meus": trabalhos atribuídos a quem tem sessão, por concluir.
 // Os botões dos cartões abrem as janelas do detalhe do trabalho:
@@ -103,21 +104,32 @@ class _PaginaOsMeusState extends State<PaginaOsMeus> {
   }
 
   Widget _lista(List<Trabalho> trabalhos) {
-    if (trabalhos.isEmpty) return const EstadoVazio(mensagem: 'Sem trabalhos');
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        for (final trabalho in trabalhos)
-          CartaoTrabalho(
-            key: ValueKey(trabalho.id),
-            trabalho: trabalho,
-            variante: _variante(trabalho),
-            aoAbrir: _abrirTrabalho,
-            aoIniciar: _iniciarEtapa,
-            aoConcluir: _concluirEtapa,
-            aoStandby: _colocarEmStandby,
-            ocupado: _ocupados.contains(trabalho.id),
+        const Text(
+          'Trabalhos Atribuídos',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: CoresApp.textoForte,
           ),
+        ),
+        const SizedBox(height: 16),
+        if (trabalhos.isEmpty)
+          const EstadoVazio(mensagem: 'Sem trabalhos')
+        else
+          for (final trabalho in trabalhos)
+            CartaoTrabalho(
+              key: ValueKey(trabalho.id),
+              trabalho: trabalho,
+              variante: _variante(trabalho),
+              aoAbrir: _abrirTrabalho,
+              aoIniciar: _iniciarEtapa,
+              aoConcluir: _concluirEtapa,
+              aoStandby: _colocarEmStandby,
+              ocupado: _ocupados.contains(trabalho.id),
+            ),
       ],
     );
   }
