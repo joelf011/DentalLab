@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:app_mobile/comum/tema/cores_app.dart';
 
-// Um dos 3 contadores do topo.
+// Contador reutilizável nos ecrãs de início.
 class Contador extends StatelessWidget {
   const Contador({
     super.key,
@@ -11,6 +11,12 @@ class Contador extends StatelessWidget {
     required this.cor,
     required this.fundo,
     required this.aoTocar,
+    this.corValor,
+    this.margem = const EdgeInsets.only(bottom: 10),
+    this.espacamento = const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+    this.alturaMinima = 64,
+    this.estiloTexto,
+    this.estiloValor,
   });
 
   final String texto;
@@ -18,13 +24,19 @@ class Contador extends StatelessWidget {
   final Color cor;
   final Color fundo;
   final VoidCallback aoTocar;
+  final Color? corValor;
+  final EdgeInsetsGeometry margem;
+  final EdgeInsetsGeometry espacamento;
+  final double alturaMinima;
+  final TextStyle? estiloTexto;
+  final TextStyle? estiloValor;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       color: fundo,
       elevation: 0,
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: margem,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: CoresApp.linha),
@@ -33,30 +45,34 @@ class Contador extends StatelessWidget {
       child: InkWell(
         onTap: aoTocar,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 64),
+          constraints: BoxConstraints(minHeight: alturaMinima),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            padding: espacamento,
             child: Row(
               children: [
                 Expanded(
                   child: Text(
                     texto,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: cor,
-                    ),
+                    style:
+                        (estiloTexto ??
+                                const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ))
+                            .copyWith(color: cor),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   '$valor',
-                  style: TextStyle(
-                    fontFamily: 'serif',
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: cor,
-                  ),
+                  style:
+                      (estiloValor ??
+                              const TextStyle(
+                                fontFamily: 'serif',
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
+                              ))
+                          .copyWith(color: corValor ?? cor),
                 ),
               ],
             ),
