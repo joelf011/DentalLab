@@ -26,19 +26,13 @@ class CartaoEncomenda extends StatelessWidget {
     final prazo = encomenda.prazo;
     return Card(
       color: CoresApp.superficie,
-      margin: const EdgeInsets.only(bottom: 10),
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: CoresApp.linha),
-      ),
-      clipBehavior: Clip.antiAlias,
+      margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: _abrir,
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
@@ -47,19 +41,18 @@ class CartaoEncomenda extends StatelessWidget {
                       encomenda.paciente,
                       style: const TextStyle(
                         fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                         color: CoresApp.textoForte,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
                   const Icon(
                     Icons.chevron_right,
                     color: CoresApp.douradoEscuro,
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
                 encomenda.tipo,
                 style: const TextStyle(
@@ -67,18 +60,18 @@ class CartaoEncomenda extends StatelessWidget {
                   color: CoresApp.textoSuave,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               // Wrap: se não couber numa linha, a data passa para baixo.
               Wrap(
                 alignment: WrapAlignment.spaceBetween,
                 crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 10,
-                runSpacing: 10,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   EtiquetaEstado(estado: encomenda.estado, paraClinica: true),
                   if (prazo != null)
                     Text(
-                      'Prazo ${dataCurta(prazo)}',
+                      'Entrega ${dataCurta(prazo)}',
                       style: const TextStyle(
                         fontSize: 13,
                         color: CoresApp.textoSuave,
