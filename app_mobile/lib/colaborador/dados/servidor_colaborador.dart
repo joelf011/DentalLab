@@ -16,59 +16,48 @@ class ServidorColaborador {
   Future<void> _esperar() =>
       Future<void>.delayed(const Duration(milliseconds: 300));
 
-  // Todos os trabalhos em curso no laboratório.
+  // Trabalhos de todas as ordens em curso, com as suas etapas.
   Future<List<Trabalho>> obterTrabalhos() async {
     await _esperar();
     return trabalhosDemo;
   }
 
-  // Colaboradores a quem se pode atribuir a próxima etapa (não ausentes).
+  // Colaboradores ativos, para atribuir a etapa seguinte.
   Future<List<Colaborador>> obterColaboradores() async {
     await _esperar();
-    return colaboradoresDemo
-        .where((colaborador) => colaborador.estado != 'ausente')
-        .toList();
+    return colaboradoresDemo.where((colaborador) => colaborador.ativo).toList();
   }
 
-  // Dados de um colaborador (estado, ...).
-  Future<Colaborador?> obterColaborador(String id) async {
-    await _esperar();
-    for (final colaborador in colaboradoresDemo) {
-      if (colaborador.id == id) return colaborador;
-    }
-    return null;
-  }
-
-  // "Assumir Etapa" / "Iniciar Etapa".
-  Future<void> assumirEtapa(String trabalhoId) async {
+  // Assumir a etapa atual: preenche responsavel_id e data_inicio.
+  Future<void> assumirEtapa(int etapaTrabalhoId) async {
     await _esperar();
   }
 
-  // "Concluir Etapa".
-  // atribuicao: livre | eu | outro (com colaboradorId)
-  // destino: avancar | prova_clinica | standby
+  // Concluir a etapa atual: preenche data_conclusao.
+  // atribuicao: livre | eu | outro (com colaboradorId) — responsável da etapa seguinte.
+  // destino: avancar | prova (ordem passa a "Em prova").
   Future<void> concluirEtapa(
-    String trabalhoId, {
+    int etapaTrabalhoId, {
     required String atribuicao,
-    String? colaboradorId,
+    int? colaboradorId,
     String nota = '',
     String destino = 'avancar',
   }) async {
     await _esperar();
   }
 
-  // "Colocar em standby" (justificação obrigatória).
-  Future<void> colocarEmStandby(String trabalhoId, String motivo) async {
+  // Colocar a ordem "Em espera": o motivo_espera é obrigatório.
+  Future<void> colocarEmEspera(int ordemTrabalhoId, String motivo) async {
     await _esperar();
   }
 
-  // Nota interna (a clínica não a vê).
-  Future<void> adicionarNota(String trabalhoId, String texto) async {
+  // Comentário interno associado ao trabalho (a clínica não o vê).
+  Future<void> adicionarNota(int trabalhoId, String conteudo) async {
     await _esperar();
   }
 
-  // Fotografia do trabalho (caminho do ficheiro).
-  Future<void> adicionarFotografia(String trabalhoId, String caminho) async {
+  // Ficheiro do tipo "Fotografia" associado ao trabalho.
+  Future<void> adicionarFotografia(int trabalhoId, String caminho) async {
     await _esperar();
   }
 }
