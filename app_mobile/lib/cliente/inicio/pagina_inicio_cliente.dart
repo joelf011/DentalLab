@@ -4,14 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:app_mobile/app_go_router.dart';
 import 'package:app_mobile/autenticacao/dados/sessao.dart';
 import 'package:app_mobile/cliente/dados/encomenda.dart';
-import 'package:app_mobile/cliente/inicio/widget_contador.dart';
 import 'package:app_mobile/cliente/dados/servidor_cliente.dart';
 import 'package:app_mobile/cliente/pedidos/widget_cartao_encomenda.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
 import 'package:app_mobile/comum/widgets/widget_estado_vazio.dart';
 
 // Separador "Início" da clínica: contadores (Iniciar / Processamento /
-// Concluído), botão "Nova Encomenda" e as 3 primeiras encomendas do servidor.
+// Concluído), botão "Nova Encomenda" e as 3 encomendas mais recentes.
 class PaginaInicioCliente extends StatefulWidget {
   const PaginaInicioCliente({
     super.key,
@@ -27,24 +26,6 @@ class PaginaInicioCliente extends StatefulWidget {
 }
 
 class _PaginaInicioClienteState extends State<PaginaInicioCliente> {
-  // Grupos visuais dos estados de estado_ordem, incluindo os nomes antigos
-  // ainda devolvidos pelo servidor de demonstração.
-  static const _estadosIniciar = {
-    'em avaliação',
-    'por iniciar',
-    'por_receber',
-    'encaminhado',
-  };
-  static const _estadosProcessamento = {
-    'em processamento',
-    'em espera',
-    'em prova',
-    'em_producao',
-    'em_standby',
-    'aguarda_aprovacao',
-  };
-  static const _estadosConcluidos = {'concluído', 'entregue', 'concluido'};
-
   final _servidor = const ServidorCliente();
   late Future<List<Encomenda>> _futuro;
 
@@ -56,15 +37,6 @@ class _PaginaInicioClienteState extends State<PaginaInicioCliente> {
 
   void _abrirEncomenda(Encomenda encomenda) {
     context.push(Rotas.detalheEncomenda, extra: encomenda);
-  }
-
-  int _contarEncomendas(List<Encomenda> encomendas, Set<String> estados) {
-    return encomendas
-        .where(
-          (encomenda) =>
-              estados.contains(encomenda.estado.trim().toLowerCase()),
-        )
-        .length;
   }
 
   @override
@@ -83,16 +55,18 @@ class _PaginaInicioClienteState extends State<PaginaInicioCliente> {
   }
 
   Widget _conteudo(List<Encomenda> encomendas) {
-    final iniciar = _contarEncomendas(encomendas, _estadosIniciar);
-    final processamento = _contarEncomendas(encomendas, _estadosProcessamento);
-    final concluido = _contarEncomendas(encomendas, _estadosConcluidos);
+    final iniciar = encomendas
+        .where((e) => e.estado == 'por_receber' || e.estado == 'encaminhado')
+        .length;
+    final concluido = encomendas.where((e) => e.estado == 'concluido').length;
+    final processamento = encomendas.length - iniciar - concluido;
 
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       children: [
         const Text(
           'Bem-vindo,',
-          style: TextStyle(fontSize: 13, color: CoresApp.textoSuave),
+          style: TextStyle(fontSize: 14, color: CoresApp.textoSuave),
         ),
         Text(
           Sessao.atual!.clinica!.nome,
@@ -102,51 +76,35 @@ class _PaginaInicioClienteState extends State<PaginaInicioCliente> {
             color: CoresApp.textoForte,
           ),
         ),
-        const SizedBox(height: 20),
-        Contador(
+        const SizedBox(height: 16),
+        _Contador(
           texto: 'Iniciar',
           valor: iniciar,
-          cor: CoresApp.douradoEscuro,
+          cor: CoresApp.texto,
           fundo: CoresApp.douradoClaro,
           aoTocar: widget.aoVerPedidos,
         ),
-        Contador(
+        _Contador(
           texto: 'Processamento',
           valor: processamento,
           cor: CoresApp.info,
           fundo: CoresApp.infoClaro,
           aoTocar: widget.aoVerPedidos,
         ),
-        Contador(
+        _Contador(
           texto: 'Concluído',
           valor: concluido,
           cor: CoresApp.sucesso,
           fundo: CoresApp.sucessoClaro,
           aoTocar: widget.aoVerPedidos,
         ),
-        const SizedBox(height: 10),
-        FilledButton(
+        const SizedBox(height: 16),
+        FilledButton.icon(
           onPressed: widget.aoNovaEncomenda,
-          style: FilledButton.styleFrom(
-            backgroundColor: CoresApp.dourado,
-            foregroundColor: CoresApp.textoForte,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            minimumSize: const Size(64, 64),
-          ),
-          child: const Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Nova Encomenda',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-              ),
-              SizedBox(width: 12),
-              Icon(Icons.add, size: 28),
-            ],
-          ),
+          icon: const Icon(Icons.add),
+          label: const Text('Nova Encomenda'),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         Row(
           children: [
             const Expanded(
@@ -161,10 +119,6 @@ class _PaginaInicioClienteState extends State<PaginaInicioCliente> {
             ),
             TextButton(
               onPressed: widget.aoVerPedidos,
-              style: TextButton.styleFrom(
-                foregroundColor: CoresApp.douradoEscuro,
-                textStyle: const TextStyle(fontSize: 12),
-              ),
               child: const Text('Ver todos →'),
             ),
           ],
@@ -172,10 +126,47 @@ class _PaginaInicioClienteState extends State<PaginaInicioCliente> {
         if (encomendas.isEmpty)
           const EstadoVazio(mensagem: 'Ainda não há encomendas.')
         else
-          // Encomenda ainda não expõe data_criacao: mantém a ordem do servidor.
           for (final encomenda in encomendas.take(3))
             CartaoEncomenda(encomenda: encomenda, aoAbrir: _abrirEncomenda),
       ],
+    );
+  }
+}
+
+// Um dos 3 contadores do topo.
+class _Contador extends StatelessWidget {
+  const _Contador({
+    required this.texto,
+    required this.valor,
+    required this.cor,
+    required this.fundo,
+    required this.aoTocar,
+  });
+
+  final String texto;
+  final int valor;
+  final Color cor;
+  final Color fundo;
+  final VoidCallback aoTocar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: fundo,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        onTap: aoTocar,
+        title: Text(texto, style: TextStyle(fontSize: 14, color: cor)),
+        trailing: Text(
+          '$valor',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: cor,
+          ),
+        ),
+      ),
     );
   }
 }
