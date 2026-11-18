@@ -9,7 +9,7 @@ import 'package:app_mobile/comum/widgets/widget_etiqueta_prazo.dart';
 enum VarianteCartaoTrabalho { normal, emProcessamento, emEspera }
 
 // Cartão de um trabalho (Início, Disponíveis, Os Meus, Prazos).
-// Na variante normal, ao tocar chama aoAbrir(trabalho).
+// Variante normal: toque abre os detalhes.
 class CartaoTrabalho extends StatelessWidget {
   const CartaoTrabalho({
     super.key,

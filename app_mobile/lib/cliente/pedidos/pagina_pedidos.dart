@@ -91,7 +91,7 @@ class _PaginaPedidosState extends State<PaginaPedidos> {
     final prazoLocal = encomenda.prazo!.toLocal();
     final dia = DateTime(prazoLocal.year, prazoLocal.month, prazoLocal.day);
     if (_prazo == 'excedido') return dia.isBefore(hoje);
-    // Inclui hoje e o sétimo dia, sem depender da hora de entrega.
+    // Intervalo inclusivo, sem considerar a hora.
     final limite = DateTime(hoje.year, hoje.month, hoje.day + 7);
     return !dia.isBefore(hoje) && !dia.isAfter(limite);
   }
