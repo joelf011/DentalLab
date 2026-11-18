@@ -12,8 +12,6 @@ import 'package:app_mobile/comum/tema/cores_app.dart';
 import 'package:app_mobile/comum/widgets/widget_etiqueta_estado.dart';
 import 'package:app_mobile/comum/widgets/widget_etiqueta_prazo.dart';
 
-// Ecrã de execução de um trabalho (colaborador): etapa ativa, etapas do
-// processo e ações (Assumir Etapa, nota, fotografia, standby, Concluir Etapa).
 class PaginaDetalheTrabalho extends StatefulWidget {
   const PaginaDetalheTrabalho({super.key, required this.trabalho});
 
@@ -33,25 +31,14 @@ class _PaginaDetalheTrabalhoState extends State<PaginaDetalheTrabalho> {
     if (!mounted) return;
     setState(() => _aCarregar = false);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Etapa atual iniciada.')),
+      const SnackBar(content: Text('Etapa atual iniciada com sucesso.')),
     );
   }
 
-  void _adicionarNota() {
-    mostrarJanelaNota(context, widget.trabalho);
-  }
-
-  void _adicionarFotografia() {
-    mostrarJanelaFotografia(context, widget.trabalho);
-  }
-
-  void _colocarEmStandby() {
-    mostrarJanelaStandby(context, widget.trabalho);
-  }
-
-  void _concluirEtapa() {
-    mostrarJanelaConcluirEtapa(context, widget.trabalho);
-  }
+  void _adicionarNota() => mostrarJanelaNota(context, widget.trabalho);
+  void _adicionarFotografia() => mostrarJanelaFotografia(context, widget.trabalho);
+  void _colocarEmStandby() => mostrarJanelaStandby(context, widget.trabalho);
+  void _concluirEtapa() => mostrarJanelaConcluirEtapa(context, widget.trabalho);
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +47,11 @@ class _PaginaDetalheTrabalhoState extends State<PaginaDetalheTrabalho> {
     final estaEmExecucao = trabalho.estaEmExecucaoPor(colaboradorId);
 
     return Scaffold(
+      backgroundColor: Colors.grey[50], // Fundo ligeiramente off-white tipico de UI moderna
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
         leading: IconButton(
           tooltip: 'Voltar',
           onPressed: () => context.pop(),
@@ -71,111 +62,212 @@ class _PaginaDetalheTrabalhoState extends State<PaginaDetalheTrabalho> {
           children: [
             Text(
               trabalho.referencia,
-              style: const TextStyle(fontSize: 12, color: CoresApp.textoSuave),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: CoresApp.textoSuave,
+                letterSpacing: 0.5,
+              ),
             ),
-            Text(trabalho.descricao, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 2),
+            Text(
+              trabalho.descricao,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
           ],
         ),
         actions: [
-          EtiquetaPrazo(
-            prazo: trabalho.prazo,
-            concluido: trabalho.estado == 'concluido',
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: EtiquetaPrazo(
+                prazo: trabalho.prazo,
+                concluido: trabalho.estado == 'concluido',
+              ),
+            ),
           ),
-          const SizedBox(width: 16),
         ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Estado e Clínica
+          // Cabeçalho de Estado e Clínica
           Row(
             children: [
               EtiquetaEstado(estado: trabalho.estado, paraClinica: false),
-              const SizedBox(width: 8),
-              Text(
-                trabalho.clinica,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: CoresApp.textoSuave,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  trabalho.clinica,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: CoresApp.textoSuave,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Cartão "Etapa Ativa" com borda dourada
-          if (trabalho.etapaAtiva != null)
+          // Cartão "Etapa Ativa" com destaque visual refinado
+          if (trabalho.etapaAtiva != null) ...[
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                border: Border.all(color: CoresApp.dourado, width: 2),
-                borderRadius: BorderRadius.circular(12),
-                color: CoresApp.douradoClaro.withValues(alpha: 0.1),
+                border: Border.all(color: CoresApp.dourado, width: 1.5),
+                borderRadius: BorderRadius.circular(14),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: CoresApp.dourado.withValues(alpha: 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'ETAPA ATIVA',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: CoresApp.douradoEscuro,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'ETAPA ATIVA',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: CoresApp.douradoEscuro,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: CoresApp.douradoClaro.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          'Em curso',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: CoresApp.douradoEscuro,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
                   Text(
                     trabalho.etapaAtiva!.nome,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    trabalho.etapaAtiva!.iniciadaEm != null
-                        ? 'Iniciada em ${trabalho.etapaAtiva!.iniciadaEm.toString().substring(0, 16)}'
-                        : 'Em execução',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: CoresApp.textoSuave,
-                    ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.access_time, size: 14, color: CoresApp.textoSuave),
+                      const SizedBox(width: 4),
+                      Text(
+                        trabalho.etapaAtiva!.iniciadaEm != null
+                            ? 'Iniciada em ${trabalho.etapaAtiva!.iniciadaEm.toString().substring(11, 16)}'
+                            : 'Iniciada recentemente',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: CoresApp.textoSuave,
+                        ),
+                      ),
+                      if (trabalho.etapaAtiva!.colaboradorNome != null) ...[
+                        const Text(' • ', style: TextStyle(color: CoresApp.textoSuave)),
+                        Text(
+                          trabalho.etapaAtiva!.colaboradorNome!.split(' ').first,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
             ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 20),
+          ],
 
-          // Secção "Consultar etapas do processo" (ExpansionTile)
+          // Secção "Consultar etapas do processo" (ExpansionTile com aspeto de Cartão Limpo)
           Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.grey.shade200),
+            ),
             margin: EdgeInsets.zero,
             child: ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               title: const Text(
                 'Consultar etapas do processo',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
               children: [
-                for (final etapa in trabalho.etapas)
-                  ListTile(
-                    leading: _obrigarIconeEstado(etapa.estado),
-                    title: Text(etapa.nome),
-                    subtitle: etapa.colaboradorNome != null
-                        ? Text('Colaborador: ${etapa.colaboradorNome!.split(' ').first}')
-                        : const Text('Por atribuir'),
-                  ),
+                const Divider(height: 1, thickness: 1, color: Colors.black12),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: trabalho.etapas.length,
+                  itemBuilder: (context, index) {
+                    final etapa = trabalho.etapas[index];
+                    final primeiroNomeColaborador = etapa.colaboradorNome != null
+                        ? etapa.colaboradorNome!.split(' ').first
+                        : 'Por atribuir';
+
+                    return ListTile(
+                      dense: true,
+                      leading: _obterIconeEstado(etapa.estado),
+                      title: Text(
+                        etapa.nome,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 13,
+                        ),
+                      ),
+                      subtitle: Text(
+                        primeiroNomeColaborador,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: CoresApp.textoSuave,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
           // Secção de Ações
           const Text(
-            'AÇÕES',
+            'AÇÕES DO COLABORADOR',
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: FontWeight.bold,
               color: CoresApp.textoSuave,
+              letterSpacing: 0.8,
             ),
           ),
           const SizedBox(height: 12),
@@ -187,7 +279,11 @@ class _PaginaDetalheTrabalhoState extends State<PaginaDetalheTrabalho> {
                 onPressed: _aCarregar ? null : _assumirEtapa,
                 style: FilledButton.styleFrom(
                   backgroundColor: CoresApp.douradoEscuro,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: const Text(
                   'Assumir Etapa',
@@ -196,30 +292,48 @@ class _PaginaDetalheTrabalhoState extends State<PaginaDetalheTrabalho> {
               ),
             )
           else if (estaEmExecucao) ...[
-            // Notas, fotografias e standby
+            // Botões secundários: Nota, Foto, Standby
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _adicionarNota,
-                    icon: const Icon(Icons.note_add, size: 18),
-                    label: const Text('Nota'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.note_add, size: 16),
+                    label: const Text('Nota', style: TextStyle(fontSize: 12)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _adicionarFotografia,
-                    icon: const Icon(Icons.camera_alt, size: 18),
-                    label: const Text('Foto'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.camera_alt, size: 16),
+                    label: const Text('Foto', style: TextStyle(fontSize: 12)),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: _colocarEmStandby,
-                    icon: const Icon(Icons.pause_circle_outline, size: 18),
-                    label: const Text('Standby'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.pause_circle_outline, size: 16),
+                    label: const Text('Standby', style: TextStyle(fontSize: 12)),
                   ),
                 ),
               ],
@@ -230,7 +344,12 @@ class _PaginaDetalheTrabalhoState extends State<PaginaDetalheTrabalho> {
               child: FilledButton(
                 onPressed: _concluirEtapa,
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: Colors.green.shade700,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: const Text(
                   'Concluir Etapa',
@@ -244,16 +363,16 @@ class _PaginaDetalheTrabalhoState extends State<PaginaDetalheTrabalho> {
     );
   }
 
-  Widget _obrigarIconeEstado(String estado) {
+  Widget _obterIconeEstado(String estado) {
     switch (estado) {
       case 'concluido':
       case 'concluida':
-        return const Icon(Icons.check_circle, color: Colors.green);
+        return const Icon(Icons.check_circle, color: Colors.green, size: 20);
       case 'em_execucao':
       case 'execucao':
-        return const Icon(Icons.access_time_filled, color: CoresApp.dourado);
+        return const Icon(Icons.access_time_filled, color: CoresApp.dourado, size: 20);
       default:
-        return const Icon(Icons.radio_button_unchecked, color: Colors.grey);
+        return const Icon(Icons.radio_button_unchecked, color: Colors.grey, size: 20);
     }
   }
 }
