@@ -6,6 +6,7 @@ import 'package:app_mobile/colaborador/dados/servidor_colaborador.dart';
 import 'package:app_mobile/colaborador/dados/trabalho.dart';
 import 'package:app_mobile/colaborador/trabalhos/widget_cartao_trabalho.dart';
 import 'package:app_mobile/comum/widgets/widget_estado_vazio.dart';
+import 'package:app_mobile/comum/tema/cores_app.dart';
 
 // Separador "Disponíveis": trabalhos cuja etapa seguinte ninguém assumiu
 // (regra em Trabalho.estaDisponivel).
@@ -49,12 +50,23 @@ class _PaginaDisponiveisState extends State<PaginaDisponiveis> {
   }
 
   Widget _lista(List<Trabalho> trabalhos) {
-    if (trabalhos.isEmpty) return const EstadoVazio(mensagem: 'Sem trabalhos');
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        for (final trabalho in trabalhos)
-          CartaoTrabalho(trabalho: trabalho, aoAbrir: _abrirTrabalho),
+        const Text(
+          'Trabalhos Disponíveis',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: CoresApp.textoForte,
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (trabalhos.isEmpty)
+          const EstadoVazio(mensagem: 'Sem trabalhos')
+        else
+          for (final trabalho in trabalhos)
+            CartaoTrabalho(trabalho: trabalho, aoAbrir: _abrirTrabalho),
       ],
     );
   }

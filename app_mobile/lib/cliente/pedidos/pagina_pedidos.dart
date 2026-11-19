@@ -7,6 +7,7 @@ import 'package:app_mobile/cliente/dados/servidor_cliente.dart';
 import 'package:app_mobile/cliente/pedidos/widget_cartao_encomenda.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
 import 'package:app_mobile/comum/widgets/widget_estado_vazio.dart';
+import 'package:app_mobile/comum/widgets/widget_etiqueta_estado.dart';
 
 // Separador "Pedidos" da clínica: todas as encomendas da clínica.
 class PaginaPedidos extends StatefulWidget {
@@ -19,11 +20,79 @@ class PaginaPedidos extends StatefulWidget {
 class _PaginaPedidosState extends State<PaginaPedidos> {
   final _servidor = const ServidorCliente();
   late Future<List<Encomenda>> _futuro;
+  late TextEditingController _controladorPesquisa;
+  String _estado = 'Todos';
+  String _tipo = '';
+  String _prazo = '';
 
   @override
   void initState() {
     super.initState();
+    _controladorPesquisa = TextEditingController();
+    _controladorPesquisa.addListener(_atualizarPesquisa);
     _futuro = _servidor.obterEncomendas();
+  }
+
+  @override
+  void dispose() {
+    _controladorPesquisa.removeListener(_atualizarPesquisa);
+    _controladorPesquisa.dispose();
+    super.dispose();
+  }
+
+  void _atualizarPesquisa() => setState(() {});
+
+  void _selecionarTodos(bool selecionado) => setState(() => _estado = 'Todos');
+  void _selecionarIniciar(bool selecionado) =>
+      setState(() => _estado = 'Iniciar');
+  void _selecionarProcessamento(bool selecionado) =>
+      setState(() => _estado = 'Processamento');
+  void _selecionarConcluido(bool selecionado) =>
+      setState(() => _estado = 'Concluído');
+  void _selecionarTipo(String? valor) => setState(() => _tipo = valor ?? '');
+  void _selecionarPrazo(String? valor) => setState(() => _prazo = valor ?? '');
+
+  void _limparFiltros() {
+    setState(() {
+      _estado = 'Todos';
+      _tipo = '';
+      _prazo = '';
+    });
+  }
+
+  String _normalizar(String texto) => texto.trim().toLowerCase();
+
+  // Encomendas fechadas não entram nos filtros de prazo.
+  bool _fechada(Encomenda encomenda) =>
+      encomenda.estado == 'Concluído' ||
+      encomenda.estado == 'Entregue' ||
+      encomenda.estado == 'Rejeitado';
+
+  bool _corresponde(Encomenda encomenda, DateTime hoje) {
+    final pesquisa = _normalizar(_controladorPesquisa.text);
+    final correspondePesquisa = [
+      '${encomenda.id}',
+      encomenda.paciente ?? '',
+      encomenda.medico,
+    ].any((texto) => _normalizar(texto).contains(pesquisa));
+    // Os botões usam os textos da clínica: Iniciar, Processamento, Concluído.
+    final correspondeEstado =
+        _estado == 'Todos' ||
+        textoDoEstado(encomenda.estado, paraClinica: true) == _estado;
+    if (!correspondePesquisa || !correspondeEstado) return false;
+    final temTipo = encomenda.trabalhos.any(
+      (trabalho) => trabalho.tipoTrabalho == _tipo,
+    );
+    if (_tipo.isNotEmpty && !temTipo) return false;
+    if (_prazo.isEmpty) return true;
+    final prazo = encomenda.prazoEntrega;
+    if (_fechada(encomenda) || prazo == null) return false;
+    final prazoLocal = prazo.toLocal();
+    final dia = DateTime(prazoLocal.year, prazoLocal.month, prazoLocal.day);
+    if (_prazo == 'excedido') return dia.isBefore(hoje);
+    // Intervalo inclusivo, sem considerar a hora.
+    final limite = DateTime(hoje.year, hoje.month, hoje.day + 7);
+    return !dia.isBefore(hoje) && !dia.isAfter(limite);
   }
 
   void _abrirEncomenda(Encomenda encomenda) {
@@ -46,6 +115,20 @@ class _PaginaPedidosState extends State<PaginaPedidos> {
   }
 
   Widget _lista(List<Encomenda> encomendas) {
+    final agora = DateTime.now();
+    final hoje = DateTime(agora.year, agora.month, agora.day);
+    final filtradas = encomendas.where((e) => _corresponde(e, hoje)).toList();
+    final tipos =
+        encomendas
+            .expand((e) => e.trabalhos)
+            .map((trabalho) => trabalho.tipoTrabalho)
+            .toSet()
+            .toList()
+          ..sort();
+    final numeroFiltros = [
+      _tipo,
+      _prazo,
+    ].where((valor) => valor.isNotEmpty).length;
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -58,12 +141,105 @@ class _PaginaPedidosState extends State<PaginaPedidos> {
           ),
         ),
         const SizedBox(height: 16),
+        TextField(
+          controller: _controladorPesquisa,
+          decoration: const InputDecoration(
+            hintText: 'Pesquisar por identificador, ref...',
+            labelText: 'Pesquisar por número, paciente ou médico',
+            prefixIcon: Icon(Icons.search, color: CoresApp.textoSuave),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _filtroEstado('Todos', _selecionarTodos),
+            _filtroEstado('Iniciar', _selecionarIniciar),
+            _filtroEstado('Processamento', _selecionarProcessamento),
+            _filtroEstado('Concluído', _selecionarConcluido),
+          ],
+        ),
+        const SizedBox(height: 12),
+        ExpansionTile(
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: const EdgeInsets.only(top: 12, bottom: 12),
+          title: Text(
+            numeroFiltros == 0
+                ? 'Filtros avançados'
+                : 'Filtros avançados · $numeroFiltros',
+          ),
+          children: [
+            _seletor('Tipo', _tipo, {
+              '': 'Todos os tipos',
+              for (final tipo in tipos) tipo: tipo,
+            }, _selecionarTipo),
+            const SizedBox(height: 12),
+            _seletor('Prazo', _prazo, {
+              '': 'Todos os prazos',
+              'excedido': 'Prazo excedido',
+              'proximos': 'Próximos 7 dias',
+            }, _selecionarPrazo),
+            if (numeroFiltros > 0 || _estado != 'Todos')
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: _limparFiltros,
+                  child: const Text('Limpar filtros'),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
         if (encomendas.isEmpty)
           const EstadoVazio(mensagem: 'Ainda não há encomendas.')
+        else if (filtradas.isEmpty)
+          const EstadoVazio(
+            mensagem: 'Sem resultados',
+            dica: 'Tente ajustar a pesquisa ou filtros',
+          )
         else
-          for (final encomenda in encomendas)
+          for (final encomenda in filtradas)
             CartaoEncomenda(encomenda: encomenda, aoAbrir: _abrirEncomenda),
       ],
+    );
+  }
+
+  Widget _filtroEstado(String texto, ValueChanged<bool> aoSelecionar) {
+    return ChoiceChip(
+      label: Text(texto),
+      selected: _estado == texto,
+      onSelected: aoSelecionar,
+      selectedColor: CoresApp.douradoClaro,
+      backgroundColor: CoresApp.superficie,
+      labelStyle: TextStyle(
+        color: _estado == texto ? CoresApp.douradoEscuro : CoresApp.texto,
+      ),
+      shape: const StadiumBorder(),
+      showCheckmark: false,
+    );
+  }
+
+  Widget _seletor(
+    String titulo,
+    String valor,
+    Map<String, String> opcoes,
+    ValueChanged<String?> aoSelecionar,
+  ) {
+    return InputDecorator(
+      decoration: InputDecoration(labelText: titulo),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: valor,
+          isExpanded: true,
+          isDense: true,
+          items: [
+            for (final opcao in opcoes.entries)
+              DropdownMenuItem(value: opcao.key, child: Text(opcao.value)),
+          ],
+          onChanged: aoSelecionar,
+        ),
+      ),
     );
   }
 }
