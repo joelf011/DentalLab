@@ -4,6 +4,7 @@ import 'package:app_mobile/autenticacao/dados/sessao.dart';
 import 'package:app_mobile/colaborador/dados/colaborador.dart';
 import 'package:app_mobile/colaborador/dados/servidor_colaborador.dart';
 import 'package:app_mobile/colaborador/dados/trabalho.dart';
+import 'package:app_mobile/colaborador/detalhe_trabalho/widget_cabecalho_janela.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
 import 'package:app_mobile/comum/widgets/widget_campo_texto.dart';
 
@@ -167,25 +168,7 @@ class _JanelaConcluirEtapaState extends State<JanelaConcluirEtapa> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Concluir Etapa',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Fechar',
-                      icon: const Icon(Icons.close),
-                      onPressed: _fechar,
-                    ),
-                  ],
-                ),
-                const Divider(),
-                const SizedBox(height: 12),
+                CabecalhoJanela(titulo: 'Concluir Etapa', aoFechar: _fechar),
                 Text(
                   'Etapa atual: $etapaAtual',
                   style: const TextStyle(

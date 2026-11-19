@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:app_mobile/autenticacao/dados/sessao.dart';
+import 'package:app_mobile/cliente/dados/dados_demo_cliente.dart';
+import 'package:app_mobile/cliente/detalhe_encomenda/pagina_detalhe_encomenda.dart';
 import 'package:app_mobile/colaborador/dados/dados_demo_colaborador.dart';
 import 'package:app_mobile/colaborador/detalhe_trabalho/pagina_detalhe_trabalho.dart';
 
-// Testes do detalhe do trabalho e da janela "Concluir Etapa"
+// Testes dos detalhes (trabalho e encomenda) e das janelas do colaborador
 // (com os dados de demonstração e a sessão da Ana Martins).
 void main() {
   setUp(() {
@@ -112,5 +114,82 @@ void main() {
     await tester.tap(botao);
     await tester.pumpAndSettle();
     expect(find.text('Trabalho colocado em standby'), findsOneWidget);
+  });
+
+  testWidgets('nota: obrigatória e guardada', (tester) async {
+    await abrir(tester, 21);
+    await tester.tap(find.text('Nota'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Guardar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Preencha este campo.'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextFormField), 'Verificar a cor');
+    await tester.tap(find.text('Guardar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nota adicionada'), findsOneWidget);
+  });
+
+  testWidgets('standby: justificação obrigatória', (tester) async {
+    await abrir(tester, 21);
+    await tester.tap(find.text('Standby'));
+    await tester.pumpAndSettle();
+    expect(find.text('Etapa atual: Enceramento'), findsOneWidget);
+
+    final botao = find.widgetWithText(FilledButton, 'Colocar em standby');
+    await tester.tap(botao);
+    await tester.pumpAndSettle();
+    expect(
+      find.text('A justificação é obrigatória para standby.'),
+      findsOneWidget,
+    );
+
+    await tester.enterText(find.byType(TextFormField), 'Aguarda impressão');
+    await tester.tap(botao);
+    await tester.pumpAndSettle();
+    expect(find.text('Trabalho colocado em standby'), findsOneWidget);
+  });
+
+  testWidgets('fotografia: câmara, galeria e guardar só com fotografia', (
+    tester,
+  ) async {
+    await abrir(tester, 21);
+    await tester.tap(find.text('Foto'));
+    await tester.pumpAndSettle();
+    expect(find.text('Câmara'), findsOneWidget);
+    expect(find.text('Galeria'), findsOneWidget);
+    final guardar = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Guardar'),
+    );
+    expect(guardar.onPressed, isNull);
+  });
+
+  // Num ecrã pequeno, se algum texto não couber o teste falha (overflow).
+  testWidgets('telemóvel pequeno: detalhes sem nada cortado', (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: PaginaDetalheEncomenda(encomenda: encomendasDemo.first),
+      ),
+    );
+    for (final aba in ['Progresso', 'Informação', 'Histórico']) {
+      await tester.ensureVisible(find.text(aba));
+      await tester.tap(find.text(aba));
+      await tester.pumpAndSettle();
+    }
+    expect(
+      find.text('Do primeiro ao mais recente · siga a numeração.'),
+      findsOneWidget,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: PaginaDetalheTrabalho(trabalho: trabalhosDemo.first)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('ETAPA ATIVA'), findsOneWidget);
   });
 }
