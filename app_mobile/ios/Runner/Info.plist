@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>A câmara é usada para tirar fotografias dos trabalhos.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>A galeria é usada para anexar fotografias aos trabalhos.</string>
 </dict>
 </plist>
