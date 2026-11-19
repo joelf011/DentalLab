@@ -22,7 +22,10 @@ void main() {
     encomendasDemo.removeRange(numeroEncomendas, encomendasDemo.length);
   });
 
-  Future<void> abrirNova(WidgetTester tester) async {
+  Future<void> abrirNova(
+    WidgetTester tester, {
+    bool aPartirDePedidos = false,
+  }) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -33,7 +36,14 @@ void main() {
     await tester.tap(find.text('Entrar'));
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Novo'));
+    if (aPartirDePedidos) {
+      await tester.tap(find.text('Pedidos'));
+      await tester.pumpAndSettle();
+      expect(find.text('Encomendas'), findsOneWidget);
+    }
+    final entrada = find.text(aPartirDePedidos ? 'Novo' : 'Nova Encomenda');
+    await tester.ensureVisible(entrada);
+    await tester.tap(entrada);
     await tester.pumpAndSettle();
   }
 
@@ -110,6 +120,23 @@ void main() {
     await tester.tap(find.text('Ver Encomendas'));
     await tester.pumpAndSettle();
     expect(find.text('Encomendas'), findsOneWidget);
+    final paciente = find.text('PAC-TESTE');
+    await tester.scrollUntilVisible(paciente, 300);
+    expect(paciente, findsOneWidget);
+  });
+
+  testWidgets('atualiza Pedidos quando Novo abre a partir desse separador', (
+    tester,
+  ) async {
+    await abrirNova(tester, aPartirDePedidos: true);
+    await preencherEncomenda(tester);
+    await escolherTipo(tester, 0, 'Ponte');
+    await tester.tap(find.text('Enviar Encomenda · 1 trabalho'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Ver Encomendas'));
+    await tester.tap(find.text('Ver Encomendas'));
+    await tester.pumpAndSettle();
+
     final paciente = find.text('PAC-TESTE');
     await tester.scrollUntilVisible(paciente, 300);
     expect(paciente, findsOneWidget);

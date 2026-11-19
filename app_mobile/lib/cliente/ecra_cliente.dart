@@ -27,6 +27,7 @@ class _EcraClienteState extends State<EcraCliente> {
   static const _separadorAlertas = 3;
 
   int _indiceAtual = 0;
+  int _versaoPedidos = 0;
 
   void _selecionarDestino(int indice) {
     if (indice == _separadorNovo) {
@@ -52,6 +53,7 @@ class _EcraClienteState extends State<EcraCliente> {
     if (enviada == true && mounted) {
       setState(() {
         _indiceAtual = _separadorPedidos;
+        _versaoPedidos++;
       });
     }
   }
@@ -63,7 +65,7 @@ class _EcraClienteState extends State<EcraCliente> {
         aoVerPedidos: _verPedidos,
         aoNovaEncomenda: _abrirNovaEncomenda,
       ),
-      const PaginaPedidos(),
+      PaginaPedidos(versao: _versaoPedidos),
       const SizedBox.shrink(), // "Novo" abre por cima (_abrirNovaEncomenda)
       const PaginaAlertas(),
       const PaginaConta(),
