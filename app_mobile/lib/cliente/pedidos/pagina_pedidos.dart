@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:app_mobile/app_go_router.dart';
-import 'package:app_mobile/autenticacao/dados/sessao.dart';
 import 'package:app_mobile/cliente/dados/encomenda.dart';
 import 'package:app_mobile/cliente/dados/servidor_cliente.dart';
 import 'package:app_mobile/cliente/pedidos/widget_cartao_encomenda.dart';
@@ -11,9 +10,7 @@ import 'package:app_mobile/comum/widgets/widget_estado_vazio.dart';
 
 // Separador "Pedidos" da clínica: todas as encomendas da clínica.
 class PaginaPedidos extends StatefulWidget {
-  const PaginaPedidos({super.key, this.versao = 0});
-
-  final int versao;
+  const PaginaPedidos({super.key});
 
   @override
   State<PaginaPedidos> createState() => _PaginaPedidosState();
@@ -26,17 +23,7 @@ class _PaginaPedidosState extends State<PaginaPedidos> {
   @override
   void initState() {
     super.initState();
-    _carregarEncomendas();
-  }
-
-  @override
-  void didUpdateWidget(covariant PaginaPedidos oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.versao != widget.versao) _carregarEncomendas();
-  }
-
-  void _carregarEncomendas() {
-    _futuro = _servidor.obterEncomendas(Sessao.atual!.clinica!.id);
+    _futuro = _servidor.obterEncomendas();
   }
 
   void _abrirEncomenda(Encomenda encomenda) {

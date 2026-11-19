@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:app_mobile/cliente/dados/encomenda.dart';
+import 'package:app_mobile/comum/formatar_datas.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
-import 'package:app_mobile/comum/widgets/widget_estado_vazio.dart';
 
-// Aba "Histórico": acontecimentos numerados, do primeiro ao mais recente.
+// Aba "Histórico": momentos da encomenda numerados, do primeiro ao mais recente.
 class AbaHistorico extends StatelessWidget {
   const AbaHistorico({super.key, required this.encomenda});
 
@@ -12,12 +12,7 @@ class AbaHistorico extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final eventos = encomenda.eventos;
-    if (eventos.isEmpty) {
-      return const EstadoVazio(
-        mensagem: 'Ainda não existem eventos nesta encomenda.',
-      );
-    }
+    final eventos = encomenda.historico;
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: eventos.length,
@@ -31,7 +26,7 @@ class AbaHistorico extends StatelessWidget {
               child: Text('${indice + 1}'),
             ),
             title: Text(evento.descricao),
-            subtitle: Text('${evento.autor} · ${evento.data}'),
+            subtitle: Text(dataHora(evento.data)),
           ),
         );
       },

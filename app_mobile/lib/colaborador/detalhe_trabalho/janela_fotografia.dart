@@ -37,7 +37,7 @@ class _JanelaFotografiaState extends State<JanelaFotografia> {
           children: [
             EmConstrucao(
               titulo: 'Adicionar fotografia',
-              descricao: widget.trabalho.referencia,
+              descricao: 'Trabalho n.º ${widget.trabalho.id}',
             ),
             TextButton(onPressed: _fechar, child: const Text('Fechar')),
           ],

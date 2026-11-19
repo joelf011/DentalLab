@@ -7,23 +7,22 @@ import 'package:app_mobile/comum/widgets/widget_linha_informacao.dart';
 class EncomendaEnviada extends StatelessWidget {
   const EncomendaEnviada({
     super.key,
-    required this.referencia,
+    required this.numero,
     required this.encomenda,
     required this.aoVerEncomendas,
     required this.aoNovaEncomenda,
   });
 
-  final String referencia;
+  final int numero; // devolvido por enviarEncomenda
   final EncomendaNova encomenda;
   final VoidCallback aoVerEncomendas;
   final VoidCallback aoNovaEncomenda;
 
   @override
   Widget build(BuildContext context) {
-    final sexo = switch (encomenda.sexo) {
-      'masculino' => 'Masculino',
-      'feminino' => 'Feminino',
-      'outro' => 'Outro',
+    final sexo = switch (encomenda.sexoPaciente) {
+      'M' => 'Masculino',
+      'F' => 'Feminino',
       _ => '—',
     };
     return SingleChildScrollView(
@@ -68,8 +67,8 @@ class EncomendaEnviada extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       LinhaInformacao(
-                        etiqueta: 'Referência',
-                        valor: referencia,
+                        etiqueta: 'Encomenda',
+                        valor: 'n.º $numero',
                       ),
                       LinhaInformacao(
                         etiqueta: 'Identificação',
@@ -77,9 +76,9 @@ class EncomendaEnviada extends StatelessWidget {
                       ),
                       LinhaInformacao(
                         etiqueta: 'Idade',
-                        valor: encomenda.idade == null
+                        valor: encomenda.idadePaciente == null
                             ? null
-                            : '${encomenda.idade} anos',
+                            : '${encomenda.idadePaciente} anos',
                       ),
                       LinhaInformacao(etiqueta: 'Sexo', valor: sexo),
                       LinhaInformacao(

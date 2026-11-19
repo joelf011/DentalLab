@@ -27,6 +27,10 @@ class _EcraClienteState extends State<EcraCliente> {
   static const _separadorAlertas = 3;
 
   int _indiceAtual = 0;
+
+  // Muda sempre que é enviada uma encomenda. Serve de key à página Pedidos:
+  // com uma key nova, a página é criada de novo e volta a pedir as
+  // encomendas ao servidor (também quando o Novo foi aberto nos Pedidos).
   int _versaoPedidos = 0;
 
   void _selecionarDestino(int indice) {
@@ -65,7 +69,7 @@ class _EcraClienteState extends State<EcraCliente> {
         aoVerPedidos: _verPedidos,
         aoNovaEncomenda: _abrirNovaEncomenda,
       ),
-      PaginaPedidos(versao: _versaoPedidos),
+      PaginaPedidos(key: ValueKey(_versaoPedidos)),
       const SizedBox.shrink(), // "Novo" abre por cima (_abrirNovaEncomenda)
       const PaginaAlertas(),
       const PaginaConta(),

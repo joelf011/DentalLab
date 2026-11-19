@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:app_mobile/autenticacao/dados/sessao.dart';
 import 'package:app_mobile/cliente/dados/encomenda_nova.dart';
 import 'package:app_mobile/cliente/dados/servidor_cliente.dart';
+import 'package:app_mobile/cliente/nova_encomenda/rascunho_trabalho.dart';
+import 'package:app_mobile/cliente/nova_encomenda/widget_encomenda_enviada.dart';
+import 'package:app_mobile/cliente/nova_encomenda/widget_formulario_trabalho.dart';
+import 'package:app_mobile/cliente/nova_encomenda/widget_passo_encomenda.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
 
-import 'rascunho_trabalho.dart';
-import 'widget_encomenda_enviada.dart';
-import 'widget_formulario_trabalho.dart';
-import 'widget_passo_encomenda.dart';
-
+// Nova encomenda: passo 1 (encomenda), passo 2 (trabalhos) e
+// "Encomenda enviada". Rota: Rotas.novaEncomenda (abre por cima, sem barra).
+//
+// Como sair deste ecrã:
+//   context.pop(true)  -> encomenda enviada: a app mostra o separador Pedidos
+//   context.pop(false) -> cancelada: a app volta ao separador onde estava
 class PaginaNovaEncomenda extends StatefulWidget {
   const PaginaNovaEncomenda({super.key});
 
@@ -29,7 +33,7 @@ class _PaginaNovaEncomendaState extends State<PaginaNovaEncomenda> {
   String? _sexo;
   int _passo = 1;
   bool _aEnviar = false;
-  String? _referencia;
+  int? _numero; // número da encomenda enviada
   EncomendaNova? _encomendaEnviada;
 
   @override
@@ -91,32 +95,26 @@ class _PaginaNovaEncomendaState extends State<PaginaNovaEncomenda> {
 
   Future<void> _enviar() async {
     if (_aEnviar || _trabalhos.any((trabalho) => trabalho.tipo == null)) return;
-    final clinica = Sessao.atual?.clinica;
-    if (clinica == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Inicie sessão com uma conta de clínica.'),
-        ),
-      );
-      return;
-    }
     FocusScope.of(context).unfocus();
+    // A clínica é a de quem tem sessão: o servidor sabe quem é.
     final encomenda = EncomendaNova(
-      clinicaId: clinica.id,
       medico: _medico.text.trim(),
       paciente: _identificacao.text.trim(),
-      idade: int.tryParse(_idade.text.trim()),
-      sexo: _sexo,
+      idadePaciente: int.tryParse(_idade.text.trim()),
+      sexoPaciente: _sexo,
+      observacoes: juntarDescricoes(_trabalhos),
       trabalhos: _trabalhos
           .map((trabalho) => trabalho.paraTrabalhoNovo())
           .toList(),
+      ficheiros: juntarFicheiros(_trabalhos),
+      fotografias: juntarFotografias(_trabalhos),
     );
     setState(() => _aEnviar = true);
     try {
-      final referencia = await _servidor.enviarEncomenda(encomenda);
+      final numero = await _servidor.enviarEncomenda(encomenda);
       if (!mounted) return;
       setState(() {
-        _referencia = referencia;
+        _numero = numero;
         _encomendaEnviada = encomenda;
       });
     } catch (_) {
@@ -140,7 +138,7 @@ class _PaginaNovaEncomendaState extends State<PaginaNovaEncomenda> {
     setState(() {
       _sexo = null;
       _passo = 1;
-      _referencia = null;
+      _numero = null;
       _encomendaEnviada = null;
       _trabalhos
         ..clear()
@@ -191,7 +189,7 @@ class _PaginaNovaEncomendaState extends State<PaginaNovaEncomenda> {
 
   @override
   Widget build(BuildContext context) {
-    final enviada = _referencia != null;
+    final enviada = _numero != null;
     final podeEnviar =
         !_aEnviar && _trabalhos.every((trabalho) => trabalho.tipo != null);
     return PopScope<bool>(
@@ -233,7 +231,7 @@ class _PaginaNovaEncomendaState extends State<PaginaNovaEncomenda> {
         body: SafeArea(
           child: enviada
               ? EncomendaEnviada(
-                  referencia: _referencia!,
+                  numero: _numero!,
                   encomenda: _encomendaEnviada!,
                   aoVerEncomendas: _verEncomendas,
                   aoNovaEncomenda: _novaEncomenda,

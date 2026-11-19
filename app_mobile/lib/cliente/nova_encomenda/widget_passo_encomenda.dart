@@ -82,16 +82,10 @@ class _PassoEncomendaState extends State<PassoEncomenda> {
                       initialValue: widget.sexo,
                       isExpanded: true,
                       hint: const Text('Selecionar…'),
+                      // M | F, como na base de dados (sexo_paciente).
                       items: const [
-                        DropdownMenuItem(
-                          value: 'masculino',
-                          child: Text('Masculino'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'feminino',
-                          child: Text('Feminino'),
-                        ),
-                        DropdownMenuItem(value: 'outro', child: Text('Outro')),
+                        DropdownMenuItem(value: 'M', child: Text('Masculino')),
+                        DropdownMenuItem(value: 'F', child: Text('Feminino')),
                       ],
                       onChanged: widget.aoMudarSexo,
                     ),

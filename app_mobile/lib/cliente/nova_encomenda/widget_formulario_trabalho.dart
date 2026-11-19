@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'package:app_mobile/cliente/dados/encomenda_nova.dart';
+import 'package:app_mobile/cliente/nova_encomenda/rascunho_trabalho.dart';
+import 'package:app_mobile/cliente/nova_encomenda/widget_zona_ficheiros.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
 import 'package:app_mobile/comum/widgets/widget_campo_texto.dart';
 import 'package:app_mobile/comum/widgets/widget_odontograma.dart';
-
-import 'rascunho_trabalho.dart';
-import 'widget_zona_ficheiros.dart';
 
 class FormularioTrabalho extends StatefulWidget {
   const FormularioTrabalho({
@@ -60,12 +59,17 @@ class _FormularioTrabalhoState extends State<FormularioTrabalho> {
       setState(() => _odontogramaAberto = !_odontogramaAberto);
   void _remover() => widget.aoRemover(widget.trabalho);
 
-  void _mudarTipo(String? id) {
+  void _mudarTipo(int? id) {
     if (id == null) return;
     setState(() {
       widget.trabalho.tipo = widget.tipos.firstWhere((tipo) => tipo.id == id);
     });
     widget.aoMudar();
+  }
+
+  void _mudarNatureza(String? natureza) {
+    if (natureza == null) return;
+    setState(() => widget.trabalho.natureza = natureza);
   }
 
   void _mudarDentes(List<int> dentes) {
@@ -160,7 +164,7 @@ class _FormularioTrabalhoState extends State<FormularioTrabalho> {
                 spacing: 16,
                 children: [
                   const Divider(),
-                  DropdownButtonFormField<String>(
+                  DropdownButtonFormField<int>(
                     initialValue: widget.trabalho.tipo?.id,
                     decoration: const InputDecoration(
                       labelText: 'Tipo de trabalho',
@@ -176,14 +180,20 @@ class _FormularioTrabalhoState extends State<FormularioTrabalho> {
                     ],
                     onChanged: _mudarTipo,
                   ),
-                  if (widget.trabalho.tipo != null)
-                    Text(
-                      'Natureza: ${widget.trabalho.tipo!.natureza}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: CoresApp.textoSuave,
+                  // A natureza é de cada trabalho (trabalho.natureza).
+                  DropdownButtonFormField<String>(
+                    initialValue: widget.trabalho.natureza,
+                    decoration: const InputDecoration(labelText: 'Natureza'),
+                    isExpanded: true,
+                    items: const [
+                      DropdownMenuItem(value: 'FISICO', child: Text('Físico')),
+                      DropdownMenuItem(
+                        value: 'DIGITAL',
+                        child: Text('Digital'),
                       ),
-                    ),
+                    ],
+                    onChanged: _mudarNatureza,
+                  ),
                   OutlinedButton(
                     onPressed: _alternarOdontograma,
                     child: Row(

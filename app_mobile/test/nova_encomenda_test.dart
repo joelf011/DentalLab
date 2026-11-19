@@ -60,7 +60,7 @@ void main() {
     int indice,
     String nome,
   ) async {
-    final campo = find.byType(DropdownButtonFormField<String>).at(indice);
+    final campo = find.byType(DropdownButtonFormField<int>).at(indice);
     await tester.ensureVisible(campo);
     await tester.tap(campo);
     await tester.pumpAndSettle();
@@ -97,7 +97,7 @@ void main() {
           .onPressed,
       isNull,
     );
-    await escolherTipo(tester, 0, 'Coroa de zircónia');
+    await escolherTipo(tester, 0, 'Coroa');
     await tester.tap(find.text('Odontograma · 0 selecionados'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('11'));
@@ -113,7 +113,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Encomenda enviada'), findsOneWidget);
     expect(find.text('0 anos'), findsOneWidget);
-    expect(find.text('1. Coroa de zircónia — 1 dente'), findsOneWidget);
+    expect(find.text('1. Coroa — 1 dente'), findsOneWidget);
     expect(find.text('2. Ponte — 0 dentes'), findsOneWidget);
     expect(encomendasDemo.length, numeroEncomendas + 1);
     await tester.ensureVisible(find.text('Ver Encomendas'));
@@ -240,21 +240,30 @@ void main() {
     expect(find.text('Selecionados: 11, 21'), findsOneWidget);
   });
 
-  test('rascunho entrega todos os dados do trabalho ao modelo de envio', () {
+  test('rascunho entrega os dados do trabalho e da encomenda', () {
     final trabalho = RascunhoTrabalho()
       ..tipo = tiposTrabalhoDemo.first
+      ..natureza = 'DIGITAL'
       ..cor = ' A2 '
       ..descricao = ' Indicações clínicas '
       ..dentes = [11, 21];
     trabalho.ficheiros['blob:stl'] = 'digital.stl';
     trabalho.fotografias['blob:foto'] = 'clinica.jpg';
     final novo = trabalho.paraTrabalhoNovo();
+    expect(novo.natureza, 'DIGITAL');
     expect(novo.cor, 'A2');
-    expect(novo.descricao, 'Indicações clínicas');
     expect(novo.dentes, [11, 21]);
-    expect(novo.ficheiros, ['blob:stl']);
-    expect(novo.fotografias, ['blob:foto']);
     trabalho.dentes.clear();
     expect(novo.dentes, [11, 21]);
+
+    final semDados = RascunhoTrabalho()..tipo = tiposTrabalhoDemo.last;
+    expect(semDados.paraTrabalhoNovo().cor, isNull);
+    expect(
+      juntarDescricoes([trabalho, semDados]),
+      'Trabalho 1 (Coroa): Indicações clínicas',
+    );
+    expect(juntarDescricoes([semDados]), isNull);
+    expect(juntarFicheiros([trabalho, semDados]), ['blob:stl']);
+    expect(juntarFotografias([trabalho, semDados]), ['blob:foto']);
   });
 }

@@ -40,7 +40,7 @@ class _PaginaContaState extends State<PaginaConta> {
         ),
         const SizedBox(height: 8),
         Text(
-          clinica.email,
+          clinica.email ?? '',
           style: const TextStyle(fontSize: 14, color: CoresApp.textoSuave),
         ),
         const SizedBox(height: 24),
