@@ -121,7 +121,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Encomendas'), findsOneWidget);
     final paciente = find.text('PAC-TESTE');
-    await tester.scrollUntilVisible(paciente, 300);
+    // A lista dos Pedidos é o primeiro Scrollable (a pesquisa tem outro).
+    await tester.scrollUntilVisible(
+      paciente,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(paciente, findsOneWidget);
   });
 
@@ -138,7 +143,12 @@ void main() {
     await tester.pumpAndSettle();
 
     final paciente = find.text('PAC-TESTE');
-    await tester.scrollUntilVisible(paciente, 300);
+    // A lista dos Pedidos é o primeiro Scrollable (a pesquisa tem outro).
+    await tester.scrollUntilVisible(
+      paciente,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(paciente, findsOneWidget);
   });
 
