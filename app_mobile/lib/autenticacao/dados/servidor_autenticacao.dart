@@ -55,6 +55,31 @@ class ServidorAutenticacao {
     }
   }
 
+  // Altera a palavra-passe de quem tem sessão.
+  // Em caso de erro (palavra-passe atual errada, ...) lança uma Exception
+  // com a mensagem a mostrar.
+  Future<void> alterarPalavraPasse(String atual, String nova) async {
+    if (usarDadosDemo) {
+      await Future<void>.delayed(const Duration(milliseconds: 800));
+      return;
+    }
+    // PUT /api/auth/password (backend/src/rotas/auth.ts)
+    final resultado = await http.put(
+      Uri.parse('$url/auth/password'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${Sessao.atual!.token}',
+      },
+      body: jsonEncode({'password_atual': atual, 'password_nova': nova}),
+    );
+    if (resultado.statusCode != 200) {
+      final resposta = jsonDecode(resultado.body);
+      throw Exception(
+        resposta['erro'] ?? 'Não foi possível alterar a palavra-passe.',
+      );
+    }
+  }
+
   // POST /api/auth/login (backend/src/rotas/auth.ts)
   // Resposta: {"token": "...", "utilizador": {"id", "nome", "cargo", "cliente_id", "email"}}
   Future<Sessao?> _entrarNaApi(String email, String palavraPasse) async {
