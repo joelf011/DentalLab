@@ -5,6 +5,7 @@ import 'package:app_mobile/app_go_router.dart';
 import 'package:app_mobile/autenticacao/dados/sessao.dart';
 import 'package:app_mobile/cliente/alertas/pagina_alertas.dart';
 import 'package:app_mobile/cliente/conta/pagina_conta.dart';
+import 'package:app_mobile/cliente/dados/servidor_cliente.dart';
 import 'package:app_mobile/cliente/inicio/pagina_inicio_cliente.dart';
 import 'package:app_mobile/cliente/pedidos/pagina_pedidos.dart';
 import 'package:app_mobile/cliente/widget_barra_cliente.dart';
@@ -26,7 +27,29 @@ class _EcraClienteState extends State<EcraCliente> {
   static const _separadorNovo = 2;
   static const _separadorAlertas = 3;
 
+  final _servidor = const ServidorCliente();
   int _indiceAtual = 0;
+
+  // Número de notificações por ler, mostrado no sino.
+  late Future<int> _futuroPorLer;
+
+  // Muda sempre que é enviada uma encomenda. Serve de key à página Pedidos:
+  // com uma key nova, a página é criada de novo e volta a pedir as
+  // encomendas ao servidor (também quando o Novo foi aberto nos Pedidos).
+  int _versaoPedidos = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _futuroPorLer = _servidor.contarNotificacoesPorLer();
+  }
+
+  // Chamado pelos Alertas quando uma notificação fica lida.
+  void _atualizarSino() {
+    setState(() {
+      _futuroPorLer = _servidor.contarNotificacoesPorLer();
+    });
+  }
 
   void _selecionarDestino(int indice) {
     if (indice == _separadorNovo) {
@@ -52,6 +75,7 @@ class _EcraClienteState extends State<EcraCliente> {
     if (enviada == true && mounted) {
       setState(() {
         _indiceAtual = _separadorPedidos;
+        _versaoPedidos++;
       });
     }
   }
@@ -63,10 +87,10 @@ class _EcraClienteState extends State<EcraCliente> {
         aoVerPedidos: _verPedidos,
         aoNovaEncomenda: _abrirNovaEncomenda,
       ),
-      const PaginaPedidos(),
+      PaginaPedidos(key: ValueKey(_versaoPedidos)),
       const SizedBox.shrink(), // "Novo" abre por cima (_abrirNovaEncomenda)
-      const PaginaAlertas(),
-      const PaginaConta(),
+      PaginaAlertas(aoMudar: _atualizarSino),
+      PaginaConta(aoVerAlertas: _verAlertas),
     ];
 
     return Scaffold(
@@ -76,11 +100,18 @@ class _EcraClienteState extends State<EcraCliente> {
           IconButton(
             tooltip: 'Alertas',
             onPressed: _verAlertas,
-            icon: const Badge(
-              label: Text('3'),
-              backgroundColor: CoresApp.dourado,
-              textColor: CoresApp.textoForte,
-              child: Icon(Icons.notifications_none_outlined),
+            icon: FutureBuilder<int>(
+              future: _futuroPorLer,
+              builder: (context, snapshot) {
+                final porLer = snapshot.data ?? 0;
+                return Badge(
+                  isLabelVisible: porLer > 0,
+                  label: Text('$porLer'),
+                  backgroundColor: CoresApp.dourado,
+                  textColor: CoresApp.textoForte,
+                  child: const Icon(Icons.notifications_none_outlined),
+                );
+              },
             ),
           ),
         ],

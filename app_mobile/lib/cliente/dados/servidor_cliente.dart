@@ -1,4 +1,5 @@
 import 'package:app_mobile/autenticacao/dados/sessao.dart';
+import 'package:app_mobile/cliente/dados/clinica.dart';
 import 'package:app_mobile/cliente/dados/dados_demo_cliente.dart';
 import 'package:app_mobile/cliente/dados/encomenda.dart';
 import 'package:app_mobile/cliente/dados/encomenda_nova.dart';
@@ -21,6 +22,12 @@ class ServidorCliente {
 
   int get _clienteId => Sessao.atual!.clinica!.id;
 
+  // GET /api/clientes/:id (vista vw_cliente): dados da clínica de quem tem sessão.
+  Future<Clinica> obterClinica() async {
+    await _esperar();
+    return clinicasDemo.firstWhere((clinica) => clinica.id == _clienteId);
+  }
+
   // GET /api/ordens (com os trabalhos e comentários de cada ordem)
   Future<List<Encomenda>> obterEncomendas() async {
     await _esperar();
@@ -29,7 +36,17 @@ class ServidorCliente {
         .toList();
   }
 
-  // Notificações de quem tem sessão, das mais recentes para as mais antigas.
+  // GET /api/ordens/:id: uma encomenda da clínica (null se não existir).
+  Future<Encomenda?> obterEncomenda(int ordemTrabalhoId) async {
+    final encomendas = await obterEncomendas();
+    for (final encomenda in encomendas) {
+      if (encomenda.id == ordemTrabalhoId) return encomenda;
+    }
+    return null;
+  }
+
+  // GET /api/notificacoes: notificações de quem tem sessão,
+  // das mais recentes para as mais antigas.
   Future<List<Notificacao>> obterNotificacoes() async {
     await _esperar();
     final idsDaClinica = encomendasDemo
@@ -43,14 +60,40 @@ class ServidorCliente {
     return lista;
   }
 
-  // Preenche data_leitura de uma notificação.
+  // Quantas notificações estão por ler (número no sino).
+  Future<int> contarNotificacoesPorLer() async {
+    final notificacoes = await obterNotificacoes();
+    return notificacoes.where((notificacao) => !notificacao.lida).length;
+  }
+
+  // POST /api/notificacoes/:id/lida: preenche data_leitura.
   Future<void> marcarNotificacaoLida(int notificacaoId) async {
     await _esperar();
+    _marcarLidaDemo(notificacaoId);
   }
 
   // Preenche data_leitura de todas as notificações por ler.
   Future<void> marcarTodasLidas() async {
-    await _esperar();
+    final notificacoes = await obterNotificacoes();
+    for (final notificacao in notificacoes) {
+      _marcarLidaDemo(notificacao.id);
+    }
+  }
+
+  // Na demonstração, troca a notificação por uma cópia já lida.
+  void _marcarLidaDemo(int notificacaoId) {
+    for (var i = 0; i < notificacoesDemo.length; i++) {
+      final notificacao = notificacoesDemo[i];
+      if (notificacao.id == notificacaoId && !notificacao.lida) {
+        notificacoesDemo[i] = Notificacao(
+          id: notificacao.id,
+          mensagem: notificacao.mensagem,
+          dataCriacao: notificacao.dataCriacao,
+          ordemTrabalhoId: notificacao.ordemTrabalhoId,
+          dataLeitura: DateTime.now(),
+        );
+      }
+    }
   }
 
   // GET /api/tipos-trabalho (só os ativos)
