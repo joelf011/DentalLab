@@ -9,6 +9,7 @@ import 'package:app_mobile/cliente/inicio/widget_contador.dart';
 import 'package:app_mobile/cliente/pedidos/widget_cartao_encomenda.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
 import 'package:app_mobile/comum/widgets/widget_estado_vazio.dart';
+import 'package:app_mobile/comum/widgets/widget_etiqueta_estado.dart';
 
 // Separador "Início" da clínica: contadores (Iniciar / Processamento /
 // Concluído), botão "Nova Encomenda" e as 3 primeiras encomendas do servidor.
@@ -33,7 +34,7 @@ class _PaginaInicioClienteState extends State<PaginaInicioCliente> {
   @override
   void initState() {
     super.initState();
-    _futuro = _servidor.obterEncomendas(Sessao.atual!.clinica!.id);
+    _futuro = _servidor.obterEncomendas();
   }
 
   void _abrirEncomenda(Encomenda encomenda) {
@@ -55,19 +56,19 @@ class _PaginaInicioClienteState extends State<PaginaInicioCliente> {
     );
   }
 
-  Widget _conteudo(List<Encomenda> encomendas) {
-    final iniciar = encomendas
-        .where((e) => e.estado == 'por_receber' || e.estado == 'encaminhado')
-        .length;
-    final concluido = encomendas.where((e) => e.estado == 'concluido').length;
-    final processamento = encomendas
+  // Quantas encomendas têm este estado, nos textos da clínica.
+  int _contar(List<Encomenda> encomendas, String estadoDaClinica) {
+    return encomendas
         .where(
-          (e) =>
-              e.estado == 'em_producao' ||
-              e.estado == 'em_standby' ||
-              e.estado == 'aguarda_aprovacao',
+          (e) => textoDoEstado(e.estado, paraClinica: true) == estadoDaClinica,
         )
         .length;
+  }
+
+  Widget _conteudo(List<Encomenda> encomendas) {
+    final iniciar = _contar(encomendas, 'Iniciar');
+    final processamento = _contar(encomendas, 'Processamento');
+    final concluido = _contar(encomendas, 'Concluído');
 
     return ListView(
       padding: const EdgeInsets.all(20),

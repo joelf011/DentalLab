@@ -1,14 +1,17 @@
-// Um colaborador do laboratório.
+// Um utilizador interno do laboratório (vista vw_utilizador):
+// Colaborador ou Administrador.
 class Colaborador {
   const Colaborador({
     required this.id,
     required this.nome,
     required this.email,
-    this.estado = 'disponivel',
+    required this.cargo,
+    this.ativo = true,
   });
 
-  final String id;
+  final int id;
   final String nome;
   final String email;
-  final String estado; // disponivel | ocupado | ausente
+  final String cargo; // Colaborador | Administrador
+  final bool ativo;
 }

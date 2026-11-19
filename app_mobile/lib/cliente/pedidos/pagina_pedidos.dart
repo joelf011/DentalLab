@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:app_mobile/app_go_router.dart';
-import 'package:app_mobile/autenticacao/dados/sessao.dart';
 import 'package:app_mobile/cliente/dados/encomenda.dart';
 import 'package:app_mobile/cliente/dados/servidor_cliente.dart';
 import 'package:app_mobile/cliente/pedidos/widget_cartao_encomenda.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
 import 'package:app_mobile/comum/widgets/widget_estado_vazio.dart';
+import 'package:app_mobile/comum/widgets/widget_etiqueta_estado.dart';
 
 // Separador "Pedidos" da clínica: todas as encomendas da clínica.
 class PaginaPedidos extends StatefulWidget {
@@ -25,20 +25,12 @@ class _PaginaPedidosState extends State<PaginaPedidos> {
   String _tipo = '';
   String _prazo = '';
 
-  static const _iniciar = {'por_receber', 'encaminhado'};
-  static const _processamento = {
-    'em_producao',
-    'em_standby',
-    'aguarda_aprovacao',
-  };
-  static const _concluido = {'concluido'};
-
   @override
   void initState() {
     super.initState();
     _controladorPesquisa = TextEditingController();
     _controladorPesquisa.addListener(_atualizarPesquisa);
-    _futuro = _servidor.obterEncomendas(Sessao.atual!.clinica!.id);
+    _futuro = _servidor.obterEncomendas();
   }
 
   @override
@@ -70,25 +62,32 @@ class _PaginaPedidosState extends State<PaginaPedidos> {
 
   String _normalizar(String texto) => texto.trim().toLowerCase();
 
+  // Encomendas fechadas não entram nos filtros de prazo.
+  bool _fechada(Encomenda encomenda) =>
+      encomenda.estado == 'Concluído' ||
+      encomenda.estado == 'Entregue' ||
+      encomenda.estado == 'Rejeitado';
+
   bool _corresponde(Encomenda encomenda, DateTime hoje) {
     final pesquisa = _normalizar(_controladorPesquisa.text);
     final correspondePesquisa = [
-      encomenda.referencia,
-      encomenda.paciente,
-      encomenda.medico ?? '',
+      '${encomenda.id}',
+      encomenda.paciente ?? '',
+      encomenda.medico,
     ].any((texto) => _normalizar(texto).contains(pesquisa));
-    final estado = encomenda.estado.trim().toLowerCase();
-    final correspondeEstado = switch (_estado) {
-      'Iniciar' => _iniciar.contains(estado),
-      'Processamento' => _processamento.contains(estado),
-      'Concluído' => _concluido.contains(estado),
-      _ => true,
-    };
+    // Os botões usam os textos da clínica: Iniciar, Processamento, Concluído.
+    final correspondeEstado =
+        _estado == 'Todos' ||
+        textoDoEstado(encomenda.estado, paraClinica: true) == _estado;
     if (!correspondePesquisa || !correspondeEstado) return false;
-    if (_tipo.isNotEmpty && encomenda.tipo != _tipo) return false;
+    final temTipo = encomenda.trabalhos.any(
+      (trabalho) => trabalho.tipoTrabalho == _tipo,
+    );
+    if (_tipo.isNotEmpty && !temTipo) return false;
     if (_prazo.isEmpty) return true;
-    if (_concluido.contains(estado) || encomenda.prazo == null) return false;
-    final prazoLocal = encomenda.prazo!.toLocal();
+    final prazo = encomenda.prazoEntrega;
+    if (_fechada(encomenda) || prazo == null) return false;
+    final prazoLocal = prazo.toLocal();
     final dia = DateTime(prazoLocal.year, prazoLocal.month, prazoLocal.day);
     if (_prazo == 'excedido') return dia.isBefore(hoje);
     // Intervalo inclusivo, sem considerar a hora.
@@ -121,8 +120,8 @@ class _PaginaPedidosState extends State<PaginaPedidos> {
     final filtradas = encomendas.where((e) => _corresponde(e, hoje)).toList();
     final tipos =
         encomendas
-            .map((e) => e.tipo)
-            .where((tipo) => tipo.isNotEmpty)
+            .expand((e) => e.trabalhos)
+            .map((trabalho) => trabalho.tipoTrabalho)
             .toSet()
             .toList()
           ..sort();
@@ -146,7 +145,7 @@ class _PaginaPedidosState extends State<PaginaPedidos> {
           controller: _controladorPesquisa,
           decoration: const InputDecoration(
             hintText: 'Pesquisar por identificador, ref...',
-            labelText: 'Pesquisar por referência, paciente ou médico',
+            labelText: 'Pesquisar por número, paciente ou médico',
             prefixIcon: Icon(Icons.search, color: CoresApp.textoSuave),
           ),
         ),

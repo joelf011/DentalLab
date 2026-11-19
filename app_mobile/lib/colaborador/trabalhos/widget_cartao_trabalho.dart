@@ -40,6 +40,7 @@ class CartaoTrabalho extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final prazo = trabalho.prazoEntrega;
     final emProcessamento = variante == VarianteCartaoTrabalho.emProcessamento;
     final normal = variante == VarianteCartaoTrabalho.normal;
     return Card(
@@ -108,7 +109,7 @@ class CartaoTrabalho extends StatelessWidget {
                             const SizedBox(height: 8),
                           ],
                           Text(
-                            trabalho.referencia,
+                            'Ordem n.º ${trabalho.ordemTrabalhoId}',
                             style: const TextStyle(
                               fontSize: 12,
                               color: CoresApp.textoSuave,
@@ -136,7 +137,7 @@ class CartaoTrabalho extends StatelessWidget {
                           ],
                           const SizedBox(height: 4),
                           Text(
-                            trabalho.descricao,
+                            trabalho.tipoTrabalho,
                             maxLines: normal ? 1 : null,
                             overflow: normal ? TextOverflow.ellipsis : null,
                             style: const TextStyle(
@@ -147,7 +148,7 @@ class CartaoTrabalho extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            trabalho.clinica,
+                            trabalho.cliente,
                             style: const TextStyle(
                               fontSize: 14,
                               color: CoresApp.textoForte,
@@ -156,11 +157,10 @@ class CartaoTrabalho extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    EtiquetaPrazo(
-                      prazo: trabalho.prazo,
-                      concluido: trabalho.estado == "concluido",
-                    ),
+                    if (prazo != null) ...[
+                      const SizedBox(width: 12),
+                      EtiquetaPrazo(prazo: prazo, estado: trabalho.estadoOrdem),
+                    ],
                   ],
                 ),
                 if (normal) ...[
@@ -178,7 +178,7 @@ class CartaoTrabalho extends StatelessWidget {
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                      EtiquetaEstado(estado: trabalho.estado),
+                      EtiquetaEstado(estado: trabalho.estadoOrdem),
                       const Text(
                         'Abrir trabalho ›',
                         style: TextStyle(
@@ -212,7 +212,8 @@ class CartaoTrabalho extends StatelessWidget {
                           children: [
                             EtiquetaNatureza(natureza: trabalho.natureza),
                             Text(
-                              trabalho.etapaAtual,
+                              trabalho.etapaAtual?.nome ??
+                                  'Sem etapas por fazer',
                               style: TextStyle(
                                 color: emProcessamento
                                     ? CoresApp.sucesso

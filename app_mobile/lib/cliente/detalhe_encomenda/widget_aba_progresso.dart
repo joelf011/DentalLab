@@ -4,23 +4,22 @@ import 'package:app_mobile/cliente/dados/encomenda.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
 import 'package:app_mobile/comum/widgets/widget_etiqueta_estado.dart';
 
-// Aba "Progresso": estado geral da encomenda e percentagem.
-// A clínica não vê as etapas internas, só o avanço total.
+// Aba "Progresso": avanço da encomenda a partir do estado da ordem.
+// A clínica não vê as etapas, que são internas do laboratório.
 class AbaProgresso extends StatelessWidget {
   const AbaProgresso({super.key, required this.encomenda});
 
   final Encomenda encomenda;
 
-  // Concluída: 100 %. Por iniciar: 10 %. Em curso: etapas feitas, entre 35 e 90 %.
   int _percentagem() {
-    final estado = encomenda.estado;
-    if (estado == 'concluido') return 100;
-    if (estado == 'por_receber' || estado == 'encaminhado') return 10;
-    final etapas = encomenda.etapas;
-    if (etapas.isEmpty) return 50;
-    final feitas = etapas.where((etapa) => etapa.concluida).length;
-    final calculada = (feitas / etapas.length * 100).round();
-    return calculada.clamp(35, 90);
+    return switch (encomenda.estado) {
+      'Em avaliação' => 10,
+      'Por iniciar' => 25,
+      'Em processamento' || 'Em espera' => 50,
+      'Em prova' => 75,
+      'Concluído' || 'Entregue' => 100,
+      _ => 0,
+    };
   }
 
   @override

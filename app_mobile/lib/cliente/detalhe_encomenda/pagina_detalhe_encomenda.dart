@@ -8,11 +8,10 @@ import 'package:app_mobile/cliente/detalhe_encomenda/widget_aba_progresso.dart';
 import 'package:app_mobile/cliente/detalhe_encomenda/widget_aba_resumo.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
 import 'package:app_mobile/comum/widgets/widget_etiqueta_estado.dart';
-import 'package:app_mobile/comum/widgets/widget_etiqueta_natureza.dart';
 import 'package:app_mobile/comum/widgets/widget_etiqueta_prazo.dart';
 
 // Detalhe de uma encomenda da clínica, com 4 abas:
-// Resumo · Progresso · Informação (mensagens) · Histórico.
+// Resumo · Progresso · Informação (comentários) · Histórico.
 class PaginaDetalheEncomenda extends StatefulWidget {
   const PaginaDetalheEncomenda({super.key, required this.encomenda});
 
@@ -30,7 +29,7 @@ class _PaginaDetalheEncomendaState extends State<PaginaDetalheEncomenda> {
   @override
   Widget build(BuildContext context) {
     final encomenda = widget.encomenda;
-    final prazo = encomenda.prazo;
+    final prazo = encomenda.prazoEntrega;
 
     return DefaultTabController(
       length: 4,
@@ -45,21 +44,21 @@ class _PaginaDetalheEncomendaState extends State<PaginaDetalheEncomenda> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                encomenda.referencia,
+                'Encomenda n.º ${encomenda.id}',
                 style: const TextStyle(
                   fontSize: 12,
                   color: CoresApp.textoSuave,
                 ),
               ),
-              Text(encomenda.tipo, style: const TextStyle(fontSize: 16)),
+              Text(
+                encomenda.resumoTrabalhos,
+                style: const TextStyle(fontSize: 16),
+              ),
             ],
           ),
           actions: [
             if (prazo != null)
-              EtiquetaPrazo(
-                prazo: prazo,
-                concluido: encomenda.estado == 'concluido',
-              ),
+              EtiquetaPrazo(prazo: prazo, estado: encomenda.estado),
             const SizedBox(width: 16),
           ],
           bottom: const TabBar(
@@ -78,12 +77,12 @@ class _PaginaDetalheEncomendaState extends State<PaginaDetalheEncomenda> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Row(
-                children: [
-                  EtiquetaEstado(estado: encomenda.estado, paraClinica: true),
-                  const SizedBox(width: 8),
-                  EtiquetaNatureza(natureza: encomenda.natureza),
-                ],
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: EtiquetaEstado(
+                  estado: encomenda.estado,
+                  paraClinica: true,
+                ),
               ),
             ),
             Expanded(

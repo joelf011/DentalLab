@@ -42,12 +42,21 @@ class _PaginaInicioColaboradorState extends State<PaginaInicioColaborador> {
     context.push(Rotas.detalheTrabalho, extra: trabalho);
   }
 
+  // Primeiro os que estão em processamento, depois pelo prazo mais próximo
+  // (os que não têm prazo ficam no fim).
   int _compararPrioridade(Trabalho primeiro, Trabalho segundo) {
-    final prioridadePrimeiro = primeiro.estado == 'em_producao' ? 0 : 1;
-    final prioridadeSegundo = segundo.estado == 'em_producao' ? 0 : 1;
+    final prioridadePrimeiro = primeiro.estadoOrdem == 'Em processamento'
+        ? 0
+        : 1;
+    final prioridadeSegundo = segundo.estadoOrdem == 'Em processamento' ? 0 : 1;
     final ordem = prioridadePrimeiro.compareTo(prioridadeSegundo);
     if (ordem != 0) return ordem;
-    return primeiro.prazo.compareTo(segundo.prazo);
+    final prazoPrimeiro = primeiro.prazoEntrega;
+    final prazoSegundo = segundo.prazoEntrega;
+    if (prazoPrimeiro == null && prazoSegundo == null) return 0;
+    if (prazoPrimeiro == null) return 1;
+    if (prazoSegundo == null) return -1;
+    return prazoPrimeiro.compareTo(prazoSegundo);
   }
 
   @override
@@ -69,12 +78,7 @@ class _PaginaInicioColaboradorState extends State<PaginaInicioColaborador> {
   Widget _conteudo(List<Trabalho> trabalhos) {
     final eu = Sessao.atual!.id;
 
-    final meus = trabalhos
-        .where(
-          (trabalho) =>
-              trabalho.responsavelId == eu && trabalho.estado != 'concluido',
-        )
-        .toList();
+    final meus = trabalhos.where((trabalho) => trabalho.eDe(eu)).toList();
     final ativos = meus.length;
     meus.sort(_compararPrioridade);
     final prioridades = meus.take(3).toList();

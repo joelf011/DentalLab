@@ -31,8 +31,9 @@ class _PaginaPrazosState extends State<PaginaPrazos> {
     context.push(Rotas.detalheTrabalho, extra: trabalho);
   }
 
+  // Os urgentes têm sempre prazo (Trabalho.eUrgente).
   int _compararPrazo(Trabalho primeiro, Trabalho segundo) {
-    return primeiro.prazo.compareTo(segundo.prazo);
+    return primeiro.prazoEntrega!.compareTo(segundo.prazoEntrega!);
   }
 
   @override

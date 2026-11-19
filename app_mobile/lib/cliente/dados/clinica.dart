@@ -1,20 +1,20 @@
-// Uma clínica (conta de cliente).
+// Uma clínica (vista vw_cliente da base de dados).
 class Clinica {
   const Clinica({
     required this.id,
     required this.nome,
-    required this.email,
     this.nif,
+    this.moradaFaturacao,
+    this.email,
     this.telefone,
-    this.morada,
-    this.estado = 'ativo',
+    this.ativo = true,
   });
 
-  final String id;
+  final int id;
   final String nome;
-  final String email;
   final String? nif;
+  final String? moradaFaturacao;
+  final String? email;
   final String? telefone;
-  final String? morada;
-  final String estado; // ativo | suspenso | aguarda_validacao
+  final bool ativo;
 }

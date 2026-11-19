@@ -23,7 +23,7 @@ class CartaoEncomenda extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prazo = encomenda.prazo;
+    final prazo = encomenda.prazoEntrega;
     return Card(
       color: CoresApp.superficie,
       margin: const EdgeInsets.only(bottom: 10),
@@ -44,7 +44,7 @@ class CartaoEncomenda extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      encomenda.paciente,
+                      encomenda.paciente ?? 'Encomenda n.º ${encomenda.id}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -61,7 +61,7 @@ class CartaoEncomenda extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                encomenda.tipo,
+                '${encomenda.resumoTrabalhos} · n.º ${encomenda.id}',
                 style: const TextStyle(
                   fontSize: 14,
                   color: CoresApp.textoSuave,
@@ -78,7 +78,7 @@ class CartaoEncomenda extends StatelessWidget {
                   EtiquetaEstado(estado: encomenda.estado, paraClinica: true),
                   if (prazo != null)
                     Text(
-                      'Prazo ${dataCurta(prazo)}',
+                      'Entrega ${dataCurta(prazo)}',
                       style: const TextStyle(
                         fontSize: 13,
                         color: CoresApp.textoSuave,

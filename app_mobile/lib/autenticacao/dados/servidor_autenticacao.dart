@@ -73,7 +73,7 @@ class ServidorAutenticacao {
     final cargo = utilizador['cargo'].toString();
     final eCliente = cargo == 'Cliente';
     return Sessao(
-      id: utilizador['id'].toString(),
+      id: utilizador['id'] as int,
       nome: utilizador['nome'].toString(),
       email: utilizador['email'].toString(),
       cargo: cargo,
@@ -81,7 +81,7 @@ class ServidorAutenticacao {
       perfil: eCliente ? Perfil.cliente : Perfil.colaborador,
       clinica: eCliente
           ? Clinica(
-              id: utilizador['cliente_id'].toString(),
+              id: utilizador['cliente_id'] as int,
               nome: utilizador['nome'].toString(),
               email: utilizador['email'].toString(),
             )
@@ -103,9 +103,9 @@ class ServidorAutenticacao {
       final completo = login == clinica.email && palavraPasse == 'clinica';
       if (atalho || completo) {
         return Sessao(
-          id: 'u-${clinica.id}',
+          id: 100 + clinica.id,
           nome: clinica.nome,
-          email: clinica.email,
+          email: clinica.email ?? login,
           cargo: 'Cliente',
           perfil: Perfil.cliente,
           clinica: clinica,
@@ -115,7 +115,7 @@ class ServidorAutenticacao {
 
     if (login == 'colaborador' && palavraPasse == '123') {
       return const Sessao(
-        id: 's1',
+        id: 2,
         nome: 'Ana Martins',
         email: 'ana@lcd.pt',
         cargo: 'Colaborador',
@@ -125,7 +125,7 @@ class ServidorAutenticacao {
 
     if (login == 'catarina@lcd.pt' && palavraPasse == 'admin') {
       return const Sessao(
-        id: 'admin',
+        id: 1,
         nome: 'Catarina Domingos',
         email: 'catarina@lcd.pt',
         cargo: 'Administrador',

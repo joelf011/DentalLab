@@ -43,7 +43,7 @@ class _JanelaConcluirEtapaState extends State<JanelaConcluirEtapa> {
           children: [
             EmConstrucao(
               titulo: 'Concluir Etapa',
-              descricao: widget.trabalho.referencia,
+              descricao: 'Trabalho n.º ${widget.trabalho.id}',
             ),
             TextButton(onPressed: _fechar, child: const Text('Fechar')),
           ],

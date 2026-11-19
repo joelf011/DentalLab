@@ -25,26 +25,34 @@ class PaginaOsMeus extends StatefulWidget {
 class _PaginaOsMeusState extends State<PaginaOsMeus> {
   final _servidor = const ServidorColaborador();
   late Future<List<Trabalho>> _futuro;
-  final Set<String> _ocupados = {};
+  final Set<int> _ocupados = {};
 
   void _recarregar() {
     if (!mounted) return;
     setState(() => _futuro = _servidor.obterTrabalhos());
   }
 
+  // Em execução por mim: "em processamento". Atribuída a mim mas ainda por
+  // iniciar (com a ordem em produção): "em espera", com o botão Iniciar Etapa.
   VarianteCartaoTrabalho _variante(Trabalho trabalho) {
     if (trabalho.estaEmExecucaoPor(Sessao.atual!.id)) {
       return VarianteCartaoTrabalho.emProcessamento;
     }
-    if (trabalho.estaDisponivel) return VarianteCartaoTrabalho.emEspera;
+    final emProducao =
+        trabalho.estadoOrdem == 'Por iniciar' ||
+        trabalho.estadoOrdem == 'Em processamento';
+    if (emProducao && trabalho.etapaAtual?.dataInicio == null) {
+      return VarianteCartaoTrabalho.emEspera;
+    }
     return VarianteCartaoTrabalho.normal;
   }
 
   Future<void> _iniciarEtapa(Trabalho trabalho) async {
-    if (_ocupados.contains(trabalho.id)) return;
+    final etapa = trabalho.etapaAtual;
+    if (etapa == null || _ocupados.contains(trabalho.id)) return;
     setState(() => _ocupados.add(trabalho.id));
     try {
-      await _servidor.assumirEtapa(trabalho.id);
+      await _servidor.assumirEtapa(etapa.id);
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -88,11 +96,7 @@ class _PaginaOsMeusState extends State<PaginaOsMeus> {
         if (snapshot.hasData) {
           final eu = Sessao.atual!.id;
           final meus = snapshot.data!
-              .where(
-                (trabalho) =>
-                    trabalho.responsavelId == eu &&
-                    trabalho.estado != 'concluido',
-              )
+              .where((trabalho) => trabalho.eDe(eu))
               .toList();
           return _lista(meus);
         } else if (snapshot.hasError) {

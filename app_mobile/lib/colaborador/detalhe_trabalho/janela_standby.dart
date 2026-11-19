@@ -38,7 +38,7 @@ class _JanelaStandbyState extends State<JanelaStandby> {
           children: [
             EmConstrucao(
               titulo: 'Colocar em standby',
-              descricao: widget.trabalho.referencia,
+              descricao: 'Trabalho n.º ${widget.trabalho.id}',
             ),
             TextButton(onPressed: _fechar, child: const Text('Fechar')),
           ],
