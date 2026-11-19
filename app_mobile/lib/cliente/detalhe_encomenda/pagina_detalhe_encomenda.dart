@@ -54,6 +54,18 @@ class _PaginaDetalheEncomendaState extends State<PaginaDetalheEncomenda> {
                 encomenda.resumoTrabalhos,
                 style: const TextStyle(fontSize: 16),
               ),
+              // Descrição curta: as observações da encomenda.
+              if (encomenda.observacoes != null &&
+                  encomenda.observacoes!.isNotEmpty)
+                Text(
+                  encomenda.observacoes!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: CoresApp.textoSuave,
+                  ),
+                ),
             ],
           ),
           actions: [

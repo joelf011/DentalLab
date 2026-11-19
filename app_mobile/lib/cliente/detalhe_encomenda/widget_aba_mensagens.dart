@@ -134,7 +134,7 @@ class _CartaoComentario extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  dataHora(comentario.dataCriacao),
+                  dataCurtaHora(comentario.dataCriacao),
                   style: const TextStyle(
                     fontSize: 11,
                     color: CoresApp.textoSuave,
