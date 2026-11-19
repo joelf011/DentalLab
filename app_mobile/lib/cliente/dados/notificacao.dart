@@ -1,18 +1,19 @@
-// Uma notificação do separador Alertas.
+// Uma notificação do sininho (tabela notificacao).
+// As mensagens são criadas pelos triggers da base de dados.
 class Notificacao {
   const Notificacao({
     required this.id,
-    required this.encomendaId,
-    required this.tipo,
     required this.mensagem,
-    required this.data,
-    this.lida = false,
+    required this.dataCriacao,
+    this.ordemTrabalhoId,
+    this.dataLeitura,
   });
 
-  final String id;
-  final String encomendaId; // encomenda que se abre ao tocar
-  final String tipo; // aceite | progresso | nota | concluido | info
+  final int id;
   final String mensagem;
-  final DateTime data;
-  final bool lida;
+  final DateTime dataCriacao;
+  final int? ordemTrabalhoId; // encomenda que se abre ao tocar
+  final DateTime? dataLeitura;
+
+  bool get lida => dataLeitura != null;
 }

@@ -5,7 +5,7 @@ import 'package:app_mobile/comum/formatar_datas.dart';
 import 'package:app_mobile/comum/tema/cores_app.dart';
 import 'package:app_mobile/comum/widgets/widget_etiqueta_estado.dart';
 
-// Cartão de uma encomenda (Início e Pedidos): identificação, tipo,
+// Cartão de uma encomenda (Início e Pedidos): paciente, trabalhos,
 // estado e data de entrega. Ao tocar chama aoAbrir(encomenda).
 class CartaoEncomenda extends StatelessWidget {
   const CartaoEncomenda({
@@ -23,7 +23,7 @@ class CartaoEncomenda extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prazo = encomenda.prazo;
+    final prazo = encomenda.prazoEntrega;
     return Card(
       color: CoresApp.superficie,
       margin: const EdgeInsets.only(bottom: 8),
@@ -38,7 +38,7 @@ class CartaoEncomenda extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      encomenda.paciente,
+                      encomenda.paciente ?? 'Encomenda n.º ${encomenda.id}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -54,7 +54,7 @@ class CartaoEncomenda extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                encomenda.tipo,
+                '${encomenda.resumoTrabalhos} · n.º ${encomenda.id}',
                 style: const TextStyle(
                   fontSize: 14,
                   color: CoresApp.textoSuave,

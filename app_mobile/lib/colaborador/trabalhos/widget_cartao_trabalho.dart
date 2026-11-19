@@ -22,11 +22,12 @@ class CartaoTrabalho extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final prazo = trabalho.prazoEntrega;
     return Card(
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
         onTap: _abrir,
-        title: Text(trabalho.descricao),
+        title: Text(trabalho.tipoTrabalho),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Wrap(
@@ -34,15 +35,16 @@ class CartaoTrabalho extends StatelessWidget {
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text('${trabalho.referencia} · ${trabalho.clinica}'),
-              EtiquetaEstado(estado: trabalho.estado),
+              Text(
+                'Ordem n.º ${trabalho.ordemTrabalhoId} · ${trabalho.cliente}',
+              ),
+              EtiquetaEstado(estado: trabalho.estadoOrdem),
             ],
           ),
         ),
-        trailing: EtiquetaPrazo(
-          prazo: trabalho.prazo,
-          concluido: trabalho.estado == 'concluido',
-        ),
+        trailing: prazo == null
+            ? null
+            : EtiquetaPrazo(prazo: prazo, estado: trabalho.estadoOrdem),
       ),
     );
   }

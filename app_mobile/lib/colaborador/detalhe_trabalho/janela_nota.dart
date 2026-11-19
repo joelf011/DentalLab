@@ -37,7 +37,7 @@ class _JanelaNotaState extends State<JanelaNota> {
           children: [
             EmConstrucao(
               titulo: 'Adicionar nota',
-              descricao: widget.trabalho.referencia,
+              descricao: 'Trabalho n.º ${widget.trabalho.id}',
             ),
             TextButton(onPressed: _fechar, child: const Text('Fechar')),
           ],
