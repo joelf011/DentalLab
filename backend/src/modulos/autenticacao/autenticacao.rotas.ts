@@ -1,7 +1,8 @@
 import bcrypt from 'bcryptjs';
 import type { FastifyInstance } from 'fastify';
-import { exigirLogin, type UtilizadorLogin } from '../../comum/acesso.ts';
+import { enviarSemSessao, exigirLogin, type UtilizadorLogin } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
+import { enviarErro } from '../../comum/erros.ts';
 
 // Rotas do login e do registo de clínicas.
 // Os dados vêm da função fn_utilizador_login (a única que lê o password_hash) e da vista vw_utilizador.
@@ -36,7 +37,7 @@ export async function rotasAutenticacao(app: FastifyInstance) {
     const dados = request.body as DadosRegisto | undefined;
     // A BD só recebe o hash, por isso a regra da palavra-passe fica aqui.
     if (!dados?.password || dados.password.length < 8) {
-      return reply.code(400).send({ erro: 'A palavra-passe tem de ter pelo menos 8 caracteres.' });
+      return enviarErro(reply, 400, 'A palavra-passe tem de ter pelo menos 8 caracteres.');
     }
     // As outras validações (nome, NIF, email repetido...) são da função na BD.
     const resultado = await escreverComo(
@@ -59,7 +60,7 @@ export async function rotasAutenticacao(app: FastifyInstance) {
   app.post('/auth/login', async (request, reply) => {
     const dados = request.body as DadosLogin | undefined;
     if (!dados?.email || !dados?.password) {
-      return reply.code(400).send({ erro: 'Indique o email e a palavra-passe.' });
+      return enviarErro(reply, 400, 'Indique o email e a palavra-passe.');
     }
 
     const resultado = await bd.query('SELECT * FROM fn_utilizador_login($1)', [dados.email]);
@@ -68,13 +69,13 @@ export async function rotasAutenticacao(app: FastifyInstance) {
     // Email que não existe ou palavra-passe errada: a mesma mensagem nos dois casos,
     // para não revelar que emails têm conta.
     if (!utilizador || !(await bcrypt.compare(dados.password, utilizador.password_hash))) {
-      return reply.code(401).send({ erro: 'Email ou palavra-passe incorretos.' });
+      return enviarErro(reply, 401, 'Email ou palavra-passe incorretos.');
     }
     if (!utilizador.ativo) {
-      return reply.code(403).send({ erro: 'Esta conta está desativada. Contacte o laboratório.' });
+      return enviarErro(reply, 403, 'Esta conta está desativada. Contacte o laboratório.');
     }
     if (!utilizador.aprovado) {
-      return reply.code(403).send({ erro: 'A sua conta ainda não foi aprovada pelo laboratório.' });
+      return enviarErro(reply, 403, 'A sua conta ainda não foi aprovada pelo laboratório.');
     }
 
     // O que fica dentro do token (e depois em request.user, nas rotas protegidas)
@@ -102,7 +103,7 @@ export async function rotasAutenticacao(app: FastifyInstance) {
     const resultado = await bd.query('SELECT * FROM vw_utilizador WHERE id = $1 AND ativo', [request.user.id]);
     const utilizador = resultado.rows[0];
     if (!utilizador) {
-      return reply.code(401).send({ erro: 'Esta conta já não está ativa.' });
+      return enviarSemSessao(reply, 'Esta conta já não está ativa.', true);
     }
     return {
       id: utilizador.id,
@@ -119,26 +120,26 @@ export async function rotasAutenticacao(app: FastifyInstance) {
   app.put('/auth/password', { preHandler: exigirLogin }, async (request, reply) => {
     const dados = request.body as DadosPassword | undefined;
     if (!dados?.password_atual || !dados?.password_nova) {
-      return reply.code(400).send({ erro: 'Indique a palavra-passe atual e a nova.' });
+      return enviarErro(reply, 400, 'Indique a palavra-passe atual e a nova.');
     }
     // Estas regras ficam aqui porque a BD nunca recebe a palavra-passe, só o hash.
     if (dados.password_nova.length < 8) {
-      return reply.code(400).send({ erro: 'A nova palavra-passe tem de ter pelo menos 8 caracteres.' });
+      return enviarErro(reply, 400, 'A nova palavra-passe tem de ter pelo menos 8 caracteres.');
     }
     if (dados.password_nova === dados.password_atual) {
-      return reply.code(400).send({ erro: 'A nova palavra-passe tem de ser diferente da atual.' });
+      return enviarErro(reply, 400, 'A nova palavra-passe tem de ser diferente da atual.');
     }
 
     // Vai buscar o hash atual: primeiro o email (pelo id do token), depois as credenciais.
     const conta = await bd.query('SELECT email FROM vw_utilizador WHERE id = $1 AND ativo', [request.user.id]);
     if (conta.rows.length === 0) {
-      return reply.code(401).send({ erro: 'Esta conta já não está ativa.' });
+      return enviarSemSessao(reply, 'Esta conta já não está ativa.', true);
     }
     const credenciais = await bd.query('SELECT password_hash FROM fn_utilizador_login($1)', [conta.rows[0].email]);
 
     // 400 e não 401: o frontend trata o 401 como "sessão terminada", e aqui a sessão está boa.
     if (!(await bcrypt.compare(dados.password_atual, credenciais.rows[0].password_hash))) {
-      return reply.code(400).send({ erro: 'A palavra-passe atual está errada.' });
+      return enviarErro(reply, 400, 'A palavra-passe atual está errada.');
     }
 
     // O 12 é o "custo" do bcrypt: quanto maior, mais lento é adivinhar a palavra-passe. É o mesmo do admin inicial.

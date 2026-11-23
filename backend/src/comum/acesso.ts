@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { bd } from './bd.ts';
+import { enviarErro } from './erros.ts';
 
 // Controlo de acesso às rotas: quem tem login (exigirLogin) e que cargos podem usar cada rota (exigirCargo).
 //
@@ -28,6 +29,15 @@ declare module '@fastify/jwt' {
   }
 }
 
+// Resposta 401: o pedido não tem sessão, ou a sessão já não serve.
+// O cabeçalho WWW-Authenticate diz ao cliente como se autenticar (regra de AI3):
+//   - Bearer                        → não veio nenhum token;
+//   - Bearer error="invalid_token"  → veio um token, mas é falso, expirou, ou a conta foi desativada.
+export function enviarSemSessao(reply: FastifyReply, mensagem: string, tokenInvalido: boolean) {
+  reply.header('WWW-Authenticate', tokenInvalido ? 'Bearer error="invalid_token"' : 'Bearer');
+  return enviarErro(reply, 401, mensagem);
+}
+
 // Verifica a sessão de um pedido. Usada pelo exigirLogin e pelo exigirCargo.
 //  1. Verifica o token do cabeçalho "Authorization: Bearer <token>" (se falta, é falso ou expirou: 401).
 //  2. Confirma na BD que a conta continua ativa (se o Administrador a desativou: 401).
@@ -36,8 +46,14 @@ declare module '@fastify/jwt' {
 async function verificarSessao(request: FastifyRequest, reply: FastifyReply): Promise<boolean> {
   try {
     await request.jwtVerify();
-  } catch {
-    reply.code(401).send({ erro: 'Sessão inválida ou expirada. Inicie sessão outra vez.' });
+  } catch (erro) {
+    // O @fastify/jwt diz porque falhou: ou não veio token, ou o token não serve (falso, expirado...).
+    const semToken = (erro as { code?: string }).code === 'FST_JWT_NO_AUTHORIZATION_IN_HEADER';
+    if (semToken) {
+      enviarSemSessao(reply, 'Tem de iniciar sessão.', false);
+    } else {
+      enviarSemSessao(reply, 'Sessão inválida ou expirada. Inicie sessão outra vez.', true);
+    }
     return false;
   }
 
@@ -47,7 +63,7 @@ async function verificarSessao(request: FastifyRequest, reply: FastifyReply): Pr
   );
   const utilizador = resultado.rows[0];
   if (!utilizador) {
-    reply.code(401).send({ erro: 'Esta conta já não está ativa.' });
+    enviarSemSessao(reply, 'Esta conta já não está ativa.', true);
     return false;
   }
 
@@ -75,7 +91,7 @@ export function exigirCargo(...cargos: Cargo[]) {
       return reply; // já respondeu 401: a rota não chega a correr
     }
     if (!cargos.includes(request.user.cargo)) {
-      return reply.code(403).send({ erro: 'Não tem permissão para fazer isto.' });
+      return enviarErro(reply, 403, 'Não tem permissão para fazer isto.');
     }
   };
 }
