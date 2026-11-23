@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { exigirCargo, exigirLogin } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
+import { enviarErro } from '../../comum/erros.ts';
 
 // Rotas dos cargos (Administrador, Colaborador, Cliente).
 // Ler: vista vw_cargo. Criar, alterar e apagar: função fn_cargo_crud. As duas foram criadas no pgAdmin.
@@ -26,7 +27,7 @@ export async function rotasCargos(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const resultado = await bd.query('SELECT * FROM vw_cargo WHERE id = $1', [id]);
     if (resultado.rows.length === 0) {
-      return reply.code(404).send({ erro: 'O cargo não existe.' });
+      return enviarErro(reply, 404, 'O cargo não existe.');
     }
     return resultado.rows[0];
   });

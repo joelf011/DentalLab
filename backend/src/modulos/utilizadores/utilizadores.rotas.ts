@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import type { FastifyInstance } from 'fastify';
 import { exigirCargo } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
+import { enviarErro } from '../../comum/erros.ts';
 
 // Rotas das contas de acesso (utilizadores). Todas são do Administrador.
 // Ler: vista vw_utilizador (não mostra o password_hash).
@@ -46,7 +47,7 @@ export async function rotasUtilizadores(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const resultado = await bd.query('SELECT * FROM vw_utilizador WHERE id = $1', [id]);
     if (resultado.rows.length === 0) {
-      return reply.code(404).send({ erro: 'O utilizador não existe.' });
+      return enviarErro(reply, 404, 'O utilizador não existe.');
     }
     return resultado.rows[0];
   });
@@ -55,7 +56,7 @@ export async function rotasUtilizadores(app: FastifyInstance) {
   app.post('/utilizadores', soAdmin, async (request, reply) => {
     const dados = request.body as DadosUtilizador | undefined;
     if (!dados?.password || !passwordValida(dados.password)) {
-      return reply.code(400).send({ erro: 'A palavra-passe tem de ter pelo menos 8 caracteres.' });
+      return enviarErro(reply, 400, 'A palavra-passe tem de ter pelo menos 8 caracteres.');
     }
     const resultado = await escreverComo(
       request.user.id,
@@ -81,13 +82,13 @@ export async function rotasUtilizadores(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     const dados = request.body as DadosUtilizador | undefined;
     if (Number(id) === request.user.id && dados?.ativo === false) {
-      return reply.code(400).send({ erro: 'Não pode desativar a sua própria conta.' });
+      return enviarErro(reply, 400, 'Não pode desativar a sua própria conta.');
     }
 
     let passwordHash: string | null = null;
     if (dados?.password !== undefined) {
       if (!passwordValida(dados.password)) {
-        return reply.code(400).send({ erro: 'A palavra-passe tem de ter pelo menos 8 caracteres.' });
+        return enviarErro(reply, 400, 'A palavra-passe tem de ter pelo menos 8 caracteres.');
       }
       passwordHash = await bcrypt.hash(dados.password, 12);
     }
@@ -124,7 +125,7 @@ export async function rotasUtilizadores(app: FastifyInstance) {
   app.delete('/utilizadores/:id', soAdmin, async (request, reply) => {
     const { id } = request.params as { id: string };
     if (Number(id) === request.user.id) {
-      return reply.code(400).send({ erro: 'Não pode desativar a sua própria conta.' });
+      return enviarErro(reply, 400, 'Não pode desativar a sua própria conta.');
     }
     const resultado = await escreverComo(request.user.id, "SELECT fn_utilizador_crud('DELETE', $1) AS id", [id]);
     return resultado.rows[0];

@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { bd } from '../../comum/bd.ts';
+import { enviarErro } from '../../comum/erros.ts';
 
 // Estado da API.
 export async function rotasSaude(app: FastifyInstance) {
@@ -10,7 +11,7 @@ export async function rotasSaude(app: FastifyInstance) {
       return { api: 'ok', bd: 'ok' };
     } catch (erro) {
       request.log.error(erro);
-      return reply.code(503).send({ api: 'ok', bd: 'sem ligação' });
+      return enviarErro(reply, 503, 'A API está a funcionar, mas não consegue ligar-se à base de dados.');
     }
   });
 }

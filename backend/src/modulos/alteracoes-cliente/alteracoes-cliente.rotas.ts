@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { exigirCargo } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
+import { enviarErro } from '../../comum/erros.ts';
 
 // Rotas dos pedidos de alteração dos dados de uma clínica.
 // A clínica pede; o Administrador aprova (os dados passam para a clínica) ou rejeita (com motivo).
@@ -57,7 +58,7 @@ export async function rotasAlteracoesCliente(app: FastifyInstance) {
     const pedido = resultado.rows[0];
     // Pedido que não existe, ou de outra clínica: 404 nos dois casos.
     if (!pedido || (request.user.cargo === 'Cliente' && pedido.cliente_id !== request.user.cliente_id)) {
-      return reply.code(404).send({ erro: 'O pedido de alteração não existe.' });
+      return enviarErro(reply, 404, 'O pedido de alteração não existe.');
     }
     return pedido;
   });

@@ -1,28 +1,26 @@
 import type { FastifyError, FastifyInstance } from 'fastify';
-import { mensagemErroDados } from '../comum/erros.ts';
+import { enviarErro, traduzirErro } from '../comum/erros.ts';
 
-// Respostas de erro de toda a API.
-// Todas têm o mesmo formato: { "erro": "mensagem" }
+// Respostas de erro de toda a API, no formato de comum/erros.ts: { codigo, mensagem, detalhes }
 export function registarTratamentoErros(app: FastifyInstance) {
-  // Quando uma rota dá erro, vem parar aqui.
+  // Quando uma rota dá erro (e não respondeu ela própria), vem parar aqui.
   app.setErrorHandler((erro: FastifyError, request, reply) => {
-    // Erro nos dados enviados: RAISE EXCEPTION das funções, regras das tabelas, formato errado...
-    // A mensagem para o utilizador vem de comum/erros.ts.
-    const mensagem = mensagemErroDados(erro);
-    if (mensagem !== null) {
-      return reply.code(400).send({ erro: mensagem });
+    // Erros conhecidos: RAISE EXCEPTION das funções, regras das tabelas, formato errado, JSON mal escrito...
+    const conhecido = traduzirErro(erro);
+    if (conhecido !== null) {
+      return enviarErro(reply, conhecido.codigo, conhecido.mensagem);
     }
-    // Outros erros do próprio Fastify com código conhecido (ex.: pedido demasiado grande).
+    // Outros erros do Fastify com código conhecido (4xx): fica a mensagem do próprio Fastify.
     if (erro.statusCode !== undefined && erro.statusCode < 500) {
-      return reply.code(erro.statusCode).send({ erro: erro.message });
+      return enviarErro(reply, erro.statusCode, erro.message);
     }
     // Qualquer outro erro fica registado no terminal; quem fez o pedido recebe uma mensagem genérica.
     request.log.error(erro);
-    return reply.code(500).send({ erro: 'Ocorreu um erro inesperado.' });
+    return enviarErro(reply, 500, 'Ocorreu um erro inesperado.');
   });
 
   // Pedido para uma rota que não existe.
   app.setNotFoundHandler((_request, reply) => {
-    return reply.code(404).send({ erro: 'Esta rota não existe.' });
+    return enviarErro(reply, 404, 'Esta rota não existe.');
   });
 }

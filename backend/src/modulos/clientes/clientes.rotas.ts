@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { exigirCargo } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
+import { enviarErro } from '../../comum/erros.ts';
 
 // Rotas dos clientes (clínicas).
 // Ler: vista vw_cliente. Criar, alterar e desativar: função fn_cliente_crud.
@@ -29,11 +30,11 @@ export async function rotasClientes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
     // Uma clínica a pedir os dados de outra recebe 404, como se não existisse.
     if (request.user.cargo === 'Cliente' && Number(id) !== request.user.cliente_id) {
-      return reply.code(404).send({ erro: 'O cliente não existe.' });
+      return enviarErro(reply, 404, 'O cliente não existe.');
     }
     const resultado = await bd.query('SELECT * FROM vw_cliente WHERE id = $1', [id]);
     if (resultado.rows.length === 0) {
-      return reply.code(404).send({ erro: 'O cliente não existe.' });
+      return enviarErro(reply, 404, 'O cliente não existe.');
     }
     return resultado.rows[0];
   });

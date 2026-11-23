@@ -1,5 +1,24 @@
-// Mensagens de erro para o utilizador, em português.
-// Usado pelo tratamento de erros (plugins/tratamento-erros.ts).
+import type { FastifyReply } from 'fastify';
+
+// Erros da API: o formato das respostas de erro e as mensagens em português.
+
+// Todas as respostas de erro da API têm este formato (regra de AI3):
+//   { "codigo": 400, "mensagem": "Tem de indicar o nome e o NIF do cliente" }
+//   { "codigo": 400, "mensagem": "...", "detalhes": [{ "campo": "nif", "problema": "..." }] }
+// - codigo: o mesmo número do código HTTP da resposta;
+// - mensagem: o texto para mostrar ao utilizador;
+// - detalhes: só aparece quando o problema é de campos concretos do pedido.
+export interface DetalheErro {
+  campo: string;
+  problema: string;
+}
+
+// Envia uma resposta de erro. Nas rotas usa-se assim:
+//   return enviarErro(reply, 404, 'O cliente não existe.');
+export function enviarErro(reply: FastifyReply, codigo: number, mensagem: string, detalhes: DetalheErro[] = []) {
+  const corpo = detalhes.length > 0 ? { codigo, mensagem, detalhes } : { codigo, mensagem };
+  return reply.code(codigo).send(corpo);
+}
 
 // Mensagens para as regras das tabelas (CHECK e UNIQUE) que o utilizador pode violar.
 // A chave é o nome da regra, tal como está em ModelosBaseDeDados/sql/01_tabelas.sql.
@@ -44,48 +63,54 @@ interface Erro {
   constraint?: string; // nome da regra violada (só nos erros do PostgreSQL)
 }
 
-// Devolve a mensagem a mostrar ao utilizador quando o erro é dos dados enviados (resposta 400),
-// ou null quando não é (aí é um erro inesperado, e a resposta é 500).
-export function mensagemErroDados(erro: Erro): string | null {
+// Para os erros conhecidos (da BD ou do Fastify), devolve o código HTTP e a mensagem para o utilizador.
+// Devolve null quando o erro não é conhecido (aí é um erro inesperado: 500).
+export function traduzirErro(erro: Erro): { codigo: number; mensagem: string } | null {
   const regra = erro.constraint ?? '';
+  // Os erros nos dados enviados são todos 400 (pedido inválido).
+  const dadosInvalidos = (mensagem: string) => ({ codigo: 400, mensagem });
 
   switch (erro.code) {
     // RAISE EXCEPTION nas funções da BD: a mensagem já vem em português
     case 'P0001':
-      return erro.message;
+      return dadosInvalidos(erro.message);
 
     // UNIQUE: valor repetido
     case '23505':
-      return mensagensRegras[regra] ?? 'Já existe um registo com estes dados.';
+      return dadosInvalidos(mensagensRegras[regra] ?? 'Já existe um registo com estes dados.');
 
     // CHECK: valor que não cumpre uma regra da tabela
     case '23514':
-      return mensagensRegras[regra] ?? 'Os dados não cumprem as regras definidas.';
+      return dadosInvalidos(mensagensRegras[regra] ?? 'Os dados não cumprem as regras definidas.');
 
     // FOREIGN KEY: refere um registo que não existe (ou apaga um que ainda está a ser usado)
     case '23503':
-      return 'A operação refere um registo que não existe ou que ainda está a ser usado.';
+      return dadosInvalidos('A operação refere um registo que não existe ou que ainda está a ser usado.');
 
     // NOT NULL: falta um dado obrigatório
     case '23502':
-      return 'Falta um dado obrigatório.';
+      return dadosInvalidos('Falta um dado obrigatório.');
 
     // texto maior do que a coluna aceita
     case '22001':
-      return 'Um dos textos é demasiado longo.';
+      return dadosInvalidos('Um dos textos é demasiado longo.');
 
     // formato errado: letras num número, número grande demais, data impossível...
     case '22P02':
     case '22003':
     case '22007':
     case '22008':
-      return 'Há um valor com formato inválido.';
+      return dadosInvalidos('Há um valor com formato inválido.');
 
     // erros do Fastify ao ler o corpo do pedido
     case 'FST_ERR_CTP_INVALID_JSON_BODY':
-      return 'O corpo do pedido não é JSON válido.';
+      return dadosInvalidos('O corpo do pedido não é JSON válido.');
     case 'FST_ERR_CTP_EMPTY_JSON_BODY':
-      return 'O pedido diz que envia JSON (Content-Type: application/json) mas vem sem corpo.';
+      return dadosInvalidos('O pedido diz que envia JSON (Content-Type: application/json) mas vem sem corpo.');
+    case 'FST_ERR_CTP_BODY_TOO_LARGE':
+      return { codigo: 413, mensagem: 'O pedido é demasiado grande.' };
+    case 'FST_ERR_CTP_INVALID_MEDIA_TYPE':
+      return { codigo: 415, mensagem: 'Os dados têm de ser enviados em JSON (Content-Type: application/json).' };
 
     default:
       return null;
