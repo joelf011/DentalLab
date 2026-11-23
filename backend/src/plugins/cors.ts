@@ -9,5 +9,8 @@ export function registarCors(app: FastifyInstance) {
   app.register(fastifyCors, {
     origin: configuracao.corsOrigens,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    // Cabeçalhos da resposta que o JavaScript do site pode ler (o navegador esconde os outros):
+    // o endereço do registo criado e o motivo de um 401.
+    exposedHeaders: ['Location', 'WWW-Authenticate'],
   });
 }
