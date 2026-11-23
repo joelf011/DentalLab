@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { exigirCargo, exigirLogin } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
+import { enviarCriado } from '../../comum/respostas.ts';
 
 // Rotas dos cargos (Administrador, Colaborador, Cliente).
 // Ler: vista vw_cargo. Criar, alterar e apagar: função fn_cargo_crud. As duas foram criadas no pgAdmin.
@@ -36,7 +37,7 @@ export async function rotasCargos(app: FastifyInstance) {
   app.post('/cargos', { preHandler: exigirCargo('Administrador') }, async (request, reply) => {
     const dados = request.body as DadosCargo | undefined;
     const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('CREATE', NULL, $1) AS id", [dados?.designacao]);
-    return reply.code(201).send(resultado.rows[0]);
+    return enviarCriado(reply, 'cargos', resultado.rows[0].id);
   });
 
   // PUT /api/v1/cargos/1 com { "designacao": "Técnico" }: altera um cargo

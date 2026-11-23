@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { exigirCargo } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
+import { enviarCriado } from '../../comum/respostas.ts';
 
 // Rotas dos clientes (clínicas).
 // Ler: vista vw_cliente. Criar, alterar e desativar: função fn_cliente_crud.
@@ -55,7 +56,7 @@ export async function rotasClientes(app: FastifyInstance) {
        ) AS id`,
       [dados?.nome, dados?.nif, dados?.morada_faturacao, dados?.email, dados?.telefone],
     );
-    return reply.code(201).send(resultado.rows[0]);
+    return enviarCriado(reply, 'clientes', resultado.rows[0].id);
   });
 
   // PUT /api/v1/clientes/1 com os campos a mudar: altera uma clínica

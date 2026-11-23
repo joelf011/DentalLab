@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { exigirCargo } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
+import { enviarCriado } from '../../comum/respostas.ts';
 
 // Rotas das contas de acesso (utilizadores). Todas são do Administrador.
 // Ler: vista vw_utilizador (não mostra o password_hash).
@@ -73,7 +74,7 @@ export async function rotasUtilizadores(app: FastifyInstance) {
        ) AS id`,
       [dados.cargo_id, dados.cliente_id, dados.nome, dados.email, await bcrypt.hash(dados.password, 12), request.user.id],
     );
-    return reply.code(201).send(resultado.rows[0]);
+    return enviarCriado(reply, 'utilizadores', resultado.rows[0].id);
   });
 
   // PUT /api/v1/utilizadores/1: altera uma conta (só os campos que vierem)

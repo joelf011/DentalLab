@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { exigirCargo } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
+import { enviarCriado } from '../../comum/respostas.ts';
 
 // Rotas dos pedidos de alteração dos dados de uma clínica.
 // A clínica pede; o Administrador aprova (os dados passam para a clínica) ou rejeita (com motivo).
@@ -31,7 +32,7 @@ export async function rotasAlteracoesCliente(app: FastifyInstance) {
        ) AS id`,
       [request.user.cliente_id, request.user.id, dados?.nome, dados?.morada_faturacao, dados?.email, dados?.telefone],
     );
-    return reply.code(201).send(resultado.rows[0]);
+    return enviarCriado(reply, 'alteracoes-cliente', resultado.rows[0].id);
   });
 
   // GET /api/v1/alteracoes-cliente: lista os pedidos (os mais recentes primeiro)
