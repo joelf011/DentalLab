@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import type { FastifyInstance } from 'fastify';
+import { randomUUID } from 'node:crypto';
 import { enviarSemSessao, exigirLogin, type UtilizadorLogin } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
@@ -30,6 +31,10 @@ interface DadosRegisto {
   email?: string; // é o email de contacto da clínica e o email de login
   password?: string;
 }
+
+// Hash de uma palavra-passe aleatória (ninguém a conhece), com o mesmo custo dos verdadeiros.
+// Calcula-se uma vez, quando a API arranca. O login usa-o quando o email não existe (ver o login).
+const HASH_FICTICIO = bcrypt.hashSync(randomUUID(), configuracao.bcrypt.custo);
 
 export async function rotasAutenticacao(app: FastifyInstance) {
   // POST /api/v1/auth/registo: uma clínica regista-se sozinha (rota pública, sem login)
@@ -75,9 +80,13 @@ export async function rotasAutenticacao(app: FastifyInstance) {
     const resultado = await bd.query('SELECT * FROM fn_utilizador_login($1)', [dados.email]);
     const utilizador = resultado.rows[0];
 
-    // Email que não existe ou palavra-passe errada: a mesma mensagem nos dois casos,
-    // para não revelar que emails têm conta.
-    if (!utilizador || !(await bcrypt.compare(dados.password, utilizador.password_hash))) {
+    // Email que não existe ou palavra-passe errada: a mesma resposta nos dois casos, para não revelar que emails têm conta.
+    // A resposta também tem de demorar o mesmo: o bcrypt é lento de propósito (cerca de 0,2 s) e, se só corresse
+    // quando o email existe, bastava medir o tempo para o descobrir. Por isso, sem conta, compara-se com o HASH_FICTICIO
+    // (o resultado não conta: sem conta, a resposta é sempre 401).
+    const hash = utilizador ? utilizador.password_hash : HASH_FICTICIO;
+    const passwordCerta = await bcrypt.compare(dados.password, hash);
+    if (!utilizador || !passwordCerta) {
       return enviarErro(reply, 401, 'Email ou palavra-passe incorretos.');
     }
     if (!utilizador.ativo) {
