@@ -1,10 +1,12 @@
 import Fastify from 'fastify';
+import { PREFIXO_API } from './comum/respostas.ts';
 import { rotasAlteracoesCliente } from './modulos/alteracoes-cliente/alteracoes-cliente.rotas.ts';
 import { rotasAutenticacao } from './modulos/autenticacao/autenticacao.rotas.ts';
 import { rotasCargos } from './modulos/cargos/cargos.rotas.ts';
 import { rotasClientes } from './modulos/clientes/clientes.rotas.ts';
 import { rotasSaude } from './modulos/saude/saude.rotas.ts';
 import { rotasUtilizadores } from './modulos/utilizadores/utilizadores.rotas.ts';
+import { registarCache } from './plugins/cache.ts';
 import { registarCors } from './plugins/cors.ts';
 import { registarJwt } from './plugins/jwt.ts';
 import { registarTratamentoErros } from './plugins/tratamento-erros.ts';
@@ -23,13 +25,14 @@ export function construirApp(mostrarPedidos = true) {
 
   // Peças ligadas uma vez, para toda a API (pasta plugins/)
   registarTratamentoErros(app);
+  registarCache(app);
   registarCors(app);
   registarJwt(app);
 
   // Módulos: cada área tem a sua pasta em modulos/, com as suas rotas.
-  // Todas ficam debaixo de /api/v1: o '/cargos' de cargos.rotas.ts passa a ser /api/v1/cargos.
+  // Todas ficam debaixo de /api/v1 (PREFIXO_API): o '/cargos' de cargos.rotas.ts passa a ser /api/v1/cargos.
   // Se um dia houver uma versão incompatível da API, regista-se a nova em /api/v2 sem mexer nesta.
-  const versao1 = { prefix: '/api/v1' };
+  const versao1 = { prefix: PREFIXO_API };
   app.register(rotasSaude, versao1);
   app.register(rotasAutenticacao, versao1);
   app.register(rotasCargos, versao1);

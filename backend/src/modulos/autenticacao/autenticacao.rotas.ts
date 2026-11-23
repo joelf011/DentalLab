@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { enviarSemSessao, exigirLogin, type UtilizadorLogin } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
+import { enviarCriado } from '../../comum/respostas.ts';
 
 // Rotas do login e do registo de clínicas.
 // Os dados vêm da função fn_utilizador_login (a única que lê o password_hash) e da vista vw_utilizador.
@@ -52,7 +53,7 @@ export async function rotasAutenticacao(app: FastifyInstance) {
        ) AS id`,
       [dados.nome, dados.nif, dados.morada_faturacao, dados.telefone, dados.email, await bcrypt.hash(dados.password, 12)],
     );
-    return reply.code(201).send(resultado.rows[0]);
+    return enviarCriado(reply, 'clientes', resultado.rows[0].id);
   });
 
   // POST /api/v1/auth/login com { "email": "...", "password": "..." }
@@ -100,6 +101,8 @@ export async function rotasAutenticacao(app: FastifyInstance) {
   // GET /api/v1/auth/eu: quem está ligado (com os dados atuais da BD)
   // O frontend chama esta rota ao abrir, para saber se o token guardado ainda serve.
   app.get('/auth/eu', { preHandler: exigirLogin }, async (request, reply) => {
+    // A sessão nunca se guarda em cache: tem de dizer sempre quem está ligado neste momento.
+    reply.header('Cache-Control', 'no-store');
     const resultado = await bd.query('SELECT * FROM vw_utilizador WHERE id = $1 AND ativo', [request.user.id]);
     const utilizador = resultado.rows[0];
     if (!utilizador) {

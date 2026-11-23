@@ -6,6 +6,8 @@ import { enviarErro } from '../../comum/erros.ts';
 export async function rotasSaude(app: FastifyInstance) {
   // GET /api/v1/saude: confirma que a API está a funcionar e que consegue falar com a BD.
   app.get('/saude', async (request, reply) => {
+    // O estado tem de ser sempre o atual, por isso nunca se guarda em cache.
+    reply.header('Cache-Control', 'no-store');
     try {
       await bd.query('SELECT 1');
       return { api: 'ok', bd: 'ok' };
