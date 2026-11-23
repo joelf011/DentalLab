@@ -47,8 +47,10 @@ src/
   comum/                peças usadas por todos os módulos
     bd.ts               ligação à base de dados: ler (bd.query) e escrever (escreverComo)
     acesso.ts           controlo de acesso às rotas (exigirLogin, exigirCargo)
-    erros.ts            mensagens em português para os erros dos dados (regras da BD, formato errado...)
+    erros.ts            formato das respostas de erro e mensagens em português
+    respostas.ts        respostas de sucesso com regras (201 com Location) e o prefixo /api/v1
   plugins/              peças do Fastify ligadas uma vez, para toda a API
+    cache.ts            Cache-Control em todas as respostas
     cors.ts             sites React autorizados
     jwt.ts              tokens de login
     tratamento-erros.ts respostas de erro e rota inexistente
@@ -176,8 +178,17 @@ final cargos = await http.get(
   | --- | --- | --- |
   | Lista | 200 | `[ {...}, {...} ]` |
   | Um registo | 200 | `{...}` |
-  | Criado | 201 | `{ "id": 5 }` |
+  | Criado | 201 | `{ "id": 5 }`, mais o cabeçalho `Location` com o endereço do registo novo (ex.: `/api/v1/cargos/5`) |
   | Alterado, apagado ou ação | 200 | `{ "id": 5 }` |
+- **Cache (`Cache-Control`):** todas as respostas dizem se o navegador as pode guardar.
+
+  | Resposta | `Cache-Control` | O que quer dizer |
+  | --- | --- | --- |
+  | Leituras (`GET`) de quem tem login | `private, no-cache` | Só o próprio navegador a pode guardar, e tem de confirmar com a API antes de a reutilizar |
+  | Escritas, login, sessão (`/auth/eu`), saúde e todos os erros | `no-store` | Nunca se guarda |
+  | Dados públicos, iguais para todos | `public, max-age=...` | Pode guardar-se e reutilizar-se durante esse tempo (só nas rotas que o indicarem) |
+
+  É com isto que o service worker do site decide o que pode guardar.
 
 ### 4. Erros
 
