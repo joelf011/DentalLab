@@ -18,14 +18,14 @@ interface DadosCliente {
 }
 
 export async function rotasClientes(app: FastifyInstance) {
-  // GET /api/clientes: lista todas as clínicas
-  app.get('/api/clientes', { preHandler: exigirCargo('Administrador') }, async () => {
+  // GET /api/v1/clientes: lista todas as clínicas
+  app.get('/clientes', { preHandler: exigirCargo('Administrador') }, async () => {
     const resultado = await bd.query('SELECT * FROM vw_cliente ORDER BY nome');
     return resultado.rows;
   });
 
-  // GET /api/clientes/1: mostra uma clínica (uma clínica só pode ver a sua)
-  app.get('/api/clientes/:id', { preHandler: exigirCargo('Administrador', 'Cliente') }, async (request, reply) => {
+  // GET /api/v1/clientes/1: mostra uma clínica (uma clínica só pode ver a sua)
+  app.get('/clientes/:id', { preHandler: exigirCargo('Administrador', 'Cliente') }, async (request, reply) => {
     const { id } = request.params as { id: string };
     // Uma clínica a pedir os dados de outra recebe 404, como se não existisse.
     if (request.user.cargo === 'Cliente' && Number(id) !== request.user.cliente_id) {
@@ -38,8 +38,8 @@ export async function rotasClientes(app: FastifyInstance) {
     return resultado.rows[0];
   });
 
-  // POST /api/clientes com { "nome": "...", "nif": "...", ... }: cria uma clínica (sem conta de acesso)
-  app.post('/api/clientes', { preHandler: exigirCargo('Administrador') }, async (request, reply) => {
+  // POST /api/v1/clientes com { "nome": "...", "nif": "...", ... }: cria uma clínica (sem conta de acesso)
+  app.post('/clientes', { preHandler: exigirCargo('Administrador') }, async (request, reply) => {
     const dados = request.body as DadosCliente | undefined;
     const resultado = await escreverComo(
       request.user.id,
@@ -57,9 +57,9 @@ export async function rotasClientes(app: FastifyInstance) {
     return reply.code(201).send(resultado.rows[0]);
   });
 
-  // PUT /api/clientes/1 com os campos a mudar: altera uma clínica
+  // PUT /api/v1/clientes/1 com os campos a mudar: altera uma clínica
   // "ativo": false desativa a clínica e as contas dela; "ativo": true reativa tudo.
-  app.put('/api/clientes/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
+  app.put('/clientes/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
     const { id } = request.params as { id: string };
     const dados = request.body as DadosCliente | undefined;
     const resultado = await escreverComo(
@@ -79,8 +79,8 @@ export async function rotasClientes(app: FastifyInstance) {
     return resultado.rows[0];
   });
 
-  // DELETE /api/clientes/1: desativa a clínica e as contas dela (não apaga: há o histórico das ordens)
-  app.delete('/api/clientes/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
+  // DELETE /api/v1/clientes/1: desativa a clínica e as contas dela (não apaga: há o histórico das ordens)
+  app.delete('/clientes/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
     const { id } = request.params as { id: string };
     const resultado = await escreverComo(request.user.id, "SELECT fn_cliente_crud('DELETE', $1) AS id", [id]);
     return resultado.rows[0];

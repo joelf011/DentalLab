@@ -29,10 +29,10 @@ interface DadosRegisto {
 }
 
 export async function rotasAuth(app: FastifyInstance) {
-  // POST /api/auth/registo: uma clínica regista-se sozinha (rota pública, sem login)
+  // POST /api/v1/auth/registo: uma clínica regista-se sozinha (rota pública, sem login)
   // Cria a clínica e a conta de acesso, que fica à espera de aprovação do Administrador.
   // Até ser aprovada, o login responde 403 "A sua conta ainda não foi aprovada pelo laboratório."
-  app.post('/api/auth/registo', async (request, reply) => {
+  app.post('/auth/registo', async (request, reply) => {
     const dados = request.body as DadosRegisto | undefined;
     // A BD só recebe o hash, por isso a regra da palavra-passe fica aqui.
     if (!dados?.password || dados.password.length < 8) {
@@ -54,9 +54,9 @@ export async function rotasAuth(app: FastifyInstance) {
     return reply.code(201).send(resultado.rows[0]);
   });
 
-  // POST /api/auth/login com { "email": "...", "password": "..." }
+  // POST /api/v1/auth/login com { "email": "...", "password": "..." }
   // Devolve o token (para enviar nos pedidos seguintes) e os dados do utilizador.
-  app.post('/api/auth/login', async (request, reply) => {
+  app.post('/auth/login', async (request, reply) => {
     const dados = request.body as DadosLogin | undefined;
     if (!dados?.email || !dados?.password) {
       return reply.code(400).send({ erro: 'Indique o email e a palavra-passe.' });
@@ -96,9 +96,9 @@ export async function rotasAuth(app: FastifyInstance) {
     };
   });
 
-  // GET /api/auth/eu: quem está ligado (com os dados atuais da BD)
+  // GET /api/v1/auth/eu: quem está ligado (com os dados atuais da BD)
   // O frontend chama esta rota ao abrir, para saber se o token guardado ainda serve.
-  app.get('/api/auth/eu', { preHandler: exigirLogin }, async (request, reply) => {
+  app.get('/auth/eu', { preHandler: exigirLogin }, async (request, reply) => {
     const resultado = await bd.query('SELECT * FROM vw_utilizador WHERE id = $1 AND ativo', [request.user.id]);
     const utilizador = resultado.rows[0];
     if (!utilizador) {
@@ -114,9 +114,9 @@ export async function rotasAuth(app: FastifyInstance) {
     };
   });
 
-  // PUT /api/auth/password com { "password_atual": "...", "password_nova": "..." }
+  // PUT /api/v1/auth/password com { "password_atual": "...", "password_nova": "..." }
   // Muda a palavra-passe de quem está ligado e deixa de ser temporária.
-  app.put('/api/auth/password', { preHandler: exigirLogin }, async (request, reply) => {
+  app.put('/auth/password', { preHandler: exigirLogin }, async (request, reply) => {
     const dados = request.body as DadosPassword | undefined;
     if (!dados?.password_atual || !dados?.password_nova) {
       return reply.code(400).send({ erro: 'Indique a palavra-passe atual e a nova.' });

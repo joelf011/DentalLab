@@ -15,14 +15,14 @@ interface DadosCargo {
 }
 
 export async function rotasCargos(app: FastifyInstance) {
-  // GET /api/cargos: lista todos os cargos
-  app.get('/api/cargos', { preHandler: exigirLogin }, async () => {
+  // GET /api/v1/cargos: lista todos os cargos
+  app.get('/cargos', { preHandler: exigirLogin }, async () => {
     const resultado = await bd.query('SELECT * FROM vw_cargo ORDER BY id');
     return resultado.rows;
   });
 
-  // GET /api/cargos/1: mostra um cargo
-  app.get('/api/cargos/:id', { preHandler: exigirLogin }, async (request, reply) => {
+  // GET /api/v1/cargos/1: mostra um cargo
+  app.get('/cargos/:id', { preHandler: exigirLogin }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const resultado = await bd.query('SELECT * FROM vw_cargo WHERE id = $1', [id]);
     if (resultado.rows.length === 0) {
@@ -31,23 +31,23 @@ export async function rotasCargos(app: FastifyInstance) {
     return resultado.rows[0];
   });
 
-  // POST /api/cargos com { "designacao": "Técnico" }: cria um cargo e devolve o id novo
-  app.post('/api/cargos', { preHandler: exigirCargo('Administrador') }, async (request, reply) => {
+  // POST /api/v1/cargos com { "designacao": "Técnico" }: cria um cargo e devolve o id novo
+  app.post('/cargos', { preHandler: exigirCargo('Administrador') }, async (request, reply) => {
     const dados = request.body as DadosCargo | undefined;
     const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('CREATE', NULL, $1) AS id", [dados?.designacao]);
     return reply.code(201).send(resultado.rows[0]);
   });
 
-  // PUT /api/cargos/1 com { "designacao": "Técnico" }: altera um cargo
-  app.put('/api/cargos/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
+  // PUT /api/v1/cargos/1 com { "designacao": "Técnico" }: altera um cargo
+  app.put('/cargos/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
     const { id } = request.params as { id: string };
     const dados = request.body as DadosCargo | undefined;
     const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('UPDATE', $1, $2) AS id", [id, dados?.designacao]);
     return resultado.rows[0];
   });
 
-  // DELETE /api/cargos/1: apaga um cargo (a função recusa se o cargo tiver utilizadores)
-  app.delete('/api/cargos/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
+  // DELETE /api/v1/cargos/1: apaga um cargo (a função recusa se o cargo tiver utilizadores)
+  app.delete('/cargos/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
     const { id } = request.params as { id: string };
     const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('DELETE', $1) AS id", [id]);
     return resultado.rows[0];

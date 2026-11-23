@@ -4,8 +4,8 @@ import { bd } from './db.ts';
 // Proteção das rotas com login.
 //
 // Como se usa numa rota:
-//   app.get('/api/...', { preHandler: exigirLogin }, async (request) => { ... });
-//   app.post('/api/...', { preHandler: exigirCargo('Administrador') }, async (request) => { ... });
+//   app.get('/...', { preHandler: exigirLogin }, async (request) => { ... });
+//   app.post('/...', { preHandler: exigirCargo('Administrador') }, async (request) => { ... });
 //
 // Dentro de uma rota protegida, request.user é quem fez login, com os dados atuais da BD:
 //   request.user.id, request.user.nome, request.user.cargo, request.user.cliente_id

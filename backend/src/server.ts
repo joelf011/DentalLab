@@ -38,8 +38,8 @@ app.setNotFoundHandler((_request, reply) => {
   return reply.code(404).send({ erro: 'Esta rota não existe.' });
 });
 
-// GET /api/health: confirma que a API está a funcionar e que consegue falar com a BD.
-app.get('/api/health', async (request, reply) => {
+// GET /api/v1/health: confirma que a API está a funcionar e que consegue falar com a BD.
+app.get('/api/v1/health', async (request, reply) => {
   try {
     await bd.query('SELECT 1');
     return { api: 'ok', bd: 'ok' };
@@ -65,11 +65,14 @@ app.register(fastifyJwt, {
 });
 
 // Cada grupo de rotas está num ficheiro da pasta rotas/.
-app.register(rotasAuth);
-app.register(rotasCargos);
-app.register(rotasClientes);
-app.register(rotasAlteracoesCliente);
-app.register(rotasUtilizadores);
+// Todas ficam debaixo de /api/v1: o '/cargos' de cargos.ts passa a ser /api/v1/cargos.
+// Se um dia houver uma versão incompatível da API, regista-se a nova em /api/v2 sem mexer nesta.
+const versao1 = { prefix: '/api/v1' };
+app.register(rotasAuth, versao1);
+app.register(rotasCargos, versao1);
+app.register(rotasClientes, versao1);
+app.register(rotasAlteracoesCliente, versao1);
+app.register(rotasUtilizadores, versao1);
 
 // Arranca o servidor.
 // host '0.0.0.0' = aceita pedidos de qualquer rede do PC, e não só do próprio PC (localhost).
