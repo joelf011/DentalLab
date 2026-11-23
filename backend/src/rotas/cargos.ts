@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { exigirCargo, exigirLogin } from '../autenticacao.ts';
-import { bd } from '../db.ts';
+import { bd, escreverComo } from '../db.ts';
 
 // Rotas dos cargos (Administrador, Colaborador, Cliente).
 // Ler: vista vw_cargo. Criar, alterar e apagar: função fn_cargo_crud. As duas foram criadas no pgAdmin.
@@ -34,7 +34,7 @@ export async function rotasCargos(app: FastifyInstance) {
   // POST /api/cargos com { "designacao": "Técnico" }: cria um cargo e devolve o id novo
   app.post('/api/cargos', { preHandler: exigirCargo('Administrador') }, async (request, reply) => {
     const dados = request.body as DadosCargo | undefined;
-    const resultado = await bd.query("SELECT fn_cargo_crud('CREATE', NULL, $1) AS id", [dados?.designacao]);
+    const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('CREATE', NULL, $1) AS id", [dados?.designacao]);
     return reply.code(201).send(resultado.rows[0]);
   });
 
@@ -42,14 +42,14 @@ export async function rotasCargos(app: FastifyInstance) {
   app.put('/api/cargos/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
     const { id } = request.params as { id: string };
     const dados = request.body as DadosCargo | undefined;
-    const resultado = await bd.query("SELECT fn_cargo_crud('UPDATE', $1, $2) AS id", [id, dados?.designacao]);
+    const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('UPDATE', $1, $2) AS id", [id, dados?.designacao]);
     return resultado.rows[0];
   });
 
   // DELETE /api/cargos/1: apaga um cargo (a função recusa se o cargo tiver utilizadores)
   app.delete('/api/cargos/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
     const { id } = request.params as { id: string };
-    const resultado = await bd.query("SELECT fn_cargo_crud('DELETE', $1) AS id", [id]);
+    const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('DELETE', $1) AS id", [id]);
     return resultado.rows[0];
   });
 }

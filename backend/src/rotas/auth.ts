@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import type { FastifyInstance } from 'fastify';
 import { exigirLogin, type UtilizadorLogin } from '../autenticacao.ts';
-import { bd } from '../db.ts';
+import { bd, escreverComo } from '../db.ts';
 
 // Rotas do login e do registo de clínicas.
 // Os dados vêm da função fn_utilizador_login (a única que lê o password_hash) e da vista vw_utilizador.
@@ -39,7 +39,8 @@ export async function rotasAuth(app: FastifyInstance) {
       return reply.code(400).send({ erro: 'A palavra-passe tem de ter pelo menos 8 caracteres.' });
     }
     // As outras validações (nome, NIF, email repetido...) são da função na BD.
-    const resultado = await bd.query(
+    const resultado = await escreverComo(
+      null,
       `SELECT fn_registar_clinica(
          p_nome             => $1,
          p_nif              => $2,
@@ -142,7 +143,8 @@ export async function rotasAuth(app: FastifyInstance) {
 
     // O 12 é o "custo" do bcrypt: quanto maior, mais lento é adivinhar a palavra-passe. É o mesmo do admin inicial.
     const novoHash = await bcrypt.hash(dados.password_nova, 12);
-    const resultado = await bd.query(
+    const resultado = await escreverComo(
+      request.user.id,
       `SELECT fn_utilizador_crud(
          p_operacao            => 'UPDATE',
          p_id                  => $1,
