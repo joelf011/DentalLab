@@ -24,7 +24,7 @@ npm install     # só da primeira vez (e sempre que o package.json mudar)
 npm run dev     # arranca a API na porta 3000 (reinicia sozinha quando gravas um ficheiro)
 ```
 
-4. Abrir http://localhost:3000/api/health no navegador. Deve mostrar `{"api":"ok","bd":"ok"}`.
+4. Abrir http://localhost:3000/api/v1/health no navegador. Deve mostrar `{"api":"ok","bd":"ok"}`.
 5. Testar o login com [`pedidos/auth.http`](pedidos/auth.http): admin `admin@dentallab.local`, palavra-passe `Admin#2026`.
 
 ## Base de dados no pgAdmin
@@ -60,10 +60,10 @@ A API tem de estar a correr (`npm run dev`) no PC.
 
 | De onde | Endereço |
 | --- | --- |
-| React, no navegador do mesmo PC | `http://localhost:3000/api` |
-| Flutter, no emulador Android | `http://10.0.2.2:3000/api` (endereço especial que aponta para o PC) |
-| Flutter, no simulador iOS | `http://localhost:3000/api` |
-| Flutter, num telemóvel real | `http://<IP do PC>:3000/api`. O IP aparece no terminal ao correr `npm run dev` (o que não é `127.0.0.1`). O telemóvel tem de estar na **mesma rede Wi-Fi** |
+| React, no navegador do mesmo PC | `http://localhost:3000/api/v1` |
+| Flutter, no emulador Android | `http://10.0.2.2:3000/api/v1` (endereço especial que aponta para o PC) |
+| Flutter, no simulador iOS | `http://localhost:3000/api/v1` |
+| Flutter, num telemóvel real | `http://<IP do PC>:3000/api/v1`. O IP aparece no terminal ao correr `npm run dev` (o que não é `127.0.0.1`). O telemóvel tem de estar na **mesma rede Wi-Fi** |
 
 - Guarda o endereço num único sítio do projeto (uma constante ou uma variável de ambiente), para mudar facilmente quando a API for para o servidor.
 - **Telemóvel real:**
@@ -76,15 +76,15 @@ A API tem de estar a correr (`npm run dev`) no PC.
 
 ### 2. Login e token
 
-1. `POST /api/auth/login` com `{ "email": "...", "password": "..." }`.
+1. `POST /api/v1/auth/login` com `{ "email": "...", "password": "..." }`.
 2. A resposta traz `{ "token": "...", "utilizador": { "id", "nome", "cargo", "cliente_id", "email", "password_temporaria" } }`.
 3. Guarda o `token`:
    - React: `localStorage`;
    - Flutter: o pacote `flutter_secure_storage`.
 4. Envia-o em **todos** os outros pedidos, no cabeçalho `Authorization: Bearer <token>`.
 5. Usa o `cargo` (`Administrador`, `Colaborador` ou `Cliente`) para escolher que ecrãs mostrar. Quem decide o que cada cargo pode fazer é a API; o frontend só esconde o que não faz sentido mostrar.
-6. Se `password_temporaria` for `true`, leva a pessoa para um ecrã de mudar a palavra-passe (`PUT /api/auth/password`) antes de continuar.
-7. Quando a app abre e já tem um token guardado, chama `GET /api/auth/eu`:
+6. Se `password_temporaria` for `true`, leva a pessoa para um ecrã de mudar a palavra-passe (`PUT /api/v1/auth/password`) antes de continuar.
+7. Quando a app abre e já tem um token guardado, chama `GET /api/v1/auth/eu`:
    - 200: a sessão continua válida;
    - 401: apaga o token e mostra o ecrã de login.
 8. O token dura 7 dias. Terminar sessão é apagar o token guardado.
@@ -92,7 +92,7 @@ A API tem de estar a correr (`npm run dev`) no PC.
 **React (`fetch`):**
 
 ```js
-const API = 'http://localhost:3000/api';
+const API = 'http://localhost:3000/api/v1';
 
 // Login
 const resposta = await fetch(`${API}/auth/login`, {
@@ -119,7 +119,7 @@ const cargos = await fetch(`${API}/cargos`, {
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-const api = 'http://10.0.2.2:3000/api';
+const api = 'http://10.0.2.2:3000/api/v1';
 
 // Login
 final resposta = await http.post(
@@ -179,32 +179,32 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 
 | Rota | O que faz |
 | --- | --- |
-| `GET /api/health` | Verifica a API e a ligação à BD |
-| `POST /api/auth/registo` | Público. Uma clínica regista-se: `{ "nome", "nif", "morada_faturacao", "telefone", "email", "password" }`. A conta fica à espera de aprovação |
-| `POST /api/auth/login` | Login: `{ "email": "...", "password": "..." }`. Devolve `{ token, utilizador }` |
-| `GET /api/auth/eu` | Quem está ligado (precisa de login) |
-| `PUT /api/auth/password` | Muda a palavra-passe de quem está ligado: `{ "password_atual": "...", "password_nova": "..." }` |
-| `GET /api/cargos` | Lista os cargos (login) |
-| `GET /api/cargos/:id` | Mostra um cargo (login) |
-| `POST /api/cargos` | Cria um cargo: `{ "designacao": "..." }` (Administrador) |
-| `PUT /api/cargos/:id` | Altera um cargo: `{ "designacao": "..." }` (Administrador) |
-| `DELETE /api/cargos/:id` | Apaga um cargo, só se não tiver utilizadores (Administrador) |
-| `GET /api/clientes` | Lista as clínicas (Administrador) |
-| `GET /api/clientes/:id` | Mostra uma clínica (Administrador; uma clínica só a sua) |
-| `POST /api/clientes` | Cria uma clínica, sem conta de acesso: `{ "nome", "nif", "morada_faturacao", "email", "telefone" }` (Administrador) |
-| `PUT /api/clientes/:id` | Altera uma clínica; `"ativo": false/true` desativa ou reativa a clínica e as contas dela (Administrador) |
-| `DELETE /api/clientes/:id` | Desativa a clínica e as contas dela (Administrador) |
-| `POST /api/alteracoes-cliente` | A clínica pede para mudar os seus dados: `{ "nome", "morada_faturacao", "email", "telefone" }`, só os que mudam (Cliente) |
-| `GET /api/alteracoes-cliente` | Pedidos de alteração; `?estado=pendente` só os que estão à espera (Administrador: todos; Cliente: os seus) |
-| `GET /api/alteracoes-cliente/:id` | Um pedido de alteração (Administrador; Cliente: só os seus) |
-| `POST /api/alteracoes-cliente/:id/aprovar` | Aprova: os dados novos passam para a clínica (Administrador) |
-| `POST /api/alteracoes-cliente/:id/rejeitar` | Rejeita: `{ "motivo_rejeicao": "..." }` (Administrador) |
-| `GET /api/utilizadores` | Lista as contas; `?por_aprovar=true` só as que estão à espera de aprovação (Administrador) |
-| `GET /api/utilizadores/:id` | Mostra uma conta (Administrador) |
-| `POST /api/utilizadores` | Cria uma conta já aprovada: `{ "nome", "email", "cargo_id", "cliente_id", "password" }`; a palavra-passe é temporária (Administrador) |
-| `PUT /api/utilizadores/:id` | Altera uma conta (só os campos que vierem); com `"password"`, define uma nova palavra-passe temporária (Administrador) |
-| `DELETE /api/utilizadores/:id` | Desativa uma conta ou recusa um registo; não pode ser a própria (Administrador) |
-| `POST /api/utilizadores/:id/aprovar` | Aprova uma conta à espera (Administrador) |
+| `GET /api/v1/health` | Verifica a API e a ligação à BD |
+| `POST /api/v1/auth/registo` | Público. Uma clínica regista-se: `{ "nome", "nif", "morada_faturacao", "telefone", "email", "password" }`. A conta fica à espera de aprovação |
+| `POST /api/v1/auth/login` | Login: `{ "email": "...", "password": "..." }`. Devolve `{ token, utilizador }` |
+| `GET /api/v1/auth/eu` | Quem está ligado (precisa de login) |
+| `PUT /api/v1/auth/password` | Muda a palavra-passe de quem está ligado: `{ "password_atual": "...", "password_nova": "..." }` |
+| `GET /api/v1/cargos` | Lista os cargos (login) |
+| `GET /api/v1/cargos/:id` | Mostra um cargo (login) |
+| `POST /api/v1/cargos` | Cria um cargo: `{ "designacao": "..." }` (Administrador) |
+| `PUT /api/v1/cargos/:id` | Altera um cargo: `{ "designacao": "..." }` (Administrador) |
+| `DELETE /api/v1/cargos/:id` | Apaga um cargo, só se não tiver utilizadores (Administrador) |
+| `GET /api/v1/clientes` | Lista as clínicas (Administrador) |
+| `GET /api/v1/clientes/:id` | Mostra uma clínica (Administrador; uma clínica só a sua) |
+| `POST /api/v1/clientes` | Cria uma clínica, sem conta de acesso: `{ "nome", "nif", "morada_faturacao", "email", "telefone" }` (Administrador) |
+| `PUT /api/v1/clientes/:id` | Altera uma clínica; `"ativo": false/true` desativa ou reativa a clínica e as contas dela (Administrador) |
+| `DELETE /api/v1/clientes/:id` | Desativa a clínica e as contas dela (Administrador) |
+| `POST /api/v1/alteracoes-cliente` | A clínica pede para mudar os seus dados: `{ "nome", "morada_faturacao", "email", "telefone" }`, só os que mudam (Cliente) |
+| `GET /api/v1/alteracoes-cliente` | Pedidos de alteração; `?estado=pendente` só os que estão à espera (Administrador: todos; Cliente: os seus) |
+| `GET /api/v1/alteracoes-cliente/:id` | Um pedido de alteração (Administrador; Cliente: só os seus) |
+| `POST /api/v1/alteracoes-cliente/:id/aprovar` | Aprova: os dados novos passam para a clínica (Administrador) |
+| `POST /api/v1/alteracoes-cliente/:id/rejeitar` | Rejeita: `{ "motivo_rejeicao": "..." }` (Administrador) |
+| `GET /api/v1/utilizadores` | Lista as contas; `?por_aprovar=true` só as que estão à espera de aprovação (Administrador) |
+| `GET /api/v1/utilizadores/:id` | Mostra uma conta (Administrador) |
+| `POST /api/v1/utilizadores` | Cria uma conta já aprovada: `{ "nome", "email", "cargo_id", "cliente_id", "password" }`; a palavra-passe é temporária (Administrador) |
+| `PUT /api/v1/utilizadores/:id` | Altera uma conta (só os campos que vierem); com `"password"`, define uma nova palavra-passe temporária (Administrador) |
+| `DELETE /api/v1/utilizadores/:id` | Desativa uma conta ou recusa um registo; não pode ser a própria (Administrador) |
+| `POST /api/v1/utilizadores/:id/aprovar` | Aprova uma conta à espera (Administrador) |
 
 ## Comandos
 

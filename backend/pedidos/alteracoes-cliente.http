@@ -5,7 +5,7 @@
 # A clínica de teste cria-se no pgAdmin com ModelosBaseDeDados/testes/dados_teste_clinica.sql.
 # Faz os dois logins primeiro; os tokens ficam guardados.
 
-@api = http://localhost:3000/api
+@api = http://localhost:3000/api/v1
 @tokenClinica = {{loginClinica.response.body.$.token}}
 @tokenAdmin = {{loginAdmin.response.body.$.token}}
 

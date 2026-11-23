@@ -5,7 +5,7 @@
 # Todas as rotas precisam de login. Ver: qualquer cargo. Criar, alterar e apagar: só Administrador.
 # Faz primeiro o pedido "Login"; o token fica guardado e os outros pedidos usam-no.
 
-@api = http://localhost:3000/api
+@api = http://localhost:3000/api/v1
 @token = {{login.response.body.$.token}}
 
 ### Login do administrador (se já mudaste a palavra-passe, escreve aqui a nova)

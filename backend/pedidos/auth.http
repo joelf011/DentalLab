@@ -2,7 +2,7 @@
 # Precisa da extensão "REST Client" do VS Code e da API a correr (npm run dev).
 # Carrega em "Send Request", que aparece por cima de cada pedido.
 
-@api = http://localhost:3000/api
+@api = http://localhost:3000/api/v1
 
 # O token da resposta do login fica guardado aqui automaticamente.
 # Faz primeiro o pedido "Login do administrador"; depois os outros já o usam.

@@ -2,10 +2,10 @@
 # Precisa da extensão "REST Client" do VS Code e da API a correr (npm run dev).
 #
 # Todas estas rotas são do Administrador. Faz primeiro o pedido "Login"; o token fica guardado.
-# Os cargo_id estão em GET /api/cargos (normalmente 1 = Administrador, 2 = Colaborador, 3 = Cliente).
-# Os cliente_id estão em GET /api/clientes.
+# Os cargo_id estão em GET /api/v1/cargos (normalmente 1 = Administrador, 2 = Colaborador, 3 = Cliente).
+# Os cliente_id estão em GET /api/v1/clientes.
 
-@api = http://localhost:3000/api
+@api = http://localhost:3000/api/v1
 @token = {{login.response.body.$.token}}
 
 ### Login do administrador (se já mudaste a palavra-passe, escreve aqui a nova)
