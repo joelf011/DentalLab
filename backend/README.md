@@ -24,7 +24,7 @@ npm install     # só da primeira vez (e sempre que o package.json mudar)
 npm run dev     # arranca a API na porta 3000 (reinicia sozinha quando gravas um ficheiro)
 ```
 
-4. Abrir http://localhost:3000/api/v1/health no navegador. Deve mostrar `{"api":"ok","bd":"ok"}`.
+4. Abrir http://localhost:3000/api/v1/saude no navegador. Deve mostrar `{"api":"ok","bd":"ok"}`.
 5. Testar o login com [`pedidos/auth.http`](pedidos/auth.http): admin `admin@dentallab.local`, palavra-passe `Admin#2026`.
 
 ## Base de dados no pgAdmin
@@ -199,7 +199,7 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 
 | Rota | O que faz |
 | --- | --- |
-| `GET /api/v1/health` | Verifica a API e a ligação à BD |
+| `GET /api/v1/saude` | Verifica a API e a ligação à BD |
 | `POST /api/v1/auth/registo` | Público. Uma clínica regista-se: `{ "nome", "nif", "morada_faturacao", "telefone", "email", "password" }`. A conta fica à espera de aprovação |
 | `POST /api/v1/auth/login` | Login: `{ "email": "...", "password": "..." }`. Devolve `{ token, utilizador }` |
 | `GET /api/v1/auth/eu` | Quem está ligado (precisa de login) |

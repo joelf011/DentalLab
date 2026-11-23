@@ -3,8 +3,8 @@ import { bd } from '../../comum/bd.ts';
 
 // Estado da API.
 export async function rotasSaude(app: FastifyInstance) {
-  // GET /api/v1/health: confirma que a API está a funcionar e que consegue falar com a BD.
-  app.get('/health', async (request, reply) => {
+  // GET /api/v1/saude: confirma que a API está a funcionar e que consegue falar com a BD.
+  app.get('/saude', async (request, reply) => {
     try {
       await bd.query('SELECT 1');
       return { api: 'ok', bd: 'ok' };
