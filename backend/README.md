@@ -122,7 +122,7 @@ const resposta = await fetch(`${API}/auth/login`, {
 });
 const dados = await resposta.json();
 if (!resposta.ok) {
-  mostrarErro(dados.erro); // a mensagem já vem pronta a mostrar
+  mostrarErro(dados.mensagem); // a mensagem já vem pronta a mostrar
 } else {
   localStorage.setItem('token', dados.token);
 }
@@ -149,7 +149,7 @@ final resposta = await http.post(
 );
 final dados = jsonDecode(resposta.body);
 if (resposta.statusCode != 200) {
-  mostrarErro(dados['erro']); // a mensagem já vem pronta a mostrar
+  mostrarErro(dados['mensagem']); // a mensagem já vem pronta a mostrar
 } else {
   final token = dados['token']; // guardar com flutter_secure_storage
 }
@@ -181,7 +181,15 @@ final cargos = await http.get(
 
 ### 4. Erros
 
-Todas as respostas de erro têm o formato `{ "erro": "mensagem" }`. A mensagem está em português e pode mostrar-se diretamente ao utilizador.
+Todas as respostas de erro têm este formato (o mesmo das aulas de AI3):
+
+```json
+{ "codigo": 400, "mensagem": "Tem de indicar o nome e o NIF do cliente" }
+```
+
+- `codigo`: o mesmo número do código HTTP da resposta.
+- `mensagem`: está em português e pode mostrar-se diretamente ao utilizador.
+- `detalhes`: só aparece quando o problema é de campos concretos, com uma lista `[{ "campo": "nif", "problema": "..." }]` para mostrar o erro ao pé de cada campo.
 
 | Código | Significa | O que o frontend deve fazer |
 | --- | --- | --- |
@@ -189,7 +197,14 @@ Todas as respostas de erro têm o formato `{ "erro": "mensagem" }`. A mensagem e
 | 401 | Sem sessão, sessão expirada ou conta desativada | Apagar o token e voltar ao ecrã de login |
 | 403 | O cargo não tem permissão; ou, no login, a conta está desativada ou ainda por aprovar | Mostrar a mensagem |
 | 404 | O registo não existe | Mostrar a mensagem, ou voltar à lista |
+| 413 | O pedido é demasiado grande | Mostrar a mensagem |
+| 415 | Os dados não foram enviados em JSON | Erro do programador: enviar `Content-Type: application/json` |
 | 500 | Erro inesperado na API | Mostrar "Ocorreu um erro inesperado. Tente novamente." |
+| 503 | A API não consegue ligar-se à base de dados | Mostrar a mensagem e tentar mais tarde |
+
+O 401 traz o cabeçalho `WWW-Authenticate`:
+- `Bearer` quando não veio token;
+- `Bearer error="invalid_token"` quando o token é falso, expirou, ou a conta foi desativada.
 
 As mensagens das funções da BD (`RAISE EXCEPTION`) chegam tal como foram escritas no pgAdmin, com o código 400.
 
