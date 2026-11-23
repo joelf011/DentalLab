@@ -7,6 +7,8 @@ import { configuracao } from '../configuracao.ts';
 export function registarJwt(app: FastifyInstance) {
   app.register(fastifyJwt, {
     secret: configuracao.jwt.segredo,
-    sign: { expiresIn: configuracao.jwt.validade },
+    // Só se usa o algoritmo HS256: um token com outro algoritmo (ex.: "none", sem assinatura) é recusado.
+    sign: { algorithm: 'HS256', expiresIn: configuracao.jwt.validade },
+    verify: { algorithms: ['HS256'] },
   });
 }

@@ -7,9 +7,10 @@ try {
   process.exit(1);
 }
 
-// Sem segredo, qualquer pessoa conseguiria criar tokens de login falsos.
-if (!process.env.JWT_SEGREDO) {
-  console.error('Falta o JWT_SEGREDO no ficheiro .env. Vê no .env.example como gerar um.');
+// Sem segredo, ou com um segredo curto, seria fácil criar tokens de login falsos.
+// Por isso a API não arranca sem um segredo de pelo menos 32 caracteres.
+if (!process.env.JWT_SEGREDO || process.env.JWT_SEGREDO.length < 32) {
+  console.error('O JWT_SEGREDO do ficheiro .env tem de ter pelo menos 32 caracteres. Vê no .env.example como gerar um.');
   process.exit(1);
 }
 
