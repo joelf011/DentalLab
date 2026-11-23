@@ -36,4 +36,9 @@ export const configuracao = {
     // Durante quanto tempo um token é válido. Depois disso, é preciso fazer login outra vez.
     validade: '7d',
   },
+  bcrypt: {
+    // O "custo" do bcrypt ao calcular o hash de uma palavra-passe: quanto maior, mais lento é calcular cada hash
+    // e, por isso, adivinhar a palavra-passe a partir dele. É o mesmo dos hashes que já estão na BD.
+    custo: 12,
+  },
 };

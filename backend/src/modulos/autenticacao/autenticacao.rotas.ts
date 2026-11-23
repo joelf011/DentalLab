@@ -4,6 +4,7 @@ import { enviarSemSessao, exigirLogin, type UtilizadorLogin } from '../../comum/
 import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
 import { enviarCriado } from '../../comum/respostas.ts';
+import { configuracao } from '../../configuracao.ts';
 
 // Rotas do login e do registo de clínicas.
 // Os dados vêm da função fn_utilizador_login (a única que lê o password_hash) e da vista vw_utilizador.
@@ -51,7 +52,14 @@ export async function rotasAutenticacao(app: FastifyInstance) {
          p_email            => $5,
          p_password_hash    => $6
        ) AS id`,
-      [dados.nome, dados.nif, dados.morada_faturacao, dados.telefone, dados.email, await bcrypt.hash(dados.password, 12)],
+      [
+        dados.nome,
+        dados.nif,
+        dados.morada_faturacao,
+        dados.telefone,
+        dados.email,
+        await bcrypt.hash(dados.password, configuracao.bcrypt.custo),
+      ],
     );
     return enviarCriado(reply, 'clientes', resultado.rows[0].id);
   });
@@ -145,8 +153,7 @@ export async function rotasAutenticacao(app: FastifyInstance) {
       return enviarErro(reply, 400, 'A palavra-passe atual está errada.');
     }
 
-    // O 12 é o "custo" do bcrypt: quanto maior, mais lento é adivinhar a palavra-passe. É o mesmo do admin inicial.
-    const novoHash = await bcrypt.hash(dados.password_nova, 12);
+    const novoHash = await bcrypt.hash(dados.password_nova, configuracao.bcrypt.custo);
     const resultado = await escreverComo(
       request.user.id,
       `SELECT fn_utilizador_crud(

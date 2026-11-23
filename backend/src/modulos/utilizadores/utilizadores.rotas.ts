@@ -4,6 +4,7 @@ import { exigirCargo } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
 import { enviarCriado } from '../../comum/respostas.ts';
+import { configuracao } from '../../configuracao.ts';
 
 // Rotas das contas de acesso (utilizadores). Todas são do Administrador.
 // Ler: vista vw_utilizador (não mostra o password_hash).
@@ -72,7 +73,14 @@ export async function rotasUtilizadores(app: FastifyInstance) {
          p_password_temporaria => TRUE,
          p_aprovado_por        => $6
        ) AS id`,
-      [dados.cargo_id, dados.cliente_id, dados.nome, dados.email, await bcrypt.hash(dados.password, 12), request.user.id],
+      [
+        dados.cargo_id,
+        dados.cliente_id,
+        dados.nome,
+        dados.email,
+        await bcrypt.hash(dados.password, configuracao.bcrypt.custo),
+        request.user.id,
+      ],
     );
     return enviarCriado(reply, 'utilizadores', resultado.rows[0].id);
   });
@@ -91,7 +99,7 @@ export async function rotasUtilizadores(app: FastifyInstance) {
       if (!passwordValida(dados.password)) {
         return enviarErro(reply, 400, 'A palavra-passe tem de ter pelo menos 8 caracteres.');
       }
-      passwordHash = await bcrypt.hash(dados.password, 12);
+      passwordHash = await bcrypt.hash(dados.password, configuracao.bcrypt.custo);
     }
 
     const resultado = await escreverComo(
