@@ -17,6 +17,10 @@ export function construirApp(mostrarPedidos = true) {
     logger: mostrarPedidos ? { transport: { target: 'pino-pretty' } } : false,
   });
 
+  // A API só recebe dados em JSON. O Fastify também aceita texto simples por omissão;
+  // sem isto, um pedido em texto chegava à rota e dava um erro confuso, em vez de 415.
+  app.removeContentTypeParser('text/plain');
+
   // Peças ligadas uma vez, para toda a API (pasta plugins/)
   registarTratamentoErros(app);
   registarCors(app);
