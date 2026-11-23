@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
-import { exigirCargo } from '../autenticacao.ts';
-import { bd, escreverComo } from '../db.ts';
+import { exigirCargo } from '../../comum/acesso.ts';
+import { bd, escreverComo } from '../../comum/bd.ts';
 
 // Rotas dos clientes (clínicas).
 // Ler: vista vw_cliente. Criar, alterar e desativar: função fn_cliente_crud.
 // O Administrador gere todas as clínicas. Uma clínica só vê os seus dados;
-// para os mudar, faz um pedido de alteração (rotas de alteracoes-cliente.ts).
+// para os mudar, faz um pedido de alteração (módulo alteracoes-cliente).
 
 // O que o frontend envia no corpo do pedido (POST e PUT)
 interface DadosCliente {

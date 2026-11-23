@@ -1,5 +1,5 @@
 // Mensagens de erro para o utilizador, em português.
-// Usado pelo tratamento de erros do server.ts.
+// Usado pelo tratamento de erros (plugins/tratamento-erros.ts).
 
 // Mensagens para as regras das tabelas (CHECK e UNIQUE) que o utilizador pode violar.
 // A chave é o nome da regra, tal como está em ModelosBaseDeDados/sql/01_tabelas.sql.

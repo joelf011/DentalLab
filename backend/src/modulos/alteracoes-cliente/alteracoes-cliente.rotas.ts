@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { exigirCargo } from '../autenticacao.ts';
-import { bd, escreverComo } from '../db.ts';
+import { exigirCargo } from '../../comum/acesso.ts';
+import { bd, escreverComo } from '../../comum/bd.ts';
 
 // Rotas dos pedidos de alteração dos dados de uma clínica.
 // A clínica pede; o Administrador aprova (os dados passam para a clínica) ou rejeita (com motivo).

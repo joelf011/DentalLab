@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
-import { exigirCargo, exigirLogin } from '../autenticacao.ts';
-import { bd, escreverComo } from '../db.ts';
+import { exigirCargo, exigirLogin } from '../../comum/acesso.ts';
+import { bd, escreverComo } from '../../comum/bd.ts';
 
 // Rotas dos cargos (Administrador, Colaborador, Cliente).
 // Ler: vista vw_cargo. Criar, alterar e apagar: função fn_cargo_crud. As duas foram criadas no pgAdmin.

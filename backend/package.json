@@ -5,8 +5,8 @@
   "description": "API do DentalLab (Node.js + Fastify + PostgreSQL)",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/servidor.ts",
+    "start": "tsx src/servidor.ts",
     "typecheck": "tsc"
   },
   "dependencies": {

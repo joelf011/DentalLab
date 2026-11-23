@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import type { FastifyInstance } from 'fastify';
-import { exigirCargo } from '../autenticacao.ts';
-import { bd, escreverComo } from '../db.ts';
+import { exigirCargo } from '../../comum/acesso.ts';
+import { bd, escreverComo } from '../../comum/bd.ts';
 
 // Rotas das contas de acesso (utilizadores). Todas são do Administrador.
 // Ler: vista vw_utilizador (não mostra o password_hash).

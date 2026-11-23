@@ -14,7 +14,7 @@ if (!process.env.JWT_SEGREDO) {
 }
 
 // Todas as definições da aplicação ficam aqui, num só sítio.
-export const config = {
+export const configuracao = {
   porta: Number(process.env.PORT ?? 3000),
   // Sites React que podem usar a API. No .env estão separados por vírgulas;
   // aqui ficam numa lista: ['http://localhost:5173', 'http://localhost:5174']

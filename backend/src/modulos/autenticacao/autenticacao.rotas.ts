@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import type { FastifyInstance } from 'fastify';
-import { exigirLogin, type UtilizadorLogin } from '../autenticacao.ts';
-import { bd, escreverComo } from '../db.ts';
+import { exigirLogin, type UtilizadorLogin } from '../../comum/acesso.ts';
+import { bd, escreverComo } from '../../comum/bd.ts';
 
 // Rotas do login e do registo de clínicas.
 // Os dados vêm da função fn_utilizador_login (a única que lê o password_hash) e da vista vw_utilizador.
@@ -28,7 +28,7 @@ interface DadosRegisto {
   password?: string;
 }
 
-export async function rotasAuth(app: FastifyInstance) {
+export async function rotasAutenticacao(app: FastifyInstance) {
   // POST /api/v1/auth/registo: uma clínica regista-se sozinha (rota pública, sem login)
   // Cria a clínica e a conta de acesso, que fica à espera de aprovação do Administrador.
   // Até ser aprovada, o login responde 403 "A sua conta ainda não foi aprovada pelo laboratório."

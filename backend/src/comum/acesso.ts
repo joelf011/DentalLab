@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
-import { bd } from './db.ts';
+import { bd } from './bd.ts';
 
-// Proteção das rotas com login.
+// Controlo de acesso às rotas: quem tem login (exigirLogin) e que cargos podem usar cada rota (exigirCargo).
 //
 // Como se usa numa rota:
 //   app.get('/...', { preHandler: exigirLogin }, async (request) => { ... });

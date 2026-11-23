@@ -1,5 +1,5 @@
 import pg from 'pg';
-import { config } from './config.ts';
+import { configuracao } from '../configuracao.ts';
 
 // O PostgreSQL devolve os BIGINT (os nossos ids) como texto: "1" em vez de 1.
 // Os ids nunca chegam perto do limite dos números do JavaScript, por isso convertemos.
@@ -11,7 +11,7 @@ pg.types.setTypeParser(pg.types.builtins.DATE, (valor) => valor);
 
 // Pool = conjunto de ligações à base de dados, que a API vai reutilizando.
 // Para ler usa-se assim: const resultado = await bd.query('SELECT * FROM vw_...');
-export const bd = new pg.Pool(config.bd);
+export const bd = new pg.Pool(configuracao.bd);
 
 // Para escrever (funções fn_* e procedimentos pr_*) usa-se o escreverComo, com o id de quem faz a alteração:
 //   const resultado = await escreverComo(request.user.id, 'SELECT fn_..._crud(...) AS id', [...]);
