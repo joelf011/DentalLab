@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { exigirCargo } from '../autenticacao.ts';
-import { bd } from '../db.ts';
+import { bd, escreverComo } from '../db.ts';
 
 // Rotas dos pedidos de alteração dos dados de uma clínica.
 // A clínica pede; o Administrador aprova (os dados passam para a clínica) ou rejeita (com motivo).
@@ -18,7 +18,8 @@ export async function rotasAlteracoesCliente(app: FastifyInstance) {
   // POST /api/alteracoes-cliente: a clínica pede para alterar os seus dados
   app.post('/api/alteracoes-cliente', { preHandler: exigirCargo('Cliente') }, async (request, reply) => {
     const dados = request.body as DadosPedido | undefined;
-    const resultado = await bd.query(
+    const resultado = await escreverComo(
+      request.user.id,
       `SELECT fn_pedir_alteracao_cliente(
          p_cliente_id       => $1,
          p_pedido_por       => $2,
@@ -64,7 +65,8 @@ export async function rotasAlteracoesCliente(app: FastifyInstance) {
   // POST /api/alteracoes-cliente/1/aprovar: o Administrador aprova; os dados novos passam para a clínica
   app.post('/api/alteracoes-cliente/:id/aprovar', { preHandler: exigirCargo('Administrador') }, async (request) => {
     const { id } = request.params as { id: string };
-    const resultado = await bd.query(
+    const resultado = await escreverComo(
+      request.user.id,
       `SELECT fn_decidir_alteracao_cliente(
          p_id           => $1,
          p_decidido_por => $2,
@@ -79,7 +81,8 @@ export async function rotasAlteracoesCliente(app: FastifyInstance) {
   app.post('/api/alteracoes-cliente/:id/rejeitar', { preHandler: exigirCargo('Administrador') }, async (request) => {
     const { id } = request.params as { id: string };
     const dados = request.body as { motivo_rejeicao?: string } | undefined;
-    const resultado = await bd.query(
+    const resultado = await escreverComo(
+      request.user.id,
       `SELECT fn_decidir_alteracao_cliente(
          p_id              => $1,
          p_decidido_por    => $2,

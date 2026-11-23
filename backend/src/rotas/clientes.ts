@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { exigirCargo } from '../autenticacao.ts';
-import { bd } from '../db.ts';
+import { bd, escreverComo } from '../db.ts';
 
 // Rotas dos clientes (clínicas).
 // Ler: vista vw_cliente. Criar, alterar e desativar: função fn_cliente_crud.
@@ -41,7 +41,8 @@ export async function rotasClientes(app: FastifyInstance) {
   // POST /api/clientes com { "nome": "...", "nif": "...", ... }: cria uma clínica (sem conta de acesso)
   app.post('/api/clientes', { preHandler: exigirCargo('Administrador') }, async (request, reply) => {
     const dados = request.body as DadosCliente | undefined;
-    const resultado = await bd.query(
+    const resultado = await escreverComo(
+      request.user.id,
       `SELECT fn_cliente_crud(
          p_operacao         => 'CREATE',
          p_id               => NULL,
@@ -61,7 +62,8 @@ export async function rotasClientes(app: FastifyInstance) {
   app.put('/api/clientes/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
     const { id } = request.params as { id: string };
     const dados = request.body as DadosCliente | undefined;
-    const resultado = await bd.query(
+    const resultado = await escreverComo(
+      request.user.id,
       `SELECT fn_cliente_crud(
          p_operacao         => 'UPDATE',
          p_id               => $1,
@@ -80,7 +82,7 @@ export async function rotasClientes(app: FastifyInstance) {
   // DELETE /api/clientes/1: desativa a clínica e as contas dela (não apaga: há o histórico das ordens)
   app.delete('/api/clientes/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
     const { id } = request.params as { id: string };
-    const resultado = await bd.query("SELECT fn_cliente_crud('DELETE', $1) AS id", [id]);
+    const resultado = await escreverComo(request.user.id, "SELECT fn_cliente_crud('DELETE', $1) AS id", [id]);
     return resultado.rows[0];
   });
 }

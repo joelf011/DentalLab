@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import type { FastifyInstance } from 'fastify';
 import { exigirCargo } from '../autenticacao.ts';
-import { bd } from '../db.ts';
+import { bd, escreverComo } from '../db.ts';
 
 // Rotas das contas de acesso (utilizadores). Todas são do Administrador.
 // Ler: vista vw_utilizador (não mostra o password_hash).
@@ -57,7 +57,8 @@ export async function rotasUtilizadores(app: FastifyInstance) {
     if (!dados?.password || !passwordValida(dados.password)) {
       return reply.code(400).send({ erro: 'A palavra-passe tem de ter pelo menos 8 caracteres.' });
     }
-    const resultado = await bd.query(
+    const resultado = await escreverComo(
+      request.user.id,
       `SELECT fn_utilizador_crud(
          p_operacao            => 'CREATE',
          p_id                  => NULL,
@@ -91,7 +92,8 @@ export async function rotasUtilizadores(app: FastifyInstance) {
       passwordHash = await bcrypt.hash(dados.password, 12);
     }
 
-    const resultado = await bd.query(
+    const resultado = await escreverComo(
+      request.user.id,
       `SELECT fn_utilizador_crud(
          p_operacao            => 'UPDATE',
          p_id                  => $1,
@@ -124,14 +126,14 @@ export async function rotasUtilizadores(app: FastifyInstance) {
     if (Number(id) === request.user.id) {
       return reply.code(400).send({ erro: 'Não pode desativar a sua própria conta.' });
     }
-    const resultado = await bd.query("SELECT fn_utilizador_crud('DELETE', $1) AS id", [id]);
+    const resultado = await escreverComo(request.user.id, "SELECT fn_utilizador_crud('DELETE', $1) AS id", [id]);
     return resultado.rows[0];
   });
 
   // POST /api/utilizadores/1/aprovar: aprova uma conta que está à espera
   app.post('/api/utilizadores/:id/aprovar', soAdmin, async (request) => {
     const { id } = request.params as { id: string };
-    const resultado = await bd.query('SELECT fn_aprovar_utilizador($1, $2) AS id', [id, request.user.id]);
+    const resultado = await escreverComo(request.user.id, 'SELECT fn_aprovar_utilizador($1, $2) AS id', [id, request.user.id]);
     return resultado.rows[0];
   });
 }
