@@ -41,14 +41,34 @@ Como mudar a BD, e o que é cada ficheiro: ver [ModelosBaseDeDados/README.md](..
 
 ```text
 src/
-  server.ts         cria o servidor, trata os erros, regista as rotas e arranca
-  config.ts         lê o ficheiro .env
-  db.ts             ligação à base de dados
-  autenticacao.ts   proteção das rotas com login (exigirLogin, exigirCargo)
-  erros.ts          mensagens em português para os erros dos dados (regras da BD, formato errado...)
-  rotas/            um ficheiro por entidade (auth.ts, cargos.ts, ...)
-pedidos/       pedidos de teste (.http) para a extensão REST Client do VS Code
+  servidor.ts           só arranca a API
+  app.ts                constrói a API: liga os plugins e os módulos (construirApp)
+  configuracao.ts       lê o ficheiro .env
+  comum/                peças usadas por todos os módulos
+    bd.ts               ligação à base de dados: ler (bd.query) e escrever (escreverComo)
+    acesso.ts           controlo de acesso às rotas (exigirLogin, exigirCargo)
+    erros.ts            mensagens em português para os erros dos dados (regras da BD, formato errado...)
+  plugins/              peças do Fastify ligadas uma vez, para toda a API
+    cors.ts             sites React autorizados
+    jwt.ts              tokens de login
+    tratamento-erros.ts respostas de erro e rota inexistente
+  modulos/              um por área; cada um tem as suas rotas
+    saude/              estado da API e da ligação à BD
+    autenticacao/       login, registo, palavra-passe
+    cargos/
+    clientes/
+    alteracoes-cliente/
+    utilizadores/
+pedidos/                pedidos de teste (.http) para a extensão REST Client do VS Code
 ```
+
+Os nomes seguem os da app (`lib/comum`, `lib/autenticacao`, `configuracao.dart`) e os do servidor de AI3 (`servidor.js`).
+
+**Acrescentar uma área nova** (ex.: ordens):
+1. Criar a pasta `src/modulos/ordens/` com o ficheiro `ordens.rotas.ts`, igual aos outros.
+2. Registá-lo no `app.ts`: `app.register(rotasOrdens, versao1);`.
+
+As regras de negócio ficam na base de dados (funções e procedimentos). Por isso, cada rota só verifica quem pode fazer o pedido, lê de uma vista ou chama uma função, e devolve a resposta. Não há camadas (controller, service, repository) por cima.
 
 ## Como usar a API no frontend (React e Flutter)
 
