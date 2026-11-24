@@ -131,6 +131,23 @@ SELECT t.id, t.nome, t.descricao, t.ativo
 FROM tipo_trabalho t;
 
 
+-- (origem: crud/crud_etapa.sql)
+-- etapa (catálogo das etapas de produção)
+
+CREATE OR REPLACE VIEW vw_etapa AS
+SELECT e.id, e.nome, e.descricao, e.ativa
+FROM etapa e;
+
+
+-- (origem: crud/crud_etapa_tipo_trabalho.sql)
+-- Etapas configuradas para cada tipo de trabalho, pela ordem.
+
+CREATE OR REPLACE VIEW vw_etapa_tipo_trabalho AS
+SELECT ett.tipo_trabalho_id, ett.ordem, ett.etapa_id, e.nome
+FROM etapa_tipo_trabalho ett
+JOIN etapa e ON e.id = ett.etapa_id
+ORDER BY ett.tipo_trabalho_id, ett.ordem;
+
 -- (origem: crud/crud_tipo_trabalho_trabalho.sql)
 -- trabalho
 
