@@ -67,7 +67,8 @@ src/
     cargos/
       cargos.rotas.ts     as rotas: quem pode, o que se lê ou escreve na BD
       cargos.esquemas.ts  os dados que cada rota recebe e devolve
-    saude/  autenticacao/  conta/  clientes/  alteracoes-cliente/  utilizadores/  contactos/   (iguais)
+    saude/  autenticacao/  conta/  clientes/  alteracoes-cliente/  utilizadores/  contactos/
+    tipos-trabalho/  etapas/   (iguais)
 ```
 
 Os nomes seguem os da app (`lib/comum`, `lib/autenticacao`, `configuracao.dart`) e os do servidor de AI3 (`servidor.js`).
@@ -283,6 +284,16 @@ Resumo. Os campos de cada rota, os obrigatórios e as respostas possíveis estã
 | `PATCH /api/v1/utilizadores/:id` | Altera uma conta (só os campos que vierem); com `"password"`, define uma nova palavra-passe temporária (Administrador) |
 | `DELETE /api/v1/utilizadores/:id` | Desativa uma conta ou recusa um registo; não pode ser a própria (Administrador) |
 | `POST /api/v1/utilizadores/:id/aprovar` | Aprova uma conta à espera (Administrador) |
+| `GET /api/v1/tipos-trabalho` | Tipos de trabalho: o Administrador vê todos, os outros só os ativos (login) |
+| `POST /api/v1/tipos-trabalho` | Cria um tipo de trabalho: `{ "nome", "descricao" }` (Administrador) |
+| `PATCH /api/v1/tipos-trabalho/:id` | Altera um tipo; `"ativo": true` reativa-o (Administrador) |
+| `DELETE /api/v1/tipos-trabalho/:id` | Desativa um tipo de trabalho (Administrador) |
+| `GET /api/v1/tipos-trabalho/:id/etapas` | Etapas do tipo, pela ordem (Administrador e Colaborador) |
+| `PUT /api/v1/tipos-trabalho/:id/etapas` | Substitui a lista de etapas do tipo: `{ "etapas": [3, 1, 5] }` (Administrador) |
+| `GET /api/v1/etapas` | Etapas de produção do catálogo, também as desativadas (Administrador) |
+| `POST /api/v1/etapas` | Cria uma etapa: `{ "nome", "descricao" }` (Administrador) |
+| `PATCH /api/v1/etapas/:id` | Altera uma etapa; `"ativa": true` reativa-a (Administrador) |
+| `DELETE /api/v1/etapas/:id` | Desativa uma etapa (Administrador) |
 | `POST /api/v1/contactos` | Público. Formulário de contacto do site: `{ "clinica", "nome", "email", "telefone", "assunto", "mensagem" }`. Vai por email para o laboratório; 503 se o email falhar |
 
 ## Comandos

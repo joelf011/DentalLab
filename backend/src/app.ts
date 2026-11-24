@@ -6,7 +6,9 @@ import { rotasCargos } from './modulos/cargos/cargos.rotas.ts';
 import { rotasClientes } from './modulos/clientes/clientes.rotas.ts';
 import { rotasConta } from './modulos/conta/conta.rotas.ts';
 import { rotasContactos } from './modulos/contactos/contactos.rotas.ts';
+import { rotasEtapas } from './modulos/etapas/etapas.rotas.ts';
 import { rotasSaude } from './modulos/saude/saude.rotas.ts';
+import { rotasTiposTrabalho } from './modulos/tipos-trabalho/tipos-trabalho.rotas.ts';
 import { rotasUtilizadores } from './modulos/utilizadores/utilizadores.rotas.ts';
 import { registarCache } from './plugins/cache.ts';
 import { registarCors } from './plugins/cors.ts';
@@ -48,6 +50,8 @@ export function construirApp(mostrarPedidos = true) {
   app.register(rotasClientes, versao1);
   app.register(rotasAlteracoesCliente, versao1);
   app.register(rotasUtilizadores, versao1);
+  app.register(rotasTiposTrabalho, versao1);
+  app.register(rotasEtapas, versao1);
 
   return app;
 }
