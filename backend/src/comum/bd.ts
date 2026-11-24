@@ -13,18 +13,27 @@ pg.types.setTypeParser(pg.types.builtins.DATE, (valor) => valor);
 // Para ler usa-se assim: const resultado = await bd.query('SELECT * FROM vw_...');
 export const bd = new pg.Pool(configuracao.bd);
 
-// Para escrever (funções fn_* e procedimentos pr_*) usa-se o escreverComo, com o id de quem faz a alteração:
-//   const resultado = await escreverComo(request.user.id, 'SELECT fn_..._crud(...) AS id', [...]);
-// Assim, os triggers de auditoria registam em registo_auditoria quem fez cada alteração.
+// Escrever (funções fn_* e procedimentos pr_*) faz-se sempre com o id de quem faz a alteração,
+// para os triggers de auditoria registarem em registo_auditoria quem a fez.
 // O pr_definir_utilizador só vale dentro de uma transação, por isso tudo é feito numa só ligação:
 //   BEGIN → CALL pr_definir_utilizador(id) → o SQL → COMMIT (ou ROLLBACK, se der erro).
 // O idUtilizador é null quando ainda não há ninguém com sessão iniciada (ex.: o registo de uma clínica).
-export async function escreverComo(idUtilizador: number | null, sql: string, valores: unknown[] = []) {
+
+// Função que corre um comando SQL dentro da transação (é o que o transacaoComo dá à tarefa)
+export type Escrever = (sql: string, valores?: unknown[]) => Promise<pg.QueryResult>;
+
+// Várias escritas de uma vez: ou ficam todas gravadas, ou nenhuma (se uma falhar, faz ROLLBACK).
+//   const id = await transacaoComo(request.user.id, async (escrever) => {
+//     const ordem = await escrever('SELECT fn_ordem_trabalho_crud(...) AS id', [...]);
+//     await escrever('SELECT fn_trabalho_crud(...) AS id', [...]);
+//     return ordem.rows[0].id;
+//   });
+export async function transacaoComo<T>(idUtilizador: number | null, tarefa: (escrever: Escrever) => Promise<T>) {
   const ligacao = await bd.connect();
   try {
     await ligacao.query('BEGIN');
     await ligacao.query('CALL pr_definir_utilizador($1)', [idUtilizador]);
-    const resultado = await ligacao.query(sql, valores);
+    const resultado = await tarefa((sql, valores = []) => ligacao.query(sql, valores));
     await ligacao.query('COMMIT');
     return resultado;
   } catch (erro) {
@@ -34,4 +43,10 @@ export async function escreverComo(idUtilizador: number | null, sql: string, val
     // devolve a ligação ao pool, corra bem ou mal
     ligacao.release();
   }
+}
+
+// Uma só escrita (é o caso mais comum):
+//   const resultado = await escreverComo(request.user.id, 'SELECT fn_..._crud(...) AS id', [...]);
+export async function escreverComo(idUtilizador: number | null, sql: string, valores: unknown[] = []) {
+  return transacaoComo(idUtilizador, (escrever) => escrever(sql, valores));
 }
