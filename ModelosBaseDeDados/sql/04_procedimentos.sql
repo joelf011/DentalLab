@@ -8,6 +8,7 @@
 -- reaproveitam as funções CRUD (03_funcoes.sql), para valerem as mesmas validações.
 --
 -- Correr depois de 03_funcoes.sql.
+-- Erros: seguem a regra dos códigos explicada no início do 03_funcoes.sql.
 -- =====================================================================
 
 
@@ -91,7 +92,8 @@ BEGIN
     WHERE o.id = p_ordem_id AND o.eliminado_em IS NULL;
 
     IF v_estado IS NULL THEN
-        RAISE EXCEPTION 'A ordem de trabalho % não existe', p_ordem_id;
+        RAISE EXCEPTION 'A ordem de trabalho % não existe', p_ordem_id
+            USING ERRCODE = 'no_data_found';
     END IF;
     IF v_estado <> 'Em avaliação' THEN
         RAISE EXCEPTION 'Só se aceitam ordens "Em avaliação" (esta está "%")', v_estado;
@@ -133,7 +135,8 @@ DECLARE
 BEGIN
     SELECT count(*) INTO n FROM tipo_trabalho WHERE id = p_tipo_trabalho_id;
     IF n = 0 THEN
-        RAISE EXCEPTION 'O tipo de trabalho % não existe', p_tipo_trabalho_id;
+        RAISE EXCEPTION 'O tipo de trabalho % não existe', p_tipo_trabalho_id
+            USING ERRCODE = 'no_data_found';
     END IF;
 
     IF p_etapas IS NULL OR array_length(p_etapas, 1) IS NULL THEN
@@ -174,7 +177,8 @@ BEGIN
     SELECT count(*), max(data_inicio) INTO n, v_inicio
     FROM etapa_trabalho WHERE id = p_etapa_trabalho_id;
     IF n = 0 THEN
-        RAISE EXCEPTION 'A etapa de trabalho % não existe', p_etapa_trabalho_id;
+        RAISE EXCEPTION 'A etapa de trabalho % não existe', p_etapa_trabalho_id
+            USING ERRCODE = 'no_data_found';
     END IF;
     IF v_inicio IS NOT NULL THEN
         RAISE EXCEPTION 'Esta etapa já foi iniciada';
@@ -205,7 +209,8 @@ DECLARE
 BEGIN
     SELECT * INTO v_etapa FROM etapa_trabalho WHERE id = p_etapa_trabalho_id;
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'A etapa de trabalho % não existe', p_etapa_trabalho_id;
+        RAISE EXCEPTION 'A etapa de trabalho % não existe', p_etapa_trabalho_id
+            USING ERRCODE = 'no_data_found';
     END IF;
     IF v_etapa.data_inicio IS NULL THEN
         RAISE EXCEPTION 'A etapa "%" ainda não foi iniciada', v_etapa.nome;

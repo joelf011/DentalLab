@@ -71,13 +71,23 @@ export function traduzirErro(erro: Erro): { codigo: number; mensagem: string } |
   const dadosInvalidos = (mensagem: string) => ({ codigo: 400, mensagem });
 
   switch (erro.code) {
-    // RAISE EXCEPTION nas funções da BD: a mensagem já vem em português
+    // RAISE EXCEPTION sem código nas funções da BD: a mensagem já vem em português
+    // (a regra dos códigos está no início do ModelosBaseDeDados/sql/03_funcoes.sql)
     case 'P0001':
       return dadosInvalidos(erro.message);
 
-    // UNIQUE: valor repetido. É 409 (conflito) e não 400: os dados estão bem escritos,
+    // RAISE EXCEPTION ... USING ERRCODE = 'no_data_found': o registo pedido não existe
+    case 'P0002':
+      return { codigo: 404, mensagem: erro.message };
+
+    // Valor repetido. É 409 (conflito) e não 400: os dados estão bem escritos,
     // mas chocam com um registo que já existe (regra de AI3).
+    // Vem de uma função (RAISE ... USING ERRCODE = 'unique_violation', com a mensagem dela)
+    // ou da própria tabela (regra UNIQUE, com o nome da regra).
     case '23505':
+      if (!erro.constraint) {
+        return { codigo: 409, mensagem: erro.message };
+      }
       return { codigo: 409, mensagem: mensagensRegras[regra] ?? 'Já existe um registo com estes dados.' };
 
     // CHECK: valor que não cumpre uma regra da tabela

@@ -533,6 +533,15 @@ WHERE t.eliminado_em IS NULL;
 -- Cada entidade tem uma função fn_<entidade>_crud(p_operacao, p_id, ...)
 -- que faz CREATE, UPDATE e DELETE e devolve o id do registo afetado.
 -- Correr depois de 02_vistas.sql.
+--
+-- Erros (RAISE EXCEPTION): a mensagem é em português e chega assim ao utilizador.
+-- Dois casos levam também um código, para a API responder com o código HTTP certo:
+--   * o registo a alterar, apagar ou usar como "pai" não existe:
+--       USING ERRCODE = 'no_data_found'     (a API responde 404)
+--   * já existe um registo com esse valor (designação, email, NIF...):
+--       USING ERRCODE = 'unique_violation'  (a API responde 409)
+-- Os outros erros ficam sem código (a API responde 400). Um id de outra tabela que vem
+-- nos dados (ex.: o cliente de uma ordem nova) também fica sem código: é um dado inválido.
 -- =====================================================================
 
 -- (origem: crud/crud_cargo_utilizador.sql)
@@ -553,7 +562,8 @@ BEGIN
     IF v_operacao IN ('UPDATE', 'DELETE') THEN
         SELECT count(*) INTO n FROM cargo WHERE id = p_id;
         IF n = 0 THEN
-            RAISE EXCEPTION 'O cargo % não existe', p_id;
+            RAISE EXCEPTION 'O cargo % não existe', p_id
+                USING ERRCODE = 'no_data_found';
         END IF;
     END IF;
 
@@ -564,7 +574,8 @@ BEGIN
 
         SELECT count(*) INTO n FROM cargo WHERE designacao = p_designacao;
         IF n > 0 THEN
-            RAISE EXCEPTION 'Já existe o cargo %', p_designacao;
+            RAISE EXCEPTION 'Já existe o cargo %', p_designacao
+                USING ERRCODE = 'unique_violation';
         END IF;
 
         INSERT INTO cargo(designacao) VALUES (p_designacao)
@@ -623,7 +634,8 @@ BEGIN
     IF v_operacao IN ('UPDATE', 'DELETE') THEN
         SELECT count(*) INTO n FROM utilizador WHERE id = p_id;
         IF n = 0 THEN
-            RAISE EXCEPTION 'O utilizador % não existe', p_id;
+            RAISE EXCEPTION 'O utilizador % não existe', p_id
+                USING ERRCODE = 'no_data_found';
         END IF;
     END IF;
 
@@ -632,7 +644,8 @@ BEGIN
             SELECT count(*) INTO n FROM utilizador
             WHERE lower(email) = lower(p_email) AND id IS DISTINCT FROM p_id;
             IF n > 0 THEN
-                RAISE EXCEPTION 'Já existe um utilizador com o email %', p_email;
+                RAISE EXCEPTION 'Já existe um utilizador com o email %', p_email
+                    USING ERRCODE = 'unique_violation';
             END IF;
         END IF;
 
@@ -805,7 +818,8 @@ DECLARE
 BEGIN
     SELECT * INTO v_conta FROM utilizador WHERE id = p_id;
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'O utilizador % não existe', p_id;
+        RAISE EXCEPTION 'O utilizador % não existe', p_id
+            USING ERRCODE = 'no_data_found';
     END IF;
     IF v_conta.data_aprovacao IS NOT NULL THEN
         RAISE EXCEPTION 'Esta conta já está aprovada';
@@ -845,7 +859,8 @@ BEGIN
     IF v_operacao IN ('UPDATE', 'DELETE') THEN
         SELECT count(*) INTO n FROM cliente WHERE id = p_id;
         IF n = 0 THEN
-            RAISE EXCEPTION 'O cliente % não existe', p_id;
+            RAISE EXCEPTION 'O cliente % não existe', p_id
+                USING ERRCODE = 'no_data_found';
         END IF;
     END IF;
 
@@ -856,7 +871,8 @@ BEGIN
 
         SELECT count(*) INTO n FROM cliente WHERE nif = p_nif AND id IS DISTINCT FROM p_id;
         IF n > 0 THEN
-            RAISE EXCEPTION 'Já existe um cliente com o NIF %', p_nif;
+            RAISE EXCEPTION 'Já existe um cliente com o NIF %', p_nif
+                USING ERRCODE = 'unique_violation';
         END IF;
     END IF;
 
@@ -930,7 +946,8 @@ BEGIN
     IF v_operacao IN ('UPDATE', 'DELETE') THEN
         SELECT count(*) INTO n FROM etapa_trabalho WHERE id = p_id;
         IF n = 0 THEN
-            RAISE EXCEPTION 'A etapa de trabalho % não existe', p_id;
+            RAISE EXCEPTION 'A etapa de trabalho % não existe', p_id
+                USING ERRCODE = 'no_data_found';
         END IF;
     END IF;
 
@@ -945,7 +962,8 @@ BEGIN
     IF v_operacao = 'CREATE' THEN
         SELECT count(*) INTO n FROM trabalho WHERE id = p_trabalho_id AND eliminado_em IS NULL;
         IF n = 0 THEN
-            RAISE EXCEPTION 'O trabalho % não existe', p_trabalho_id;
+            RAISE EXCEPTION 'O trabalho % não existe', p_trabalho_id
+                USING ERRCODE = 'no_data_found';
         END IF;
 
         v_nome := p_nome;
@@ -1047,7 +1065,8 @@ BEGIN
     SELECT count(*) INTO n FROM alteracao_cliente
     WHERE cliente_id = p_cliente_id AND estado = 'pendente';
     IF n > 0 THEN
-        RAISE EXCEPTION 'Já existe um pedido de alteração à espera de aprovação';
+        RAISE EXCEPTION 'Já existe um pedido de alteração à espera de aprovação'
+            USING ERRCODE = 'unique_violation';
     END IF;
 
     INSERT INTO alteracao_cliente(cliente_id, pedido_por, nome, morada_faturacao, email, telefone)
@@ -1075,9 +1094,13 @@ DECLARE
     v_pedido alteracao_cliente%ROWTYPE;
     n        integer;
 BEGIN
-    SELECT * INTO v_pedido FROM alteracao_cliente WHERE id = p_id AND estado = 'pendente';
+    SELECT * INTO v_pedido FROM alteracao_cliente WHERE id = p_id;
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'O pedido de alteração % não existe ou já foi decidido', p_id;
+        RAISE EXCEPTION 'O pedido de alteração % não existe', p_id
+            USING ERRCODE = 'no_data_found';
+    END IF;
+    IF v_pedido.estado <> 'pendente' THEN
+        RAISE EXCEPTION 'O pedido de alteração % já foi decidido', p_id;
     END IF;
 
     SELECT count(*) INTO n
@@ -1139,7 +1162,8 @@ BEGIN
     IF v_operacao IN ('UPDATE', 'DELETE') THEN
         SELECT count(*) INTO n FROM estado_ordem WHERE id = p_id;
         IF n = 0 THEN
-            RAISE EXCEPTION 'O estado % não existe', p_id;
+            RAISE EXCEPTION 'O estado % não existe', p_id
+                USING ERRCODE = 'no_data_found';
         END IF;
     END IF;
 
@@ -1150,7 +1174,8 @@ BEGIN
 
         SELECT count(*) INTO n FROM estado_ordem WHERE designacao = p_designacao;
         IF n > 0 THEN
-            RAISE EXCEPTION 'Já existe o estado %', p_designacao;
+            RAISE EXCEPTION 'Já existe o estado %', p_designacao
+                USING ERRCODE = 'unique_violation';
         END IF;
 
         INSERT INTO estado_ordem(designacao) VALUES (p_designacao)
@@ -1217,7 +1242,8 @@ BEGIN
     IF v_operacao IN ('UPDATE', 'DELETE') THEN
         SELECT count(*) INTO n FROM ordem_trabalho WHERE id = p_id AND eliminado_em IS NULL;
         IF n = 0 THEN
-            RAISE EXCEPTION 'A ordem de trabalho % não existe', p_id;
+            RAISE EXCEPTION 'A ordem de trabalho % não existe', p_id
+                USING ERRCODE = 'no_data_found';
         END IF;
     END IF;
 
@@ -1331,7 +1357,8 @@ BEGIN
     IF v_operacao IN ('UPDATE', 'DELETE') THEN
         SELECT count(*) INTO n FROM tipo_trabalho WHERE id = p_id;
         IF n = 0 THEN
-            RAISE EXCEPTION 'O tipo de trabalho % não existe', p_id;
+            RAISE EXCEPTION 'O tipo de trabalho % não existe', p_id
+                USING ERRCODE = 'no_data_found';
         END IF;
     END IF;
 
@@ -1339,7 +1366,8 @@ BEGIN
         SELECT count(*) INTO n FROM tipo_trabalho
         WHERE nome = p_nome AND id IS DISTINCT FROM p_id;
         IF n > 0 THEN
-            RAISE EXCEPTION 'Já existe o tipo de trabalho %', p_nome;
+            RAISE EXCEPTION 'Já existe o tipo de trabalho %', p_nome
+                USING ERRCODE = 'unique_violation';
         END IF;
     END IF;
 
@@ -1396,7 +1424,8 @@ BEGIN
     IF v_operacao IN ('UPDATE', 'DELETE') THEN
         SELECT count(*) INTO n FROM trabalho WHERE id = p_id AND eliminado_em IS NULL;
         IF n = 0 THEN
-            RAISE EXCEPTION 'O trabalho % não existe', p_id;
+            RAISE EXCEPTION 'O trabalho % não existe', p_id
+                USING ERRCODE = 'no_data_found';
         END IF;
     END IF;
 
@@ -1412,7 +1441,8 @@ BEGIN
         SELECT count(*) INTO n FROM ordem_trabalho
         WHERE id = p_ordem_trabalho_id AND eliminado_em IS NULL;
         IF n = 0 THEN
-            RAISE EXCEPTION 'A ordem de trabalho % não existe', p_ordem_trabalho_id;
+            RAISE EXCEPTION 'A ordem de trabalho % não existe', p_ordem_trabalho_id
+                USING ERRCODE = 'no_data_found';
         END IF;
 
         SELECT count(*) INTO n FROM tipo_trabalho WHERE id = p_tipo_trabalho_id AND ativo;
@@ -1483,6 +1513,7 @@ $BODY$;
 -- reaproveitam as funções CRUD (03_funcoes.sql), para valerem as mesmas validações.
 --
 -- Correr depois de 03_funcoes.sql.
+-- Erros: seguem a regra dos códigos explicada no início do 03_funcoes.sql.
 -- =====================================================================
 
 
@@ -1566,7 +1597,8 @@ BEGIN
     WHERE o.id = p_ordem_id AND o.eliminado_em IS NULL;
 
     IF v_estado IS NULL THEN
-        RAISE EXCEPTION 'A ordem de trabalho % não existe', p_ordem_id;
+        RAISE EXCEPTION 'A ordem de trabalho % não existe', p_ordem_id
+            USING ERRCODE = 'no_data_found';
     END IF;
     IF v_estado <> 'Em avaliação' THEN
         RAISE EXCEPTION 'Só se aceitam ordens "Em avaliação" (esta está "%")', v_estado;
@@ -1608,7 +1640,8 @@ DECLARE
 BEGIN
     SELECT count(*) INTO n FROM tipo_trabalho WHERE id = p_tipo_trabalho_id;
     IF n = 0 THEN
-        RAISE EXCEPTION 'O tipo de trabalho % não existe', p_tipo_trabalho_id;
+        RAISE EXCEPTION 'O tipo de trabalho % não existe', p_tipo_trabalho_id
+            USING ERRCODE = 'no_data_found';
     END IF;
 
     IF p_etapas IS NULL OR array_length(p_etapas, 1) IS NULL THEN
@@ -1649,7 +1682,8 @@ BEGIN
     SELECT count(*), max(data_inicio) INTO n, v_inicio
     FROM etapa_trabalho WHERE id = p_etapa_trabalho_id;
     IF n = 0 THEN
-        RAISE EXCEPTION 'A etapa de trabalho % não existe', p_etapa_trabalho_id;
+        RAISE EXCEPTION 'A etapa de trabalho % não existe', p_etapa_trabalho_id
+            USING ERRCODE = 'no_data_found';
     END IF;
     IF v_inicio IS NOT NULL THEN
         RAISE EXCEPTION 'Esta etapa já foi iniciada';
@@ -1680,7 +1714,8 @@ DECLARE
 BEGIN
     SELECT * INTO v_etapa FROM etapa_trabalho WHERE id = p_etapa_trabalho_id;
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'A etapa de trabalho % não existe', p_etapa_trabalho_id;
+        RAISE EXCEPTION 'A etapa de trabalho % não existe', p_etapa_trabalho_id
+            USING ERRCODE = 'no_data_found';
     END IF;
     IF v_etapa.data_inicio IS NULL THEN
         RAISE EXCEPTION 'A etapa "%" ainda não foi iniciada', v_etapa.nome;

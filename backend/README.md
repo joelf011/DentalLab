@@ -218,7 +218,7 @@ O 401 traz o cabeçalho `WWW-Authenticate`:
 - `Bearer` quando não veio token;
 - `Bearer error="invalid_token"` quando o token é falso, expirou, ou a conta foi desativada.
 
-As mensagens das funções da BD (`RAISE EXCEPTION`) chegam tal como foram escritas no pgAdmin, com o código 400.
+As mensagens das funções da BD (`RAISE EXCEPTION`) chegam tal como foram escritas no pgAdmin, com o código 400; ou 404 e 409, quando a função indica que o registo não existe ou que já existe (regra no início do `03_funcoes.sql`).
 
 No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se a mensagem, sem apagar nada.
 
