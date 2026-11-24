@@ -254,11 +254,7 @@ Resumo. Os campos de cada rota, os obrigatórios e as respostas possíveis estã
 | `POST /api/v1/auth/login` | Login: `{ "email": "...", "password": "..." }`. Devolve `{ token, utilizador }` |
 | `GET /api/v1/auth/eu` | Quem está ligado (precisa de login) |
 | `PUT /api/v1/auth/password` | Muda a palavra-passe de quem está ligado: `{ "password_atual": "...", "password_nova": "..." }` |
-| `GET /api/v1/cargos` | Lista os cargos (login) |
-| `GET /api/v1/cargos/:id` | Mostra um cargo (login) |
-| `POST /api/v1/cargos` | Cria um cargo: `{ "designacao": "..." }` (Administrador) |
-| `PATCH /api/v1/cargos/:id` | Altera um cargo: `{ "designacao": "..." }` (Administrador) |
-| `DELETE /api/v1/cargos/:id` | Apaga um cargo, só se não tiver utilizadores (Administrador) |
+| `GET /api/v1/cargos` | Lista os cargos, que são fixos: Administrador, Colaborador e Cliente (login) |
 | `GET /api/v1/clientes` | Lista as clínicas (Administrador) |
 | `GET /api/v1/clientes/:id` | Mostra uma clínica (Administrador; uma clínica só a sua) |
 | `POST /api/v1/clientes` | Cria uma clínica, sem conta de acesso: `{ "nome", "nif", "morada_faturacao", "email", "telefone" }` (Administrador) |
