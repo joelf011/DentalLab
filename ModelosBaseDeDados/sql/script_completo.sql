@@ -1826,6 +1826,14 @@ BEGIN
         v_depois := to_jsonb(NEW) - 'password_hash';
     END IF;
 
+    -- A password mudou (só acontece na tabela utilizador): fica registado que mudou, nunca o hash.
+    -- Sem isto, uma mudança só da password parecia um UPDATE sem alterações e não ficava registada.
+    -- Usa-se to_jsonb(...) ->> 'password_hash' porque as outras tabelas não têm essa coluna (dá NULL).
+    IF TG_OP = 'UPDATE'
+       AND (to_jsonb(OLD) ->> 'password_hash') IS DISTINCT FROM (to_jsonb(NEW) ->> 'password_hash') THEN
+        v_depois := v_depois || jsonb_build_object('password_alterada', TRUE);
+    END IF;
+
     -- UPDATE que não mudou nada: não regista
     IF TG_OP = 'UPDATE' AND v_antes = v_depois THEN
         RETURN NULL;
