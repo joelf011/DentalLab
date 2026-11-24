@@ -26,7 +26,7 @@ npm run dev     # arranca a API na porta 3000 (reinicia sozinha quando gravas um
 
 4. Abrir http://localhost:3000/api/v1/saude no navegador. Deve mostrar `{"api":"ok","bd":"ok"}`.
 5. Abrir a documentação, http://localhost:3000/api/v1/docs. Tem todas as rotas, com os dados que cada uma recebe e devolve, e permite experimentá-las:
-   1. Em `POST /api/v1/auth/login`, carregar em **Try it out** e entrar com o admin: `admin@dentallab.local`, palavra-passe `Admin#2026`.
+   1. Em `POST /api/v1/tokens`, carregar em **Try it out** e entrar com o admin: `admin@dentallab.local`, palavra-passe `Admin#2026`.
    2. Copiar o `token` da resposta, carregar em **Authorize** (no topo) e colá-lo.
    3. A partir daí, as outras rotas já funcionam.
 
@@ -103,43 +103,46 @@ A API tem de estar a correr (`npm run dev`) no PC.
   - No iOS, é preciso uma exceção `NSAppTransportSecurity` no `Info.plist`.
 - **React:** a porta do site tem de estar no `CORS_ORIGENS` do `.env` da API. Já lá estão a 5173 e a 5174, que são as do Vite. Sem isso, o navegador bloqueia os pedidos.
 
-### 2. Login e token
+### 2. Entrar e sair
 
-1. `POST /api/v1/auth/login` com `{ "email": "...", "password": "..." }`.
-2. A resposta traz `{ "token": "...", "utilizador": { "id", "nome", "cargo", "cliente_id", "email", "password_temporaria" } }`.
-3. Guarda o `token`:
-   - React: `localStorage`;
-   - Flutter: o pacote `flutter_secure_storage`.
-4. Envia-o em **todos** os outros pedidos, no cabeçalho `Authorization: Bearer <token>`.
-5. Usa o `cargo` (`Administrador`, `Colaborador` ou `Cliente`) para escolher que ecrãs mostrar. Quem decide o que cada cargo pode fazer é a API; o frontend só esconde o que não faz sentido mostrar.
-6. Se `password_temporaria` for `true`, leva a pessoa para um ecrã de mudar a palavra-passe (`PUT /api/v1/conta/palavra-passe`) antes de continuar.
-7. Quando a app abre e já tem um token guardado, chama `GET /api/v1/auth/eu`:
-   - 200: a sessão continua válida;
-   - 401: apaga o token e mostra o ecrã de login.
-8. O token dura 7 dias. Terminar sessão é apagar o token guardado.
+O site e a app entram de formas diferentes, como nas aulas de AI3:
+
+| | Site (React) | App (Flutter) |
+| --- | --- | --- |
+| Entrar | `POST /api/v1/sessao` | `POST /api/v1/tokens` |
+| Onde fica o token | Num cookie `HttpOnly`, que o navegador guarda e envia sozinho. O JavaScript da página não o vê | Vem na resposta, `{ "token", "utilizador" }`. A app guarda-o no SQFLite |
+| Nos outros pedidos | `fetch(..., { credentials: 'include' })` | Cabeçalho `Authorization: Bearer <token>` |
+| Ao abrir | `GET /api/v1/sessao`: 200, a sessão continua; 401, mostrar o login | `GET /api/v1/sessao` com o token guardado: 200, continua; 401, apagar o token e mostrar o login |
+| Sair | `DELETE /api/v1/sessao` (apaga o cookie) | Apagar o token guardado |
+
+- Os dois enviam `{ "email": "...", "password": "..." }` e recebem quem entrou: `{ "id", "nome", "cargo", "cliente_id", "email", "password_temporaria" }` (na app, dentro de `utilizador`).
+- Usa o `cargo` (`Administrador`, `Colaborador` ou `Cliente`) para escolher que ecrãs mostrar. Quem decide o que cada cargo pode fazer é a API; o frontend só esconde o que não faz sentido mostrar.
+- Se `password_temporaria` for `true`, leva a pessoa para um ecrã de mudar a palavra-passe (`PUT /api/v1/conta/palavra-passe`) antes de continuar.
+- Ao entrar: 401 é "email ou palavra-passe incorretos"; 403 é conta desativada ou ainda por aprovar. Nos dois, mostra-se a `mensagem`.
+- O login dura 7 dias. Depois disso, a API responde 401 e é preciso entrar outra vez.
 
 **React (`fetch`):**
 
 ```js
 const API = 'http://localhost:3000/api/v1';
 
-// Login
-const resposta = await fetch(`${API}/auth/login`, {
+// Entrar: a API guarda a sessão num cookie; o corpo traz quem entrou
+const resposta = await fetch(`${API}/sessao`, {
   method: 'POST',
+  credentials: 'include',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ email, password }),
 });
 const dados = await resposta.json();
 if (!resposta.ok) {
   mostrarErro(dados.mensagem); // a mensagem já vem pronta a mostrar
-} else {
-  localStorage.setItem('token', dados.token);
 }
 
-// Qualquer outro pedido
-const cargos = await fetch(`${API}/cargos`, {
-  headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-});
+// Qualquer outro pedido: credentials: 'include' faz o navegador enviar o cookie
+const cargos = await fetch(`${API}/cargos`, { credentials: 'include' });
+
+// Sair
+await fetch(`${API}/sessao`, { method: 'DELETE', credentials: 'include' });
 ```
 
 **Flutter (pacote `http`):**
@@ -150,9 +153,9 @@ import 'package:http/http.dart' as http;
 
 const api = 'http://10.0.2.2:3000/api/v1';
 
-// Login
+// Entrar
 final resposta = await http.post(
-  Uri.parse('$api/auth/login'),
+  Uri.parse('$api/tokens'),
   headers: {'Content-Type': 'application/json'},
   body: jsonEncode({'email': email, 'password': password}),
 );
@@ -160,7 +163,7 @@ final dados = jsonDecode(resposta.body);
 if (resposta.statusCode != 200) {
   mostrarErro(dados['mensagem']); // a mensagem já vem pronta a mostrar
 } else {
-  final token = dados['token']; // guardar com flutter_secure_storage
+  final token = dados['token']; // guardar no SQFLite
 }
 
 // Qualquer outro pedido
@@ -195,7 +198,7 @@ final cargos = await http.get(
   | Resposta | `Cache-Control` | O que quer dizer |
   | --- | --- | --- |
   | Leituras (`GET`) de quem tem login | `private, no-cache` | Só o próprio navegador a pode guardar, e tem de confirmar com a API antes de a reutilizar |
-  | Escritas, login, sessão (`/auth/eu`), saúde e todos os erros | `no-store` | Nunca se guarda |
+  | Escritas, login, sessão (`/sessao`), saúde e todos os erros | `no-store` | Nunca se guarda |
   | Dados públicos, iguais para todos | `public, max-age=...` | Pode guardar-se e reutilizar-se durante esse tempo (só nas rotas que o indicarem) |
 
   É com isto que o service worker do site decide o que pode guardar.
@@ -226,7 +229,7 @@ Todas as respostas de erro têm este formato (o mesmo das aulas de AI3):
 | Código | Significa | O que o frontend deve fazer |
 | --- | --- | --- |
 | 400 | Dados inválidos (ex.: "Os dados enviados não são válidos.", com `detalhes`) | Mostrar a mensagem e, se vier `detalhes`, o problema ao pé de cada campo |
-| 401 | Sem sessão, sessão expirada ou conta desativada | Apagar o token e voltar ao ecrã de login |
+| 401 | Sem sessão, sessão expirada ou conta desativada | Voltar ao ecrã de login (na app, apagar o token guardado) |
 | 403 | O cargo não tem permissão; ou, no login, a conta está desativada ou ainda por aprovar | Mostrar a mensagem |
 | 404 | O registo não existe | Mostrar a mensagem, ou voltar à lista |
 | 409 | Conflito: já existe um registo com esse valor (ex.: "Já existe um cliente com este NIF"), ou o registo não está no estado certo (ex.: "Esta conta já está aprovada") | Mostrar a mensagem (e, se for preciso, recarregar os dados) |
@@ -236,12 +239,12 @@ Todas as respostas de erro têm este formato (o mesmo das aulas de AI3):
 | 503 | A API não consegue ligar-se à base de dados | Mostrar a mensagem e tentar mais tarde |
 
 O 401 traz o cabeçalho `WWW-Authenticate`:
-- `Bearer` quando não veio token;
+- `Bearer` quando não veio token (nem o cookie da sessão);
 - `Bearer error="invalid_token"` quando o token é falso, expirou, ou a conta foi desativada.
 
 As mensagens das funções da BD (`RAISE EXCEPTION`) chegam tal como foram escritas no pgAdmin, com o código 400; ou 404 e 409, quando a função indica que o registo não existe, que já existe ou que não está no estado certo (regra no início do `03_funcoes.sql`).
 
-No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se a mensagem, sem apagar nada.
+Ao **entrar** (`POST /sessao` ou `POST /tokens`), o 401 significa "email ou palavra-passe incorretos". Aí mostra-se a mensagem, sem apagar nada.
 
 ## Rotas
 
@@ -251,8 +254,10 @@ Resumo. Os campos de cada rota, os obrigatórios e as respostas possíveis estã
 | --- | --- |
 | `GET /api/v1/saude` | Verifica a API e a ligação à BD |
 | `POST /api/v1/registos` | Público. Uma clínica regista-se: `{ "nome", "nif", "morada_faturacao", "telefone", "email", "password" }`. A conta fica à espera de aprovação |
-| `POST /api/v1/auth/login` | Login: `{ "email": "...", "password": "..." }`. Devolve `{ token, utilizador }` |
-| `GET /api/v1/auth/eu` | Quem está ligado (precisa de login) |
+| `POST /api/v1/tokens` | App: entrar com `{ "email", "password" }`. Devolve `{ token, utilizador }` |
+| `POST /api/v1/sessao` | Site: entrar com `{ "email", "password" }`. Guarda a sessão num cookie e devolve quem entrou |
+| `GET /api/v1/sessao` | Quem está ligado (cookie ou token) |
+| `DELETE /api/v1/sessao` | Site: sair (apaga o cookie) |
 | `PUT /api/v1/conta/palavra-passe` | Muda a palavra-passe de quem está ligado: `{ "password_atual": "...", "password_nova": "..." }` |
 | `GET /api/v1/cargos` | Lista os cargos, que são fixos: Administrador, Colaborador e Cliente (login) |
 | `GET /api/v1/clientes` | Lista as clínicas (Administrador) |
