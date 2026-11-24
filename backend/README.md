@@ -12,7 +12,7 @@ A API só faz duas coisas:
 
 ## Arrancar
 
-1. Criar a base de dados `dentallab` no pgAdmin e correr os ficheiros SQL (ver abaixo).
+1. Criar a base de dados `abd_lab_cd` no pgAdmin e correr os ficheiros SQL (ver abaixo).
 2. Copiar `.env.example` para `.env` e preencher:
    - `DB_PASSWORD`: a palavra-passe do PostgreSQL;
    - `JWT_SEGREDO`: um texto longo e aleatório (o `.env.example` tem o comando para o gerar);
@@ -25,7 +25,12 @@ npm run dev     # arranca a API na porta 3000 (reinicia sozinha quando gravas um
 ```
 
 4. Abrir http://localhost:3000/api/v1/saude no navegador. Deve mostrar `{"api":"ok","bd":"ok"}`.
-5. Testar o login com [`pedidos/auth.http`](pedidos/auth.http): admin `admin@dentallab.local`, palavra-passe `Admin#2026`.
+5. Abrir a documentação, http://localhost:3000/api/v1/docs. Tem todas as rotas, com os dados que cada uma recebe e devolve, e permite experimentá-las:
+   1. Em `POST /api/v1/auth/login`, carregar em **Try it out** e entrar com o admin: `admin@dentallab.local`, palavra-passe `Admin#2026`.
+   2. Copiar o `token` da resposta, carregar em **Authorize** (no topo) e colá-lo.
+   3. A partir daí, as outras rotas já funcionam.
+
+   O mesmo contrato, em JSON (OpenAPI 3), está em http://localhost:3000/api/v1/docs/json.
 
 ## Base de dados no pgAdmin
 
@@ -48,27 +53,29 @@ src/
     bd.ts               ligação à base de dados: ler (bd.query) e escrever (escreverComo)
     acesso.ts           controlo de acesso às rotas (exigirLogin, exigirCargo)
     erros.ts            formato das respostas de erro e mensagens em português
+    esquemas.ts         peças dos esquemas usadas por todos os módulos (id no endereço, respostas, erros)
     respostas.ts        respostas de sucesso com regras (201 com Location) e o prefixo /api/v1
   plugins/              peças do Fastify ligadas uma vez, para toda a API
     cache.ts            Cache-Control em todas as respostas
     cors.ts             sites React autorizados
+    documentacao.ts     documentação da API (OpenAPI), em /api/v1/docs
     jwt.ts              tokens de login
     tratamento-erros.ts respostas de erro e rota inexistente
-  modulos/              um por área; cada um tem as suas rotas
-    saude/              estado da API e da ligação à BD
-    autenticacao/       login, registo, palavra-passe
+    validacao.ts        confirma os dados dos pedidos com os esquemas
+  modulos/              um por área
     cargos/
-    clientes/
-    alteracoes-cliente/
-    utilizadores/
-pedidos/                pedidos de teste (.http) para a extensão REST Client do VS Code
+      cargos.rotas.ts     as rotas: quem pode, o que se lê ou escreve na BD
+      cargos.esquemas.ts  os dados que cada rota recebe e devolve
+    saude/  autenticacao/  clientes/  alteracoes-cliente/  utilizadores/   (iguais)
 ```
 
 Os nomes seguem os da app (`lib/comum`, `lib/autenticacao`, `configuracao.dart`) e os do servidor de AI3 (`servidor.js`).
 
 **Acrescentar uma área nova** (ex.: ordens):
-1. Criar a pasta `src/modulos/ordens/` com o ficheiro `ordens.rotas.ts`, igual aos outros.
-2. Registá-lo no `app.ts`: `app.register(rotasOrdens, versao1);`.
+1. Criar a pasta `src/modulos/ordens/` com os ficheiros `ordens.rotas.ts` e `ordens.esquemas.ts`, iguais aos outros.
+2. No `ordens.esquemas.ts`, descrever cada rota: o que recebe (`params`, `querystring`, `body`) e o que devolve (`response`). Com isto, a API recusa dados errados (400, com `detalhes`) e a rota aparece na documentação.
+3. A resposta só leva os campos que estão no esquema. Se acrescentarem uma coluna à vista, acrescentem-na também ao esquema (ex.: `esquemaCargo`), senão não aparece na resposta.
+4. Registar o módulo no `app.ts`: `app.register(rotasOrdens, versao1);`.
 
 As regras de negócio ficam na base de dados (funções e procedimentos). Por isso, cada rota só verifica quem pode fazer o pedido, lê de uma vista ou chama uma função, e devolve a resposta. Não há camadas (controller, service, repository) por cima.
 
@@ -167,7 +174,9 @@ final cargos = await http.get(
 
 - Os dados vão e vêm em **JSON**.
 - Os nomes dos campos são os das colunas da BD (snake_case): `prazo_entrega`, `cliente_id`, ...
-- **`Content-Type: application/json` só se envia nos pedidos com corpo** (`POST` e `PUT`). Num `DELETE` sem corpo, esse cabeçalho dá erro 400.
+- **`Content-Type: application/json` só se envia nos pedidos com corpo** (`POST`, `PUT` e `PATCH`). Num `DELETE` sem corpo, esse cabeçalho dá erro 400.
+- **Alterar um registo é `PATCH`**, só com os campos que mudam (ex.: `PATCH /api/v1/clientes/5` com `{ "telefone": "232000000" }`). Os outros ficam como estão.
+- **Campos:** um campo que a rota não conhece dá 400 (ex.: `morada` em vez de `morada_faturacao`), e os tipos têm de estar certos (`"cargo_id": 2`, não `"2"`; `"ativo": true`, não `"true"`).
 - **Datas:**
   - as datas sem hora vêm como `"2026-11-20"`;
   - as datas com hora vêm em ISO, `"2026-11-04T10:30:00.000Z"`, em UTC, e convertem-se para a hora local ao mostrar.
@@ -179,7 +188,8 @@ final cargos = await http.get(
   | Lista | 200 | `[ {...}, {...} ]` |
   | Um registo | 200 | `{...}` |
   | Criado | 201 | `{ "id": 5 }`, mais o cabeçalho `Location` com o endereço do registo novo (ex.: `/api/v1/cargos/5`) |
-  | Alterado, apagado ou ação | 200 | `{ "id": 5 }` |
+  | Alterado ou ação (ex.: aprovar) | 200 | `{ "id": 5 }` |
+  | Apagado ou desativado (`DELETE`) | 204 | Sem corpo |
 - **Cache (`Cache-Control`):** todas as respostas dizem se o navegador as pode guardar.
 
   | Resposta | `Cache-Control` | O que quer dizer |
@@ -195,16 +205,27 @@ final cargos = await http.get(
 Todas as respostas de erro têm este formato (o mesmo das aulas de AI3):
 
 ```json
-{ "codigo": 400, "mensagem": "Tem de indicar o nome e o NIF do cliente" }
+{ "codigo": 409, "mensagem": "Já existe um cliente com o NIF 509990010" }
+```
+
+```json
+{
+  "codigo": 400,
+  "mensagem": "Os dados enviados não são válidos.",
+  "detalhes": [
+    { "campo": "nif", "problema": "Tem de ter 9 algarismos." },
+    { "campo": "password", "problema": "Tem de ter pelo menos 8 caracteres." }
+  ]
+}
 ```
 
 - `codigo`: o mesmo número do código HTTP da resposta.
 - `mensagem`: está em português e pode mostrar-se diretamente ao utilizador.
-- `detalhes`: só aparece quando o problema é de campos concretos, com uma lista `[{ "campo": "nif", "problema": "..." }]` para mostrar o erro ao pé de cada campo.
+- `detalhes`: só aparece quando os dados enviados não cumprem as regras da rota. Traz todos os problemas de uma vez, para mostrar cada um ao pé do seu campo.
 
 | Código | Significa | O que o frontend deve fazer |
 | --- | --- | --- |
-| 400 | Dados inválidos (ex.: "Tem de indicar a designação do cargo") | Mostrar a mensagem e deixar a pessoa corrigir |
+| 400 | Dados inválidos (ex.: "Os dados enviados não são válidos.", com `detalhes`) | Mostrar a mensagem e, se vier `detalhes`, o problema ao pé de cada campo |
 | 401 | Sem sessão, sessão expirada ou conta desativada | Apagar o token e voltar ao ecrã de login |
 | 403 | O cargo não tem permissão; ou, no login, a conta está desativada ou ainda por aprovar | Mostrar a mensagem |
 | 404 | O registo não existe | Mostrar a mensagem, ou voltar à lista |
@@ -224,6 +245,8 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 
 ## Rotas
 
+Resumo. Os campos de cada rota, os obrigatórios e as respostas possíveis estão na documentação (http://localhost:3000/api/v1/docs).
+
 | Rota | O que faz |
 | --- | --- |
 | `GET /api/v1/saude` | Verifica a API e a ligação à BD |
@@ -234,12 +257,12 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 | `GET /api/v1/cargos` | Lista os cargos (login) |
 | `GET /api/v1/cargos/:id` | Mostra um cargo (login) |
 | `POST /api/v1/cargos` | Cria um cargo: `{ "designacao": "..." }` (Administrador) |
-| `PUT /api/v1/cargos/:id` | Altera um cargo: `{ "designacao": "..." }` (Administrador) |
+| `PATCH /api/v1/cargos/:id` | Altera um cargo: `{ "designacao": "..." }` (Administrador) |
 | `DELETE /api/v1/cargos/:id` | Apaga um cargo, só se não tiver utilizadores (Administrador) |
 | `GET /api/v1/clientes` | Lista as clínicas (Administrador) |
 | `GET /api/v1/clientes/:id` | Mostra uma clínica (Administrador; uma clínica só a sua) |
 | `POST /api/v1/clientes` | Cria uma clínica, sem conta de acesso: `{ "nome", "nif", "morada_faturacao", "email", "telefone" }` (Administrador) |
-| `PUT /api/v1/clientes/:id` | Altera uma clínica; `"ativo": false/true` desativa ou reativa a clínica e as contas dela (Administrador) |
+| `PATCH /api/v1/clientes/:id` | Altera uma clínica (só os campos que vierem); `"ativo": false/true` desativa ou reativa a clínica e as contas dela (Administrador) |
 | `DELETE /api/v1/clientes/:id` | Desativa a clínica e as contas dela (Administrador) |
 | `POST /api/v1/alteracoes-cliente` | A clínica pede para mudar os seus dados: `{ "nome", "morada_faturacao", "email", "telefone" }`, só os que mudam (Cliente) |
 | `GET /api/v1/alteracoes-cliente` | Pedidos de alteração; `?estado=pendente` só os que estão à espera (Administrador: todos; Cliente: os seus) |
@@ -249,7 +272,7 @@ No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se
 | `GET /api/v1/utilizadores` | Lista as contas; `?por_aprovar=true` só as que estão à espera de aprovação (Administrador) |
 | `GET /api/v1/utilizadores/:id` | Mostra uma conta (Administrador) |
 | `POST /api/v1/utilizadores` | Cria uma conta já aprovada: `{ "nome", "email", "cargo_id", "cliente_id", "password" }`; a palavra-passe é temporária (Administrador) |
-| `PUT /api/v1/utilizadores/:id` | Altera uma conta (só os campos que vierem); com `"password"`, define uma nova palavra-passe temporária (Administrador) |
+| `PATCH /api/v1/utilizadores/:id` | Altera uma conta (só os campos que vierem); com `"password"`, define uma nova palavra-passe temporária (Administrador) |
 | `DELETE /api/v1/utilizadores/:id` | Desativa uma conta ou recusa um registo; não pode ser a própria (Administrador) |
 | `POST /api/v1/utilizadores/:id/aprovar` | Aprova uma conta à espera (Administrador) |
 
