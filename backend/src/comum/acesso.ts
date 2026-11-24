@@ -21,10 +21,17 @@ export interface UtilizadorLogin {
   cliente_id: number | null; // só o cargo Cliente tem clínica; nos outros é null
 }
 
-// Diz ao TypeScript o que está dentro do token, para request.user.cargo (etc.) funcionar sem erros.
+// O que vai dentro do link de recuperação da palavra-passe (modulos/conta)
+export interface DadosRecuperacao {
+  id: number;
+  impressao: string; // resumo do hash atual da palavra-passe: quando ela muda, o link deixa de servir
+}
+
+// Diz ao TypeScript o que está dentro dos tokens, para request.user.cargo (etc.) funcionar sem erros.
+// O token do login leva UtilizadorLogin; o do link de recuperação leva DadosRecuperacao (com outro segredo).
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: UtilizadorLogin;
+    payload: UtilizadorLogin | DadosRecuperacao;
     user: UtilizadorLogin;
   }
 }

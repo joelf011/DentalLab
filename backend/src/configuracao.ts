@@ -36,6 +36,11 @@ export const configuracao = {
     // Durante quanto tempo um login é válido: 7 dias, em segundos. Depois disso, é preciso entrar outra vez.
     // O token da app e o cookie do site duram o mesmo.
     validade: 7 * 24 * 60 * 60,
+    // Segredo dos links de recuperação da palavra-passe. É diferente do do login (acrescenta-se um texto ao fim),
+    // para que um link de recuperação nunca sirva como sessão, nem o contrário.
+    segredoRecuperacao: `${process.env.JWT_SEGREDO}:recuperacao`,
+    // Durante quanto tempo um link de recuperação serve: 1 hora, em segundos.
+    validadeRecuperacao: 60 * 60,
   },
   email: {
     // Servidor de email (SMTP). Sem SMTP_HOST, os emails não são enviados: aparecem no terminal da API.

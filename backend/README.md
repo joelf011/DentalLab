@@ -16,7 +16,8 @@ A API só faz duas coisas:
 2. Copiar `.env.example` para `.env` e preencher:
    - `DB_PASSWORD`: a palavra-passe do PostgreSQL;
    - `JWT_SEGREDO`: um texto longo e aleatório (o `.env.example` tem o comando para o gerar);
-   - `CORS_ORIGENS`: os endereços dos sites React (já vem preenchido para o Vite).
+   - `CORS_ORIGENS`: os endereços dos sites React (já vem preenchido para o Vite);
+   - `SMTP_*` (opcional): o servidor de email, para a recuperação da palavra-passe e o formulário de contacto. Sem ele, os emails não são enviados: aparecem no terminal da API.
 3. No terminal, dentro da pasta `backend`:
 
 ```bash
@@ -120,6 +121,10 @@ O site e a app entram de formas diferentes, como nas aulas de AI3:
 - Se `password_temporaria` for `true`, leva a pessoa para um ecrã de mudar a palavra-passe (`PUT /api/v1/conta/palavra-passe`) antes de continuar.
 - Ao entrar: 401 é "email ou palavra-passe incorretos"; 403 é conta desativada ou ainda por aprovar. Nos dois, mostra-se a `mensagem`.
 - O login dura 7 dias. Depois disso, a API responde 401 e é preciso entrar outra vez.
+- **Esqueci-me da palavra-passe** (site):
+  1. `POST /api/v1/recuperacoes` com `{ "email": "..." }`. A resposta é sempre 204 (não diz se o email tem conta), por isso o site mostra sempre algo como "Se o email tiver conta, vai receber um link".
+  2. O email leva o link `<site>/#/recuperar?codigo=...`, válido durante 1 hora. Essa página do site pede a palavra-passe nova e envia `POST /api/v1/recuperacoes/concluir` com `{ "codigo": "...", "password_nova": "..." }`.
+  3. 204: mostrar "Palavra-passe alterada" e ir para o login. 400: o link já não serve (expirou ou já foi usado); pedir outro.
 
 **React (`fetch`):**
 
@@ -258,6 +263,8 @@ Resumo. Os campos de cada rota, os obrigatórios e as respostas possíveis estã
 | `POST /api/v1/sessao` | Site: entrar com `{ "email", "password" }`. Guarda a sessão num cookie e devolve quem entrou |
 | `GET /api/v1/sessao` | Quem está ligado (cookie ou token) |
 | `DELETE /api/v1/sessao` | Site: sair (apaga o cookie) |
+| `POST /api/v1/recuperacoes` | Público. Pede o link para escolher uma palavra-passe nova: `{ "email" }`. Responde sempre 204 |
+| `POST /api/v1/recuperacoes/concluir` | Público. Escolhe a palavra-passe nova com o código do link: `{ "codigo", "password_nova" }` |
 | `PUT /api/v1/conta/palavra-passe` | Muda a palavra-passe de quem está ligado: `{ "password_atual": "...", "password_nova": "..." }` |
 | `GET /api/v1/cargos` | Lista os cargos, que são fixos: Administrador, Colaborador e Cliente (login) |
 | `GET /api/v1/clientes` | Lista as clínicas (Administrador) |

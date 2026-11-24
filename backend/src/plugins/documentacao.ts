@@ -30,7 +30,7 @@ export function registarDocumentacao(app: FastifyInstance) {
       tags: [
         { name: 'Saúde', description: 'Estado da API e da ligação à base de dados.' },
         { name: 'Autenticação', description: 'Entrar e sair: token da app e sessão do site (cookie).' },
-        { name: 'Conta', description: 'Registo de clínicas e palavra-passe.' },
+        { name: 'Conta', description: 'Registo de clínicas, palavra-passe e recuperação por email.' },
         { name: 'Cargos', description: 'Administrador, Colaborador e Cliente.' },
         { name: 'Clientes', description: 'As clínicas.' },
         { name: 'Alterações de cliente', description: 'Pedidos das clínicas para mudar os seus dados.' },

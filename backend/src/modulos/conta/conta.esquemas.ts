@@ -1,6 +1,12 @@
-import { palavraPasseNova, respostaCriado, respostaId, respostasErro } from '../../comum/esquemas.ts';
+import {
+  palavraPasseNova,
+  respostaCriado,
+  respostaId,
+  respostaSemConteudo,
+  respostasErro,
+} from '../../comum/esquemas.ts';
 
-// Esquemas das rotas da conta: registo de uma clínica e palavra-passe (ver comum/esquemas.ts)
+// Esquemas das rotas da conta: registo de uma clínica, palavra-passe e recuperação (ver comum/esquemas.ts)
 
 const etiqueta = ['Conta'];
 
@@ -51,5 +57,52 @@ export const mudarPalavraPasse = {
     200: respostaId,
     // 400 e não 401 quando a atual está errada: o frontend trata o 401 como "sessão terminada".
     ...respostasErro(400, 401),
+  },
+};
+
+// POST /api/v1/recuperacoes
+export const pedirRecuperacao = {
+  tags: etiqueta,
+  operationId: 'pedirRecuperacao',
+  summary: 'Pedir para recuperar a palavra-passe',
+  description:
+    'Se o email for de uma conta ativa, envia-lhe um link para escolher uma palavra-passe nova (válido durante ' +
+    '1 hora). A resposta é sempre 204, haja ou não conta com esse email: assim não se descobre que emails têm conta.',
+  security: [], // pública: quem se esqueceu da palavra-passe não consegue entrar
+  body: {
+    type: 'object',
+    properties: {
+      email: { type: 'string', format: 'email', maxLength: 254 },
+    },
+    required: ['email'],
+    additionalProperties: false,
+  },
+  response: {
+    204: respostaSemConteudo,
+    ...respostasErro(400),
+  },
+};
+
+// POST /api/v1/recuperacoes/concluir
+export const concluirRecuperacao = {
+  tags: etiqueta,
+  operationId: 'concluirRecuperacao',
+  summary: 'Escolher a palavra-passe nova (com o código do link)',
+  description:
+    'O código vem no link do email (#/recuperar?codigo=...). Só serve uma vez: depois de a palavra-passe mudar, ' +
+    'o mesmo link deixa de funcionar.',
+  security: [], // pública: quem a usa ainda não conseguiu entrar
+  body: {
+    type: 'object',
+    properties: {
+      codigo: { type: 'string', minLength: 1 },
+      password_nova: palavraPasseNova,
+    },
+    required: ['codigo', 'password_nova'],
+    additionalProperties: false,
+  },
+  response: {
+    204: respostaSemConteudo,
+    ...respostasErro(400),
   },
 };
