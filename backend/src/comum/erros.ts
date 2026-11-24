@@ -178,17 +178,21 @@ const mensagensFormatos: Record<string, string> = {
 export function traduzirValidacao(problemas: FastifySchemaValidationError[]): DetalheErro[] {
   return problemas.map((erro) => {
     const valores = erro.params;
-    // O campo vem como "/email"; vazio quer dizer o corpo todo.
-    let campo = erro.instancePath.slice(1) || 'corpo';
+    // O caminho vem como "/email" ou "/trabalhos/0/natureza"; passa a "email" ou "trabalhos[0].natureza".
+    const caminho = erro.instancePath.slice(1).replace(/\/(\d+)/g, '[$1]').replace(/\//g, '.');
+    // Junta ao caminho o nome de um campo (ex.: o que falta dentro de trabalhos[1])
+    const dentroDe = (nome: unknown) => (caminho ? `${caminho}.${nome}` : String(nome));
+    // Vazio quer dizer o corpo todo
+    let campo = caminho || 'corpo';
     let problema: string;
 
     switch (erro.keyword) {
       case 'required':
-        campo = String(valores.missingProperty);
+        campo = dentroDe(valores.missingProperty);
         problema = 'É obrigatório.';
         break;
       case 'additionalProperties':
-        campo = String(valores.additionalProperty);
+        campo = dentroDe(valores.additionalProperty);
         problema = 'Este campo não existe.';
         break;
       case 'type':
