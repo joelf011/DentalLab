@@ -222,6 +222,12 @@ export function traduzirValidacao(problemas: FastifySchemaValidationError[]): De
       case 'minProperties':
         problema = 'Indique pelo menos um campo.';
         break;
+      case 'minItems':
+        problema = valores.limit === 1 ? 'Indique pelo menos um.' : `Indique pelo menos ${valores.limit}.`;
+        break;
+      case 'maxItems':
+        problema = `Indique no máximo ${valores.limit}.`;
+        break;
       default:
         problema = 'Valor inválido.';
     }
