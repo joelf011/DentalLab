@@ -67,7 +67,7 @@ src/
     cargos/
       cargos.rotas.ts     as rotas: quem pode, o que se lê ou escreve na BD
       cargos.esquemas.ts  os dados que cada rota recebe e devolve
-    saude/  autenticacao/  conta/  clientes/  alteracoes-cliente/  utilizadores/   (iguais)
+    saude/  autenticacao/  conta/  clientes/  alteracoes-cliente/  utilizadores/  contactos/   (iguais)
 ```
 
 Os nomes seguem os da app (`lib/comum`, `lib/autenticacao`, `configuracao.dart`) e os do servidor de AI3 (`servidor.js`).
@@ -283,6 +283,7 @@ Resumo. Os campos de cada rota, os obrigatórios e as respostas possíveis estã
 | `PATCH /api/v1/utilizadores/:id` | Altera uma conta (só os campos que vierem); com `"password"`, define uma nova palavra-passe temporária (Administrador) |
 | `DELETE /api/v1/utilizadores/:id` | Desativa uma conta ou recusa um registo; não pode ser a própria (Administrador) |
 | `POST /api/v1/utilizadores/:id/aprovar` | Aprova uma conta à espera (Administrador) |
+| `POST /api/v1/contactos` | Público. Formulário de contacto do site: `{ "clinica", "nome", "email", "telefone", "assunto", "mensagem" }`. Vai por email para o laboratório; 503 se o email falhar |
 
 ## Comandos
 
