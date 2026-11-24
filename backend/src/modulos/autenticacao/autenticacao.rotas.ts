@@ -6,30 +6,40 @@ import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
 import { enviarCriado } from '../../comum/respostas.ts';
 import { configuracao } from '../../configuracao.ts';
+import {
+  esquemaUtilizadorLigado,
+  fazerLogin,
+  mudarPassword,
+  obterUtilizadorLigado,
+  registarClinica,
+} from './autenticacao.esquemas.ts';
 
 // Rotas do login e do registo de clínicas.
 // Os dados vêm da função fn_utilizador_login (a única que lê o password_hash) e da vista vw_utilizador.
 
-// O que o frontend envia no login
+// O que o frontend envia em cada rota. As regras (obrigatório, tamanho, formato) estão em autenticacao.esquemas.ts:
+// quando a rota corre, os dados já foram confirmados.
+
+// Login
 interface DadosLogin {
-  email?: string;
-  password?: string;
+  email: string;
+  password: string;
 }
 
-// O que o frontend envia para mudar a palavra-passe
+// Mudar a palavra-passe
 interface DadosPassword {
-  password_atual?: string;
-  password_nova?: string;
+  password_atual: string;
+  password_nova: string;
 }
 
-// O que a clínica envia no registo
+// Registo de uma clínica
 interface DadosRegisto {
-  nome?: string;
-  nif?: string;
+  nome: string;
+  nif: string;
   morada_faturacao?: string;
   telefone?: string;
-  email?: string; // é o email de contacto da clínica e o email de login
-  password?: string;
+  email: string; // é o email de contacto da clínica e o email de login
+  password: string;
 }
 
 // Hash de uma palavra-passe aleatória (ninguém a conhece), com o mesmo custo dos verdadeiros.
@@ -37,16 +47,15 @@ interface DadosRegisto {
 const HASH_FICTICIO = bcrypt.hashSync(randomUUID(), configuracao.bcrypt.custo);
 
 export async function rotasAutenticacao(app: FastifyInstance) {
+  // Esquema com nome, usado pelas respostas do login e de GET /auth/eu
+  app.addSchema(esquemaUtilizadorLigado);
+
   // POST /api/v1/auth/registo: uma clínica regista-se sozinha (rota pública, sem login)
   // Cria a clínica e a conta de acesso, que fica à espera de aprovação do Administrador.
   // Até ser aprovada, o login responde 403 "A sua conta ainda não foi aprovada pelo laboratório."
-  app.post('/auth/registo', async (request, reply) => {
-    const dados = request.body as DadosRegisto | undefined;
-    // A BD só recebe o hash, por isso a regra da palavra-passe fica aqui.
-    if (!dados?.password || dados.password.length < 8) {
-      return enviarErro(reply, 400, 'A palavra-passe tem de ter pelo menos 8 caracteres.');
-    }
-    // As outras validações (nome, NIF, email repetido...) são da função na BD.
+  app.post('/auth/registo', { schema: registarClinica }, async (request, reply) => {
+    const dados = request.body as DadosRegisto;
+    // A função na BD confirma o resto (NIF ou email repetidos...).
     const resultado = await escreverComo(
       null,
       `SELECT fn_registar_clinica(
@@ -71,12 +80,8 @@ export async function rotasAutenticacao(app: FastifyInstance) {
 
   // POST /api/v1/auth/login com { "email": "...", "password": "..." }
   // Devolve o token (para enviar nos pedidos seguintes) e os dados do utilizador.
-  app.post('/auth/login', async (request, reply) => {
-    const dados = request.body as DadosLogin | undefined;
-    if (!dados?.email || !dados?.password) {
-      return enviarErro(reply, 400, 'Indique o email e a palavra-passe.');
-    }
-
+  app.post('/auth/login', { schema: fazerLogin }, async (request, reply) => {
+    const dados = request.body as DadosLogin;
     const resultado = await bd.query('SELECT * FROM fn_utilizador_login($1)', [dados.email]);
     const utilizador = resultado.rows[0];
 
@@ -117,7 +122,7 @@ export async function rotasAutenticacao(app: FastifyInstance) {
 
   // GET /api/v1/auth/eu: quem está ligado (com os dados atuais da BD)
   // O frontend chama esta rota ao abrir, para saber se o token guardado ainda serve.
-  app.get('/auth/eu', { preHandler: exigirLogin }, async (request, reply) => {
+  app.get('/auth/eu', { schema: obterUtilizadorLigado, preHandler: exigirLogin }, async (request, reply) => {
     // A sessão nunca se guarda em cache: tem de dizer sempre quem está ligado neste momento.
     reply.header('Cache-Control', 'no-store');
     const resultado = await bd.query('SELECT * FROM vw_utilizador WHERE id = $1 AND ativo', [request.user.id]);
@@ -137,15 +142,9 @@ export async function rotasAutenticacao(app: FastifyInstance) {
 
   // PUT /api/v1/auth/password com { "password_atual": "...", "password_nova": "..." }
   // Muda a palavra-passe de quem está ligado e deixa de ser temporária.
-  app.put('/auth/password', { preHandler: exigirLogin }, async (request, reply) => {
-    const dados = request.body as DadosPassword | undefined;
-    if (!dados?.password_atual || !dados?.password_nova) {
-      return enviarErro(reply, 400, 'Indique a palavra-passe atual e a nova.');
-    }
-    // Estas regras ficam aqui porque a BD nunca recebe a palavra-passe, só o hash.
-    if (dados.password_nova.length < 8) {
-      return enviarErro(reply, 400, 'A nova palavra-passe tem de ter pelo menos 8 caracteres.');
-    }
+  app.put('/auth/password', { schema: mudarPassword, preHandler: exigirLogin }, async (request, reply) => {
+    const dados = request.body as DadosPassword;
+    // Uma regra que compara dois campos não cabe no esquema, por isso fica aqui.
     if (dados.password_nova === dados.password_atual) {
       return enviarErro(reply, 400, 'A nova palavra-passe tem de ser diferente da atual.');
     }
