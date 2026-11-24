@@ -1,6 +1,6 @@
 import { Ajv } from 'ajv';
 import formatos from 'ajv-formats';
-import type { FastifyInstance } from 'fastify';
+import type { FastifySchemaCompiler, FastifyServerOptions } from 'fastify';
 
 // Validação dos pedidos com os esquemas das rotas (ficheiros <area>.esquemas.ts).
 // O Fastify confirma os dados antes de a rota correr. Se não cumprirem o esquema, a rota nem chega a correr
@@ -22,9 +22,18 @@ function criarValidador(converterTipos: boolean) {
 const validadorEndereco = criarValidador(true);
 const validadorCorpo = criarValidador(false);
 
-export function registarValidacao(app: FastifyInstance) {
-  app.setValidatorCompiler(({ schema, httpPart }) => {
-    const validador = httpPart === 'body' ? validadorCorpo : validadorEndereco;
-    return validador.compile(schema);
-  });
-}
+// Escolhe o validador certo para cada parte do pedido.
+const validar: FastifySchemaCompiler<object> = ({ schema, httpPart }) => {
+  const validador = httpPart === 'body' ? validadorCorpo : validadorEndereco;
+  return validador.compile(schema);
+};
+
+// O tipo que o Fastify pede nas opções (schemaController.compilersFactory.buildValidator)
+type FabricaValidadores = NonNullable<NonNullable<FastifyServerOptions['schemaController']>['compilersFactory']>['buildValidator'];
+
+// Entra nas opções do Fastify (app.ts), e não com app.setValidatorCompiler: os módulos que registam
+// esquemas com nome (app.addSchema) recriam o validador a partir daqui, e assim usam sempre estes dois.
+// Os esquemas com nome são só para as respostas; os pedidos não os usam, por isso não se passam ao validador.
+// O "as unknown as": o Fastify chama a função com { schema, httpPart }, como em validar, mas os tipos
+// do pacote descrevem-na de outra forma.
+export const construirValidador = (() => validar) as unknown as FabricaValidadores;

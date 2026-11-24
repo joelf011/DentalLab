@@ -11,7 +11,7 @@ import { registarCors } from './plugins/cors.ts';
 import { registarDocumentacao } from './plugins/documentacao.ts';
 import { registarJwt } from './plugins/jwt.ts';
 import { registarTratamentoErros } from './plugins/tratamento-erros.ts';
-import { registarValidacao } from './plugins/validacao.ts';
+import { construirValidador } from './plugins/validacao.ts';
 
 // Constrói a API: liga os plugins e os módulos, mas não a põe a ouvir (isso é no servidor.ts).
 // Assim, a API pode ser construída noutros sítios (por exemplo, num script de teste) sem abrir uma porta.
@@ -19,6 +19,8 @@ import { registarValidacao } from './plugins/validacao.ts';
 export function construirApp(mostrarPedidos = true) {
   const app = Fastify({
     logger: mostrarPedidos ? { transport: { target: 'pino-pretty' } } : false,
+    // Validação dos pedidos com os esquemas das rotas (plugins/validacao.ts)
+    schemaController: { compilersFactory: { buildValidator: construirValidador } },
   });
 
   // A API só recebe dados em JSON. O Fastify também aceita texto simples por omissão;
@@ -27,7 +29,6 @@ export function construirApp(mostrarPedidos = true) {
 
   // Peças ligadas uma vez, para toda a API (pasta plugins/)
   registarTratamentoErros(app);
-  registarValidacao(app);
   registarCache(app);
   registarCors(app);
   registarJwt(app);
