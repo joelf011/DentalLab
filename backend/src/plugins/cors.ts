@@ -10,6 +10,9 @@ export function registarCors(app: FastifyInstance) {
     origin: configuracao.corsOrigens,
     // PATCH: alterar só alguns campos de um registo. PUT: substituir (ex.: a palavra-passe).
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    // O site pode enviar o cookie da sessão (no fetch: credentials: 'include').
+    // Só funciona com os sites indicados em CORS_ORIGENS (nunca com "qualquer site").
+    credentials: true,
     // Cabeçalhos da resposta que o JavaScript do site pode ler (o navegador esconde os outros):
     // o endereço do registo criado e o motivo de um 401.
     exposedHeaders: ['Location', 'WWW-Authenticate'],

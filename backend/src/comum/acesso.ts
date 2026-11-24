@@ -39,7 +39,8 @@ export function enviarSemSessao(reply: FastifyReply, mensagem: string, tokenInva
 }
 
 // Verifica a sessão de um pedido. Usada pelo exigirLogin e pelo exigirCargo.
-//  1. Verifica o token do cabeçalho "Authorization: Bearer <token>" (se falta, é falso ou expirou: 401).
+//  1. Verifica o token: do cabeçalho "Authorization: Bearer <token>" (app) ou do cookie "sessao" (site).
+//     Se falta, é falso ou expirou: 401.
 //  2. Confirma na BD que a conta continua ativa (se o Administrador a desativou: 401).
 //  3. Põe em request.user os dados ATUAIS da BD: se o cargo mudou depois do login, conta o novo.
 // Devolve true se a sessão é válida; se não for, já respondeu 401 e devolve false.
@@ -47,8 +48,9 @@ async function verificarSessao(request: FastifyRequest, reply: FastifyReply): Pr
   try {
     await request.jwtVerify();
   } catch (erro) {
-    // O @fastify/jwt diz porque falhou: ou não veio token, ou o token não serve (falso, expirado...).
-    const semToken = (erro as { code?: string }).code === 'FST_JWT_NO_AUTHORIZATION_IN_HEADER';
+    // O @fastify/jwt diz porque falhou: ou não veio token (nem no cabeçalho, nem no cookie),
+    // ou o token não serve (falso, expirado...).
+    const semToken = (erro as { code?: string }).code === 'FST_JWT_NO_AUTHORIZATION_IN_COOKIE';
     if (semToken) {
       enviarSemSessao(reply, 'Tem de iniciar sessão.', false);
     } else {

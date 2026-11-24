@@ -33,8 +33,9 @@ export const configuracao = {
   jwt: {
     // Segredo para assinar os tokens de login. Está no .env e nunca vai para o Git.
     segredo: process.env.JWT_SEGREDO,
-    // Durante quanto tempo um token é válido. Depois disso, é preciso fazer login outra vez.
-    validade: '7d',
+    // Durante quanto tempo um login é válido: 7 dias, em segundos. Depois disso, é preciso entrar outra vez.
+    // O token da app e o cookie do site duram o mesmo.
+    validade: 7 * 24 * 60 * 60,
   },
   bcrypt: {
     // O "custo" do bcrypt ao calcular o hash de uma palavra-passe: quanto maior, mais lento é calcular cada hash
