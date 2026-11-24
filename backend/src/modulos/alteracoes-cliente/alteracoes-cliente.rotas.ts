@@ -3,10 +3,19 @@ import { exigirCargo } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
 import { enviarCriado } from '../../comum/respostas.ts';
+import {
+  aprovarAlteracaoCliente,
+  esquemaAlteracaoCliente,
+  listarAlteracoesCliente,
+  obterAlteracaoCliente,
+  pedirAlteracaoCliente,
+  rejeitarAlteracaoCliente,
+} from './alteracoes-cliente.esquemas.ts';
 
 // Rotas dos pedidos de alteração dos dados de uma clínica.
 // A clínica pede; o Administrador aprova (os dados passam para a clínica) ou rejeita (com motivo).
 // Ler: vista vw_alteracao_cliente. Pedir: fn_pedir_alteracao_cliente. Decidir: fn_decidir_alteracao_cliente.
+// As regras dos dados estão em alteracoes-cliente.esquemas.ts.
 
 // O que a clínica envia ao pedir uma alteração (só os campos que quer mudar)
 interface DadosPedido {
@@ -17,9 +26,12 @@ interface DadosPedido {
 }
 
 export async function rotasAlteracoesCliente(app: FastifyInstance) {
+  // Esquema com nome, usado pelas respostas das leituras
+  app.addSchema(esquemaAlteracaoCliente);
+
   // POST /api/v1/alteracoes-cliente: a clínica pede para alterar os seus dados
-  app.post('/alteracoes-cliente', { preHandler: exigirCargo('Cliente') }, async (request, reply) => {
-    const dados = request.body as DadosPedido | undefined;
+  app.post('/alteracoes-cliente', { schema: pedirAlteracaoCliente, preHandler: exigirCargo('Cliente') }, async (request, reply) => {
+    const dados = request.body as DadosPedido;
     const resultado = await escreverComo(
       request.user.id,
       `SELECT fn_pedir_alteracao_cliente(
@@ -30,14 +42,14 @@ export async function rotasAlteracoesCliente(app: FastifyInstance) {
          p_email            => $5,
          p_telefone         => $6
        ) AS id`,
-      [request.user.cliente_id, request.user.id, dados?.nome, dados?.morada_faturacao, dados?.email, dados?.telefone],
+      [request.user.cliente_id, request.user.id, dados.nome, dados.morada_faturacao, dados.email, dados.telefone],
     );
     return enviarCriado(reply, 'alteracoes-cliente', resultado.rows[0].id);
   });
 
   // GET /api/v1/alteracoes-cliente: lista os pedidos (os mais recentes primeiro)
   // O Administrador vê todos; a clínica só os seus. ?estado=pendente mostra só os que estão à espera.
-  app.get('/alteracoes-cliente', { preHandler: exigirCargo('Administrador', 'Cliente') }, async (request) => {
+  app.get('/alteracoes-cliente', { schema: listarAlteracoesCliente, preHandler: exigirCargo('Administrador', 'Cliente') }, async (request) => {
     const { estado } = request.query as { estado?: string };
     // Para a clínica filtra-se pelo cliente dela; para o Administrador fica null (= todos).
     const clienteId = request.user.cargo === 'Cliente' ? request.user.cliente_id : null;
@@ -53,8 +65,8 @@ export async function rotasAlteracoesCliente(app: FastifyInstance) {
   });
 
   // GET /api/v1/alteracoes-cliente/1: mostra um pedido (a clínica só pode ver os seus)
-  app.get('/alteracoes-cliente/:id', { preHandler: exigirCargo('Administrador', 'Cliente') }, async (request, reply) => {
-    const { id } = request.params as { id: string };
+  app.get('/alteracoes-cliente/:id', { schema: obterAlteracaoCliente, preHandler: exigirCargo('Administrador', 'Cliente') }, async (request, reply) => {
+    const { id } = request.params as { id: number };
     const resultado = await bd.query('SELECT * FROM vw_alteracao_cliente WHERE id = $1', [id]);
     const pedido = resultado.rows[0];
     // Pedido que não existe, ou de outra clínica: 404 nos dois casos.
@@ -65,8 +77,8 @@ export async function rotasAlteracoesCliente(app: FastifyInstance) {
   });
 
   // POST /api/v1/alteracoes-cliente/1/aprovar: o Administrador aprova; os dados novos passam para a clínica
-  app.post('/alteracoes-cliente/:id/aprovar', { preHandler: exigirCargo('Administrador') }, async (request) => {
-    const { id } = request.params as { id: string };
+  app.post('/alteracoes-cliente/:id/aprovar', { schema: aprovarAlteracaoCliente, preHandler: exigirCargo('Administrador') }, async (request) => {
+    const { id } = request.params as { id: number };
     const resultado = await escreverComo(
       request.user.id,
       `SELECT fn_decidir_alteracao_cliente(
@@ -80,9 +92,9 @@ export async function rotasAlteracoesCliente(app: FastifyInstance) {
   });
 
   // POST /api/v1/alteracoes-cliente/1/rejeitar com { "motivo_rejeicao": "..." }: o Administrador rejeita
-  app.post('/alteracoes-cliente/:id/rejeitar', { preHandler: exigirCargo('Administrador') }, async (request) => {
-    const { id } = request.params as { id: string };
-    const dados = request.body as { motivo_rejeicao?: string } | undefined;
+  app.post('/alteracoes-cliente/:id/rejeitar', { schema: rejeitarAlteracaoCliente, preHandler: exigirCargo('Administrador') }, async (request) => {
+    const { id } = request.params as { id: number };
+    const dados = request.body as { motivo_rejeicao: string };
     const resultado = await escreverComo(
       request.user.id,
       `SELECT fn_decidir_alteracao_cliente(
@@ -91,7 +103,7 @@ export async function rotasAlteracoesCliente(app: FastifyInstance) {
          p_aprovar         => FALSE,
          p_motivo_rejeicao => $3
        ) AS id`,
-      [id, request.user.id, dados?.motivo_rejeicao],
+      [id, request.user.id, dados.motivo_rejeicao],
     );
     return resultado.rows[0];
   });
