@@ -37,6 +37,21 @@ export const configuracao = {
     // O token da app e o cookie do site duram o mesmo.
     validade: 7 * 24 * 60 * 60,
   },
+  email: {
+    // Servidor de email (SMTP). Sem SMTP_HOST, os emails não são enviados: aparecem no terminal da API.
+    smtp: {
+      host: process.env.SMTP_HOST ?? '',
+      port: Number(process.env.SMTP_PORT ?? 587),
+      utilizador: process.env.SMTP_UTILIZADOR ?? '',
+      palavraPasse: process.env.SMTP_PALAVRA_PASSE ?? '',
+    },
+    // Quem aparece como remetente dos emails da API
+    remetente: process.env.EMAIL_REMETENTE ?? 'DentalLab <nao-responder@dentallab.local>',
+    // Para onde vão as mensagens do formulário de contacto do site
+    laboratorio: process.env.EMAIL_LABORATORIO ?? 'geral@dentallab.local',
+  },
+  // Endereço do site, para os links que vão nos emails (ex.: recuperar a palavra-passe)
+  urlSite: process.env.URL_SITE ?? 'http://localhost:5173',
   bcrypt: {
     // O "custo" do bcrypt ao calcular o hash de uma palavra-passe: quanto maior, mais lento é calcular cada hash
     // e, por isso, adivinhar a palavra-passe a partir dele. É o mesmo dos hashes que já estão na BD.
