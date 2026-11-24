@@ -140,10 +140,10 @@ export const aprovarUtilizador = {
   tags: etiqueta,
   operationId: 'aprovarUtilizador',
   summary: 'Aprovar uma conta',
-  description: 'Só o Administrador. Uma conta já aprovada ou desativada dá 400.',
+  description: 'Só o Administrador. Uma conta já aprovada ou desativada dá 409.',
   params: paramId,
   response: {
     200: respostaId,
-    ...respostasErro(400, 401, 403, 404),
+    ...respostasErro(400, 401, 403, 404, 409),
   },
 };

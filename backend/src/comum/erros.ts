@@ -112,6 +112,12 @@ export function traduzirErro(erro: Erro): { codigo: number; mensagem: string } |
       }
       return { codigo: 409, mensagem: mensagensRegras[regra] ?? 'Já existe um registo com estes dados.' };
 
+    // RAISE ... USING ERRCODE = 'object_not_in_prerequisite_state' ou 'object_in_use':
+    // o pedido choca com o estado atual (ex.: conta já aprovada, cargo com utilizadores). Também é 409.
+    case '55000':
+    case '55006':
+      return { codigo: 409, mensagem: erro.message };
+
     // CHECK: valor que não cumpre uma regra da tabela
     case '23514':
       return dadosInvalidos(mensagensRegras[regra] ?? 'Os dados não cumprem as regras definidas.');

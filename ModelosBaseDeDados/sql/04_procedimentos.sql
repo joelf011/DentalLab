@@ -96,7 +96,8 @@ BEGIN
             USING ERRCODE = 'no_data_found';
     END IF;
     IF v_estado <> 'Em avaliação' THEN
-        RAISE EXCEPTION 'Só se aceitam ordens "Em avaliação" (esta está "%")', v_estado;
+        RAISE EXCEPTION 'Só se aceitam ordens "Em avaliação" (esta está "%")', v_estado
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
     IF p_prazo IS NULL OR p_prazo < current_date THEN
         RAISE EXCEPTION 'Tem de indicar um prazo de entrega a partir de hoje';
@@ -181,7 +182,8 @@ BEGIN
             USING ERRCODE = 'no_data_found';
     END IF;
     IF v_inicio IS NOT NULL THEN
-        RAISE EXCEPTION 'Esta etapa já foi iniciada';
+        RAISE EXCEPTION 'Esta etapa já foi iniciada'
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     CALL pr_definir_utilizador(p_responsavel_id);
@@ -213,10 +215,12 @@ BEGIN
             USING ERRCODE = 'no_data_found';
     END IF;
     IF v_etapa.data_inicio IS NULL THEN
-        RAISE EXCEPTION 'A etapa "%" ainda não foi iniciada', v_etapa.nome;
+        RAISE EXCEPTION 'A etapa "%" ainda não foi iniciada', v_etapa.nome
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
     IF v_etapa.data_conclusao IS NOT NULL THEN
-        RAISE EXCEPTION 'A etapa "%" já está concluída', v_etapa.nome;
+        RAISE EXCEPTION 'A etapa "%" já está concluída', v_etapa.nome
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     CALL pr_definir_utilizador(p_utilizador_id);

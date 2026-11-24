@@ -535,11 +535,15 @@ WHERE t.eliminado_em IS NULL;
 -- Correr depois de 02_vistas.sql.
 --
 -- Erros (RAISE EXCEPTION): a mensagem é em português e chega assim ao utilizador.
--- Dois casos levam também um código, para a API responder com o código HTTP certo:
+-- Alguns casos levam também um código, para a API responder com o código HTTP certo:
 --   * o registo a alterar, apagar ou usar como "pai" não existe:
 --       USING ERRCODE = 'no_data_found'     (a API responde 404)
 --   * já existe um registo com esse valor (designação, email, NIF...):
 --       USING ERRCODE = 'unique_violation'  (a API responde 409)
+--   * o registo não está no estado certo para isto (ex.: conta já aprovada, etapa já iniciada):
+--       USING ERRCODE = 'object_not_in_prerequisite_state'  (a API responde 409)
+--   * o registo ainda está a ser usado (ex.: cargo com utilizadores):
+--       USING ERRCODE = 'object_in_use'  (a API responde 409)
 -- Os outros erros ficam sem código (a API responde 400). Um id de outra tabela que vem
 -- nos dados (ex.: o cliente de uma ordem nova) também fica sem código: é um dado inválido.
 -- =====================================================================
@@ -591,7 +595,8 @@ BEGIN
         -- a tabela não tem ativo nem eliminado_em: só se apaga se não estiver em uso
         SELECT count(*) INTO n FROM utilizador WHERE cargo_id = p_id;
         IF n > 0 THEN
-            RAISE EXCEPTION 'O cargo % tem utilizadores associados', p_id;
+            RAISE EXCEPTION 'O cargo % tem utilizadores associados', p_id
+                USING ERRCODE = 'object_in_use';
         END IF;
 
         DELETE FROM cargo WHERE id = p_id;
@@ -822,10 +827,12 @@ BEGIN
             USING ERRCODE = 'no_data_found';
     END IF;
     IF v_conta.data_aprovacao IS NOT NULL THEN
-        RAISE EXCEPTION 'Esta conta já está aprovada';
+        RAISE EXCEPTION 'Esta conta já está aprovada'
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
     IF NOT v_conta.ativo THEN
-        RAISE EXCEPTION 'Esta conta está desativada; reative-a antes de a aprovar';
+        RAISE EXCEPTION 'Esta conta está desativada; reative-a antes de a aprovar'
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     RETURN fn_utilizador_crud(p_operacao => 'UPDATE', p_id => p_id, p_aprovado_por => p_aprovado_por);
@@ -1000,7 +1007,8 @@ BEGIN
     ELSIF v_operacao = 'DELETE' THEN
         SELECT data_inicio INTO v_inicio FROM etapa_trabalho WHERE id = p_id;
         IF v_inicio IS NOT NULL THEN
-            RAISE EXCEPTION 'Só é possível eliminar etapas que ainda não foram iniciadas';
+            RAISE EXCEPTION 'Só é possível eliminar etapas que ainda não foram iniciadas'
+                USING ERRCODE = 'object_not_in_prerequisite_state';
         END IF;
 
         DELETE FROM etapa_trabalho WHERE id = p_id;
@@ -1100,7 +1108,8 @@ BEGIN
             USING ERRCODE = 'no_data_found';
     END IF;
     IF v_pedido.estado <> 'pendente' THEN
-        RAISE EXCEPTION 'O pedido de alteração % já foi decidido', p_id;
+        RAISE EXCEPTION 'O pedido de alteração % já foi decidido', p_id
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     SELECT count(*) INTO n
@@ -1191,7 +1200,8 @@ BEGIN
         -- a tabela não tem ativo nem eliminado_em: só se apaga se não estiver em uso
         SELECT count(*) INTO n FROM ordem_trabalho WHERE estado_ordem_id = p_id;
         IF n > 0 THEN
-            RAISE EXCEPTION 'O estado % está atribuído a ordens de trabalho', p_id;
+            RAISE EXCEPTION 'O estado % está atribuído a ordens de trabalho', p_id
+                USING ERRCODE = 'object_in_use';
         END IF;
 
         DELETE FROM estado_ordem WHERE id = p_id;
@@ -1601,7 +1611,8 @@ BEGIN
             USING ERRCODE = 'no_data_found';
     END IF;
     IF v_estado <> 'Em avaliação' THEN
-        RAISE EXCEPTION 'Só se aceitam ordens "Em avaliação" (esta está "%")', v_estado;
+        RAISE EXCEPTION 'Só se aceitam ordens "Em avaliação" (esta está "%")', v_estado
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
     IF p_prazo IS NULL OR p_prazo < current_date THEN
         RAISE EXCEPTION 'Tem de indicar um prazo de entrega a partir de hoje';
@@ -1686,7 +1697,8 @@ BEGIN
             USING ERRCODE = 'no_data_found';
     END IF;
     IF v_inicio IS NOT NULL THEN
-        RAISE EXCEPTION 'Esta etapa já foi iniciada';
+        RAISE EXCEPTION 'Esta etapa já foi iniciada'
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     CALL pr_definir_utilizador(p_responsavel_id);
@@ -1718,10 +1730,12 @@ BEGIN
             USING ERRCODE = 'no_data_found';
     END IF;
     IF v_etapa.data_inicio IS NULL THEN
-        RAISE EXCEPTION 'A etapa "%" ainda não foi iniciada', v_etapa.nome;
+        RAISE EXCEPTION 'A etapa "%" ainda não foi iniciada', v_etapa.nome
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
     IF v_etapa.data_conclusao IS NOT NULL THEN
-        RAISE EXCEPTION 'A etapa "%" já está concluída', v_etapa.nome;
+        RAISE EXCEPTION 'A etapa "%" já está concluída', v_etapa.nome
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     CALL pr_definir_utilizador(p_utilizador_id);
@@ -1771,6 +1785,7 @@ $BODY$;
 --
 -- BEFORE: pode alterar NEW antes de gravar (ou cancelar com RAISE EXCEPTION).
 -- AFTER : a linha já está gravada; serve para registar ou mexer noutras tabelas.
+-- Os erros (RAISE EXCEPTION) seguem a regra dos códigos explicada no início do 03_funcoes.sql.
 --
 -- Lista:
 --   T1 trg_<tabela>_auditoria                 auditoria de várias tabelas
@@ -1981,7 +1996,8 @@ BEGIN
     WHERE o.id = NEW.ordem_trabalho_id;
 
     IF v_estado IN ('Rejeitado', 'Concluído', 'Entregue') THEN
-        RAISE EXCEPTION 'Não é possível juntar trabalhos a uma ordem no estado "%"', v_estado;
+        RAISE EXCEPTION 'Não é possível juntar trabalhos a uma ordem no estado "%"', v_estado
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     RETURN NEW;
@@ -2016,7 +2032,8 @@ BEGIN
     WHERE t.id = NEW.trabalho_id;
 
     IF v_estado NOT IN ('Por iniciar', 'Em processamento', 'Em prova') THEN
-        RAISE EXCEPTION 'Não é possível começar etapas de uma ordem no estado "%"', v_estado;
+        RAISE EXCEPTION 'Não é possível começar etapas de uma ordem no estado "%"', v_estado
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     -- primeira etapa anterior que ainda não está concluída (se houver)
@@ -2029,7 +2046,8 @@ BEGIN
     LIMIT 1;
 
     IF v_anterior IS NOT NULL THEN
-        RAISE EXCEPTION 'Antes de começar "%" tem de concluir a etapa "%"', NEW.nome, v_anterior;
+        RAISE EXCEPTION 'Antes de começar "%" tem de concluir a etapa "%"', NEW.nome, v_anterior
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     RETURN NEW;

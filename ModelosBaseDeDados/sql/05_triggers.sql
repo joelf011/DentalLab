@@ -10,6 +10,7 @@
 --
 -- BEFORE: pode alterar NEW antes de gravar (ou cancelar com RAISE EXCEPTION).
 -- AFTER : a linha já está gravada; serve para registar ou mexer noutras tabelas.
+-- Os erros (RAISE EXCEPTION) seguem a regra dos códigos explicada no início do 03_funcoes.sql.
 --
 -- Lista:
 --   T1 trg_<tabela>_auditoria                 auditoria de várias tabelas
@@ -220,7 +221,8 @@ BEGIN
     WHERE o.id = NEW.ordem_trabalho_id;
 
     IF v_estado IN ('Rejeitado', 'Concluído', 'Entregue') THEN
-        RAISE EXCEPTION 'Não é possível juntar trabalhos a uma ordem no estado "%"', v_estado;
+        RAISE EXCEPTION 'Não é possível juntar trabalhos a uma ordem no estado "%"', v_estado
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     RETURN NEW;
@@ -255,7 +257,8 @@ BEGIN
     WHERE t.id = NEW.trabalho_id;
 
     IF v_estado NOT IN ('Por iniciar', 'Em processamento', 'Em prova') THEN
-        RAISE EXCEPTION 'Não é possível começar etapas de uma ordem no estado "%"', v_estado;
+        RAISE EXCEPTION 'Não é possível começar etapas de uma ordem no estado "%"', v_estado
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     -- primeira etapa anterior que ainda não está concluída (se houver)
@@ -268,7 +271,8 @@ BEGIN
     LIMIT 1;
 
     IF v_anterior IS NOT NULL THEN
-        RAISE EXCEPTION 'Antes de começar "%" tem de concluir a etapa "%"', NEW.nome, v_anterior;
+        RAISE EXCEPTION 'Antes de começar "%" tem de concluir a etapa "%"', NEW.nome, v_anterior
+            USING ERRCODE = 'object_not_in_prerequisite_state';
     END IF;
 
     RETURN NEW;

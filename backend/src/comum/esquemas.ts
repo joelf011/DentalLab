@@ -64,7 +64,7 @@ const descricoesErros = {
   401: 'Sem sessão, sessão expirada ou conta desativada.',
   403: 'O cargo de quem está ligado não pode fazer isto.',
   404: 'O registo não existe.',
-  409: 'Já existe um registo com esse valor.',
+  409: 'Conflito: já existe um registo com esse valor, ou o registo não está no estado certo para isto.',
   500: 'Erro inesperado na API.',
   503: 'A API não consegue ligar-se à base de dados.',
 };

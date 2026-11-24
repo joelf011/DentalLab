@@ -100,11 +100,11 @@ export const aprovarAlteracaoCliente = {
   tags: etiqueta,
   operationId: 'aprovarAlteracaoCliente',
   summary: 'Aprovar um pedido de alteração',
-  description: 'Só o Administrador. Os dados pedidos passam para a clínica. Um pedido já decidido dá 400.',
+  description: 'Só o Administrador. Os dados pedidos passam para a clínica. Um pedido já decidido dá 409.',
   params: paramId,
   response: {
     200: respostaId,
-    ...respostasErro(400, 401, 403, 404),
+    ...respostasErro(400, 401, 403, 404, 409),
   },
 };
 
@@ -113,7 +113,7 @@ export const rejeitarAlteracaoCliente = {
   tags: etiqueta,
   operationId: 'rejeitarAlteracaoCliente',
   summary: 'Rejeitar um pedido de alteração',
-  description: 'Só o Administrador, com o motivo. Um pedido já decidido dá 400.',
+  description: 'Só o Administrador, com o motivo. Um pedido já decidido dá 409.',
   params: paramId,
   body: {
     type: 'object',
@@ -125,6 +125,6 @@ export const rejeitarAlteracaoCliente = {
   },
   response: {
     200: respostaId,
-    ...respostasErro(400, 401, 403, 404),
+    ...respostasErro(400, 401, 403, 404, 409),
   },
 };

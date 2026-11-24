@@ -229,7 +229,7 @@ Todas as respostas de erro têm este formato (o mesmo das aulas de AI3):
 | 401 | Sem sessão, sessão expirada ou conta desativada | Apagar o token e voltar ao ecrã de login |
 | 403 | O cargo não tem permissão; ou, no login, a conta está desativada ou ainda por aprovar | Mostrar a mensagem |
 | 404 | O registo não existe | Mostrar a mensagem, ou voltar à lista |
-| 409 | Conflito: já existe um registo com esse valor (ex.: "Já existe um cliente com este NIF") | Mostrar a mensagem e deixar a pessoa corrigir |
+| 409 | Conflito: já existe um registo com esse valor (ex.: "Já existe um cliente com este NIF"), ou o registo não está no estado certo (ex.: "Esta conta já está aprovada") | Mostrar a mensagem (e, se for preciso, recarregar os dados) |
 | 413 | O pedido é demasiado grande | Mostrar a mensagem |
 | 415 | Os dados não foram enviados em JSON | Erro do programador: enviar `Content-Type: application/json` |
 | 500 | Erro inesperado na API | Mostrar "Ocorreu um erro inesperado. Tente novamente." |
@@ -239,7 +239,7 @@ O 401 traz o cabeçalho `WWW-Authenticate`:
 - `Bearer` quando não veio token;
 - `Bearer error="invalid_token"` quando o token é falso, expirou, ou a conta foi desativada.
 
-As mensagens das funções da BD (`RAISE EXCEPTION`) chegam tal como foram escritas no pgAdmin, com o código 400; ou 404 e 409, quando a função indica que o registo não existe ou que já existe (regra no início do `03_funcoes.sql`).
+As mensagens das funções da BD (`RAISE EXCEPTION`) chegam tal como foram escritas no pgAdmin, com o código 400; ou 404 e 409, quando a função indica que o registo não existe, que já existe ou que não está no estado certo (regra no início do `03_funcoes.sql`).
 
 No **login**, o 401 significa "email ou palavra-passe incorretos". Aí mostra-se a mensagem, sem apagar nada.
 
