@@ -1,4 +1,4 @@
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifySchemaValidationError } from 'fastify';
 
 // Erros da API: o formato das respostas de erro e as mensagens em português.
 
@@ -116,4 +116,77 @@ export function traduzirErro(erro: Erro): { codigo: number; mensagem: string } |
     default:
       return null;
   }
+}
+
+// Nomes dos tipos, para as mensagens dos esquemas
+const nomesTipos: Record<string, string> = {
+  string: 'texto',
+  integer: 'um número inteiro',
+  number: 'um número',
+  boolean: 'true ou false',
+  object: 'um objeto JSON',
+  array: 'uma lista',
+  null: 'null',
+};
+
+// Mensagens para os formatos (pattern) usados nos esquemas. A chave é o próprio pattern.
+// Um pattern que não esteja aqui usa a mensagem genérica.
+const mensagensFormatos: Record<string, string> = {
+  '^[0-9]{9}$': 'Tem de ter 9 algarismos.',
+};
+
+// Problemas encontrados pelos esquemas das rotas (plugins/validacao.ts): cada um passa a { campo, problema }.
+// Exemplo: [{ "campo": "password", "problema": "Tem de ter pelo menos 8 caracteres." }]
+export function traduzirValidacao(problemas: FastifySchemaValidationError[]): DetalheErro[] {
+  return problemas.map((erro) => {
+    const valores = erro.params;
+    // O campo vem como "/email"; vazio quer dizer o corpo todo.
+    let campo = erro.instancePath.slice(1) || 'corpo';
+    let problema: string;
+
+    switch (erro.keyword) {
+      case 'required':
+        campo = String(valores.missingProperty);
+        problema = 'É obrigatório.';
+        break;
+      case 'additionalProperties':
+        campo = String(valores.additionalProperty);
+        problema = 'Este campo não existe.';
+        break;
+      case 'type':
+        // Pode ser mais do que um tipo, ex.: "string,null"
+        problema = `Tem de ser ${String(valores.type)
+          .split(',')
+          .map((tipo) => nomesTipos[tipo] ?? tipo)
+          .join(' ou ')}.`;
+        break;
+      case 'minLength':
+        problema = valores.limit === 1 ? 'Não pode estar vazio.' : `Tem de ter pelo menos ${valores.limit} caracteres.`;
+        break;
+      case 'maxLength':
+        problema = `Tem de ter no máximo ${valores.limit} caracteres.`;
+        break;
+      case 'minimum':
+        problema = `Tem de ser ${valores.limit} ou mais.`;
+        break;
+      case 'maximum':
+        problema = `Tem de ser ${valores.limit} ou menos.`;
+        break;
+      case 'format':
+        problema = valores.format === 'email' ? 'Tem de ser um email válido.' : 'Não tem o formato certo.';
+        break;
+      case 'pattern':
+        problema = mensagensFormatos[String(valores.pattern)] ?? 'Não tem o formato certo.';
+        break;
+      case 'enum':
+        problema = `Tem de ser um destes valores: ${(valores.allowedValues as unknown[]).join(', ')}.`;
+        break;
+      case 'minProperties':
+        problema = 'Indique pelo menos um campo.';
+        break;
+      default:
+        problema = 'Valor inválido.';
+    }
+    return { campo, problema };
+  });
 }

@@ -10,6 +10,7 @@ import { registarCache } from './plugins/cache.ts';
 import { registarCors } from './plugins/cors.ts';
 import { registarJwt } from './plugins/jwt.ts';
 import { registarTratamentoErros } from './plugins/tratamento-erros.ts';
+import { registarValidacao } from './plugins/validacao.ts';
 
 // Constrói a API: liga os plugins e os módulos, mas não a põe a ouvir (isso é no servidor.ts).
 // Assim, a API pode ser construída noutros sítios (por exemplo, num script de teste) sem abrir uma porta.
@@ -25,6 +26,7 @@ export function construirApp(mostrarPedidos = true) {
 
   // Peças ligadas uma vez, para toda a API (pasta plugins/)
   registarTratamentoErros(app);
+  registarValidacao(app);
   registarCache(app);
   registarCors(app);
   registarJwt(app);

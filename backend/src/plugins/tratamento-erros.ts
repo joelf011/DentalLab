@@ -1,10 +1,16 @@
 import type { FastifyError, FastifyInstance } from 'fastify';
-import { enviarErro, traduzirErro } from '../comum/erros.ts';
+import { enviarErro, traduzirErro, traduzirValidacao } from '../comum/erros.ts';
 
 // Respostas de erro de toda a API, no formato de comum/erros.ts: { codigo, mensagem, detalhes }
 export function registarTratamentoErros(app: FastifyInstance) {
   // Quando uma rota dá erro (e não respondeu ela própria), vem parar aqui.
   app.setErrorHandler((erro: FastifyError, request, reply) => {
+    // Pedido que não cumpre o esquema da rota (plugins/validacao.ts): 400 com a lista dos problemas.
+    if (erro.validation) {
+      const mensagem =
+        erro.validationContext === 'body' ? 'Os dados enviados não são válidos.' : 'O endereço do pedido tem valores inválidos.';
+      return enviarErro(reply, 400, mensagem, traduzirValidacao(erro.validation));
+    }
     // Erros conhecidos: RAISE EXCEPTION das funções, regras das tabelas, formato errado, JSON mal escrito...
     const conhecido = traduzirErro(erro);
     if (conhecido !== null) {
