@@ -75,9 +75,10 @@ export function traduzirErro(erro: Erro): { codigo: number; mensagem: string } |
     case 'P0001':
       return dadosInvalidos(erro.message);
 
-    // UNIQUE: valor repetido
+    // UNIQUE: valor repetido. É 409 (conflito) e não 400: os dados estão bem escritos,
+    // mas chocam com um registo que já existe (regra de AI3).
     case '23505':
-      return dadosInvalidos(mensagensRegras[regra] ?? 'Já existe um registo com estes dados.');
+      return { codigo: 409, mensagem: mensagensRegras[regra] ?? 'Já existe um registo com estes dados.' };
 
     // CHECK: valor que não cumpre uma regra da tabela
     case '23514':

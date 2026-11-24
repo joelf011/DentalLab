@@ -208,6 +208,7 @@ Todas as respostas de erro têm este formato (o mesmo das aulas de AI3):
 | 401 | Sem sessão, sessão expirada ou conta desativada | Apagar o token e voltar ao ecrã de login |
 | 403 | O cargo não tem permissão; ou, no login, a conta está desativada ou ainda por aprovar | Mostrar a mensagem |
 | 404 | O registo não existe | Mostrar a mensagem, ou voltar à lista |
+| 409 | Conflito: já existe um registo com esse valor (ex.: "Já existe um cliente com este NIF") | Mostrar a mensagem e deixar a pessoa corrigir |
 | 413 | O pedido é demasiado grande | Mostrar a mensagem |
 | 415 | Os dados não foram enviados em JSON | Erro do programador: enviar `Content-Type: application/json` |
 | 500 | Erro inesperado na API | Mostrar "Ocorreu um erro inesperado. Tente novamente." |
