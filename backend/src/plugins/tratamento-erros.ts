@@ -1,8 +1,11 @@
 import type { FastifyError, FastifyInstance } from 'fastify';
-import { enviarErro, traduzirErro, traduzirValidacao } from '../comum/erros.ts';
+import { enviarErro, esquemaErro, traduzirErro, traduzirValidacao } from '../comum/erros.ts';
 
 // Respostas de erro de toda a API, no formato de comum/erros.ts: { codigo, mensagem, detalhes }
 export function registarTratamentoErros(app: FastifyInstance) {
+  // O esquema do formato de erro, usado pelas rotas com { $ref: 'Erro#' } (ver comum/esquemas.ts)
+  app.addSchema(esquemaErro);
+
   // Quando uma rota dá erro (e não respondeu ela própria), vem parar aqui.
   app.setErrorHandler((erro: FastifyError, request, reply) => {
     // Pedido que não cumpre o esquema da rota (plugins/validacao.ts): 400 com a lista dos problemas.

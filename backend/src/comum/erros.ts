@@ -13,6 +13,28 @@ export interface DetalheErro {
   problema: string;
 }
 
+// O mesmo formato em esquema, para as respostas e a documentação ({ $ref: 'Erro#' }).
+// Regista-se uma vez, em plugins/tratamento-erros.ts.
+export const esquemaErro = {
+  $id: 'Erro',
+  type: 'object',
+  description: 'Resposta de erro, igual em toda a API.',
+  properties: {
+    codigo: { type: 'integer', minimum: 400, maximum: 599, description: 'O mesmo número do código HTTP.' },
+    mensagem: { type: 'string', description: 'Em português, pronta a mostrar ao utilizador.' },
+    detalhes: {
+      type: 'array',
+      description: 'Só aparece quando o problema é de campos concretos do pedido.',
+      items: {
+        type: 'object',
+        properties: { campo: { type: 'string' }, problema: { type: 'string' } },
+        required: ['campo', 'problema'],
+      },
+    },
+  },
+  required: ['codigo', 'mensagem'],
+};
+
 // Envia uma resposta de erro. Nas rotas usa-se assim:
 //   return enviarErro(reply, 404, 'O cliente não existe.');
 export function enviarErro(reply: FastifyReply, codigo: number, mensagem: string, detalhes: DetalheErro[] = []) {

@@ -8,6 +8,7 @@ import { rotasSaude } from './modulos/saude/saude.rotas.ts';
 import { rotasUtilizadores } from './modulos/utilizadores/utilizadores.rotas.ts';
 import { registarCache } from './plugins/cache.ts';
 import { registarCors } from './plugins/cors.ts';
+import { registarDocumentacao } from './plugins/documentacao.ts';
 import { registarJwt } from './plugins/jwt.ts';
 import { registarTratamentoErros } from './plugins/tratamento-erros.ts';
 import { registarValidacao } from './plugins/validacao.ts';
@@ -30,6 +31,7 @@ export function construirApp(mostrarPedidos = true) {
   registarCache(app);
   registarCors(app);
   registarJwt(app);
+  registarDocumentacao(app);
 
   // Módulos: cada área tem a sua pasta em modulos/, com as suas rotas.
   // Todas ficam debaixo de /api/v1 (PREFIXO_API): o '/cargos' de cargos.rotas.ts passa a ser /api/v1/cargos.
