@@ -36,6 +36,8 @@ export function registarDocumentacao(app: FastifyInstance) {
         { name: 'Alterações de cliente', description: 'Pedidos das clínicas para mudar os seus dados.' },
         { name: 'Utilizadores', description: 'Contas de acesso.' },
         { name: 'Catálogo', description: 'Tipos de trabalho e etapas de produção.' },
+        { name: 'Ordens', description: 'As encomendas das clínicas: ordens de trabalho e os seus trabalhos.' },
+        { name: 'Trabalhos', description: 'Os trabalhos de cada ordem e a sua produção.' },
         { name: 'Contactos', description: 'Formulário de contacto do site.' },
       ],
       components: {

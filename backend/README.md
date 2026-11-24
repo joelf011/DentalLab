@@ -68,7 +68,7 @@ src/
       cargos.rotas.ts     as rotas: quem pode, o que se lê ou escreve na BD
       cargos.esquemas.ts  os dados que cada rota recebe e devolve
     saude/  autenticacao/  conta/  clientes/  alteracoes-cliente/  utilizadores/  contactos/
-    tipos-trabalho/  etapas/   (iguais)
+    tipos-trabalho/  etapas/  ordens/  trabalhos/   (iguais)
 ```
 
 Os nomes seguem os da app (`lib/comum`, `lib/autenticacao`, `configuracao.dart`) e os do servidor de AI3 (`servidor.js`).
@@ -294,6 +294,13 @@ Resumo. Os campos de cada rota, os obrigatórios e as respostas possíveis estã
 | `POST /api/v1/etapas` | Cria uma etapa: `{ "nome", "descricao" }` (Administrador) |
 | `PATCH /api/v1/etapas/:id` | Altera uma etapa; `"ativa": true` reativa-a (Administrador) |
 | `DELETE /api/v1/etapas/:id` | Desativa uma etapa (Administrador) |
+| `GET /api/v1/ordens` | Ordens (encomendas), com os trabalhos; `?estado=...` filtra (Cliente: só as suas; laboratório: todas) |
+| `GET /api/v1/ordens/:id` | Uma ordem, com os trabalhos (Cliente: só as suas) |
+| `POST /api/v1/ordens` | Cria a encomenda com os trabalhos, de uma vez: `{ "nome_medico_responsavel", ..., "trabalhos": [{ "tipo_trabalho_id", "natureza", "cor", "dentes" }] }` (Cliente; o Administrador indica o `cliente_id`) |
+| `PATCH /api/v1/ordens/:id` | Altera os dados da ordem: médico, paciente, consulta, observações, prazo (Administrador) |
+| `POST /api/v1/ordens/:id/aceitar` | Aceita a ordem "Em avaliação": `{ "prazo_entrega" }` (laboratório) |
+| `POST /api/v1/ordens/:id/estado` | Muda o estado: `{ "estado", "motivo" }`; "Em espera" e "Rejeitado" precisam de motivo (laboratório) |
+| `PATCH /api/v1/trabalhos/:id` | Altera um trabalho: natureza, cor, dentes (Administrador) |
 | `POST /api/v1/contactos` | Público. Formulário de contacto do site: `{ "clinica", "nome", "email", "telefone", "assunto", "mensagem" }`. Vai por email para o laboratório; 503 se o email falhar |
 
 ## Comandos
