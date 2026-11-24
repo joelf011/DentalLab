@@ -3,29 +3,34 @@ import { exigirCargo, exigirLogin } from '../../comum/acesso.ts';
 import { bd, escreverComo } from '../../comum/bd.ts';
 import { enviarErro } from '../../comum/erros.ts';
 import { enviarCriado } from '../../comum/respostas.ts';
+import { alterarCargo, apagarCargo, criarCargo, esquemaCargo, listarCargos, obterCargo } from './cargos.esquemas.ts';
 
 // Rotas dos cargos (Administrador, Colaborador, Cliente).
 // Ler: vista vw_cargo. Criar, alterar e apagar: função fn_cargo_crud. As duas foram criadas no pgAdmin.
 // Ver: qualquer pessoa com login. Criar, alterar e apagar: só o Administrador.
+// As regras dos dados (obrigatórios, tamanhos) estão em cargos.esquemas.ts.
 //
 // Os valores vão sempre em $1, $2... e nunca colados no texto do SQL:
 // assim ninguém consegue alterar o SQL através dos dados que envia (SQL injection).
 
-// O que o frontend envia no corpo do pedido (POST e PUT)
+// O que o frontend envia no corpo do pedido (POST e PATCH)
 interface DadosCargo {
-  designacao?: string;
+  designacao: string;
 }
 
 export async function rotasCargos(app: FastifyInstance) {
+  // Esquema com nome, usado pelas respostas das leituras
+  app.addSchema(esquemaCargo);
+
   // GET /api/v1/cargos: lista todos os cargos
-  app.get('/cargos', { preHandler: exigirLogin }, async () => {
+  app.get('/cargos', { schema: listarCargos, preHandler: exigirLogin }, async () => {
     const resultado = await bd.query('SELECT * FROM vw_cargo ORDER BY id');
     return resultado.rows;
   });
 
   // GET /api/v1/cargos/1: mostra um cargo
-  app.get('/cargos/:id', { preHandler: exigirLogin }, async (request, reply) => {
-    const { id } = request.params as { id: string };
+  app.get('/cargos/:id', { schema: obterCargo, preHandler: exigirLogin }, async (request, reply) => {
+    const { id } = request.params as { id: number };
     const resultado = await bd.query('SELECT * FROM vw_cargo WHERE id = $1', [id]);
     if (resultado.rows.length === 0) {
       return enviarErro(reply, 404, 'O cargo não existe.');
@@ -34,24 +39,25 @@ export async function rotasCargos(app: FastifyInstance) {
   });
 
   // POST /api/v1/cargos com { "designacao": "Técnico" }: cria um cargo e devolve o id novo
-  app.post('/cargos', { preHandler: exigirCargo('Administrador') }, async (request, reply) => {
-    const dados = request.body as DadosCargo | undefined;
-    const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('CREATE', NULL, $1) AS id", [dados?.designacao]);
+  app.post('/cargos', { schema: criarCargo, preHandler: exigirCargo('Administrador') }, async (request, reply) => {
+    const dados = request.body as DadosCargo;
+    const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('CREATE', NULL, $1) AS id", [dados.designacao]);
     return enviarCriado(reply, 'cargos', resultado.rows[0].id);
   });
 
-  // PUT /api/v1/cargos/1 com { "designacao": "Técnico" }: altera um cargo
-  app.put('/cargos/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
-    const { id } = request.params as { id: string };
-    const dados = request.body as DadosCargo | undefined;
-    const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('UPDATE', $1, $2) AS id", [id, dados?.designacao]);
+  // PATCH /api/v1/cargos/1 com { "designacao": "Técnico" }: altera um cargo
+  app.patch('/cargos/:id', { schema: alterarCargo, preHandler: exigirCargo('Administrador') }, async (request) => {
+    const { id } = request.params as { id: number };
+    const dados = request.body as DadosCargo;
+    const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('UPDATE', $1, $2) AS id", [id, dados.designacao]);
     return resultado.rows[0];
   });
 
   // DELETE /api/v1/cargos/1: apaga um cargo (a função recusa se o cargo tiver utilizadores)
-  app.delete('/cargos/:id', { preHandler: exigirCargo('Administrador') }, async (request) => {
-    const { id } = request.params as { id: string };
-    const resultado = await escreverComo(request.user.id, "SELECT fn_cargo_crud('DELETE', $1) AS id", [id]);
-    return resultado.rows[0];
+  // Responde 204: correu bem e não há nada para devolver.
+  app.delete('/cargos/:id', { schema: apagarCargo, preHandler: exigirCargo('Administrador') }, async (request, reply) => {
+    const { id } = request.params as { id: number };
+    await escreverComo(request.user.id, "SELECT fn_cargo_crud('DELETE', $1) AS id", [id]);
+    return reply.code(204).send();
   });
 }
