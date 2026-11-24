@@ -114,7 +114,9 @@ SELECT o.id,
        o.nome_medico_responsavel, o.nome_paciente, o.sexo_paciente, o.idade_paciente,
        o.data_proxima_consulta, o.observacoes, o.prazo_entrega,
        o.data_criacao, o.data_aceitacao, o.data_inicio, o.data_conclusao, o.data_entrega,
-       o.motivo_espera, o.motivo_rejeicao
+       o.motivo_espera, o.motivo_rejeicao,
+       -- ids no fim (acrescentados depois): a API filtra as ordens de cada clínica e pelo estado
+       o.cliente_id, o.estado_ordem_id
 FROM ordem_trabalho o
 JOIN cliente c          ON c.id = o.cliente_id
 JOIN utilizador uc      ON uc.id = o.criado_por
