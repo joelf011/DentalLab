@@ -66,7 +66,7 @@ src/
     cargos/
       cargos.rotas.ts     as rotas: quem pode, o que se lê ou escreve na BD
       cargos.esquemas.ts  os dados que cada rota recebe e devolve
-    saude/  autenticacao/  clientes/  alteracoes-cliente/  utilizadores/   (iguais)
+    saude/  autenticacao/  conta/  clientes/  alteracoes-cliente/  utilizadores/   (iguais)
 ```
 
 Os nomes seguem os da app (`lib/comum`, `lib/autenticacao`, `configuracao.dart`) e os do servidor de AI3 (`servidor.js`).
@@ -112,7 +112,7 @@ A API tem de estar a correr (`npm run dev`) no PC.
    - Flutter: o pacote `flutter_secure_storage`.
 4. Envia-o em **todos** os outros pedidos, no cabeçalho `Authorization: Bearer <token>`.
 5. Usa o `cargo` (`Administrador`, `Colaborador` ou `Cliente`) para escolher que ecrãs mostrar. Quem decide o que cada cargo pode fazer é a API; o frontend só esconde o que não faz sentido mostrar.
-6. Se `password_temporaria` for `true`, leva a pessoa para um ecrã de mudar a palavra-passe (`PUT /api/v1/auth/password`) antes de continuar.
+6. Se `password_temporaria` for `true`, leva a pessoa para um ecrã de mudar a palavra-passe (`PUT /api/v1/conta/palavra-passe`) antes de continuar.
 7. Quando a app abre e já tem um token guardado, chama `GET /api/v1/auth/eu`:
    - 200: a sessão continua válida;
    - 401: apaga o token e mostra o ecrã de login.
@@ -250,10 +250,10 @@ Resumo. Os campos de cada rota, os obrigatórios e as respostas possíveis estã
 | Rota | O que faz |
 | --- | --- |
 | `GET /api/v1/saude` | Verifica a API e a ligação à BD |
-| `POST /api/v1/auth/registo` | Público. Uma clínica regista-se: `{ "nome", "nif", "morada_faturacao", "telefone", "email", "password" }`. A conta fica à espera de aprovação |
+| `POST /api/v1/registos` | Público. Uma clínica regista-se: `{ "nome", "nif", "morada_faturacao", "telefone", "email", "password" }`. A conta fica à espera de aprovação |
 | `POST /api/v1/auth/login` | Login: `{ "email": "...", "password": "..." }`. Devolve `{ token, utilizador }` |
 | `GET /api/v1/auth/eu` | Quem está ligado (precisa de login) |
-| `PUT /api/v1/auth/password` | Muda a palavra-passe de quem está ligado: `{ "password_atual": "...", "password_nova": "..." }` |
+| `PUT /api/v1/conta/palavra-passe` | Muda a palavra-passe de quem está ligado: `{ "password_atual": "...", "password_nova": "..." }` |
 | `GET /api/v1/cargos` | Lista os cargos, que são fixos: Administrador, Colaborador e Cliente (login) |
 | `GET /api/v1/clientes` | Lista as clínicas (Administrador) |
 | `GET /api/v1/clientes/:id` | Mostra uma clínica (Administrador; uma clínica só a sua) |

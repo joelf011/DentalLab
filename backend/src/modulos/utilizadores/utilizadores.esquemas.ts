@@ -1,4 +1,5 @@
 import {
+  palavraPasseNova,
   paramId,
   resposta,
   respostaCriado,
@@ -42,8 +43,7 @@ const camposUtilizador = {
   email: { type: 'string', format: 'email', maxLength: 254 },
   cargo_id: { type: 'integer', minimum: 1 },
   cliente_id: { type: 'integer', minimum: 1, description: 'Só no cargo Cliente: a clínica a que a conta pertence.' },
-  // Pelo menos 8 caracteres. No máximo 72, porque o bcrypt só usa os primeiros 72 bytes.
-  password: { type: 'string', minLength: 8, maxLength: 72, description: 'Palavra-passe temporária.' },
+  password: { ...palavraPasseNova, description: 'Palavra-passe temporária.' },
 };
 
 // GET /api/v1/utilizadores

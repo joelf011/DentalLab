@@ -19,7 +19,7 @@ import {
 // Ler: vista vw_utilizador (não mostra o password_hash).
 // Criar, alterar e desativar: fn_utilizador_crud. Aprovar: fn_aprovar_utilizador.
 // As contas criadas pelo Administrador ficam logo aprovadas, com uma palavra-passe temporária
-// que a pessoa tem de mudar no primeiro login (PUT /api/v1/auth/password).
+// que a pessoa tem de mudar no primeiro login (PUT /api/v1/conta/palavra-passe).
 // As regras dos dados (obrigatórios, tamanhos, palavra-passe) estão em utilizadores.esquemas.ts.
 
 // O que o frontend envia para criar uma conta (POST)

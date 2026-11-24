@@ -14,6 +14,10 @@ export const paramId = {
   required: ['id'],
 };
 
+// Uma palavra-passe nova: pelo menos 8 caracteres. No máximo 72, porque o bcrypt só usa os primeiros 72 bytes
+// e ignorava o resto sem avisar.
+export const palavraPasseNova = { type: 'string', minLength: 8, maxLength: 72 };
+
 // O Cache-Control de cada resposta (plugins/cache.ts), para aparecer na documentação
 function cacheControl(valor: string): Record<string, object> {
   return { 'Cache-Control': { type: 'string', enum: [valor] } };

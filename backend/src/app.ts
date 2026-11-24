@@ -4,6 +4,7 @@ import { rotasAlteracoesCliente } from './modulos/alteracoes-cliente/alteracoes-
 import { rotasAutenticacao } from './modulos/autenticacao/autenticacao.rotas.ts';
 import { rotasCargos } from './modulos/cargos/cargos.rotas.ts';
 import { rotasClientes } from './modulos/clientes/clientes.rotas.ts';
+import { rotasConta } from './modulos/conta/conta.rotas.ts';
 import { rotasSaude } from './modulos/saude/saude.rotas.ts';
 import { rotasUtilizadores } from './modulos/utilizadores/utilizadores.rotas.ts';
 import { registarCache } from './plugins/cache.ts';
@@ -40,6 +41,7 @@ export function construirApp(mostrarPedidos = true) {
   const versao1 = { prefix: PREFIXO_API };
   app.register(rotasSaude, versao1);
   app.register(rotasAutenticacao, versao1);
+  app.register(rotasConta, versao1);
   app.register(rotasCargos, versao1);
   app.register(rotasClientes, versao1);
   app.register(rotasAlteracoesCliente, versao1);

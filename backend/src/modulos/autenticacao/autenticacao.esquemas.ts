@@ -1,12 +1,8 @@
-import { resposta, respostaCriado, respostaErro, respostaId, respostasErro } from '../../comum/esquemas.ts';
+import { resposta, respostaErro, respostasErro } from '../../comum/esquemas.ts';
 
 // Esquemas das rotas da autenticação (ver comum/esquemas.ts)
 
 const etiqueta = ['Autenticação'];
-
-// Palavra-passe nova: pelo menos 8 caracteres. No máximo 72, porque o bcrypt só usa os primeiros 72 bytes
-// e ignorava o resto sem avisar.
-const passwordNova = { type: 'string', minLength: 8, maxLength: 72 };
 
 // Quem está ligado: vem no login e em GET /auth/eu.
 // Tem nome ($id), por isso regista-se no módulo (app.addSchema) e as rotas usam { $ref: 'UtilizadorLigado#' }.
@@ -26,34 +22,6 @@ export const esquemaUtilizadorLigado = {
     },
   },
   required: ['id', 'nome', 'cargo', 'cliente_id', 'email', 'password_temporaria'],
-};
-
-// POST /api/v1/auth/registo
-export const registarClinica = {
-  tags: etiqueta,
-  operationId: 'registarClinica',
-  summary: 'Registar uma clínica',
-  description:
-    'Cria a clínica e a conta de acesso. A conta fica à espera de aprovação do Administrador; ' +
-    'até lá, o login responde 403.',
-  security: [], // pública: quem se regista ainda não tem conta
-  body: {
-    type: 'object',
-    properties: {
-      nome: { type: 'string', minLength: 1, maxLength: 150 },
-      nif: { type: 'string', pattern: '^[0-9]{9}$', description: '9 algarismos.' },
-      morada_faturacao: { type: 'string', maxLength: 255 },
-      telefone: { type: 'string', maxLength: 20 },
-      email: { type: 'string', format: 'email', maxLength: 254, description: 'Email da clínica e email de login.' },
-      password: passwordNova,
-    },
-    required: ['nome', 'nif', 'email', 'password'],
-    additionalProperties: false,
-  },
-  response: {
-    201: respostaCriado,
-    ...respostasErro(400, 409),
-  },
 };
 
 // POST /api/v1/auth/login
@@ -101,27 +69,5 @@ export const obterUtilizadorLigado = {
   response: {
     200: resposta('Quem está ligado, com os dados atuais da base de dados.', { $ref: 'UtilizadorLigado#' }, 'no-store'),
     ...respostasErro(401),
-  },
-};
-
-// PUT /api/v1/auth/password
-export const mudarPassword = {
-  tags: etiqueta,
-  operationId: 'mudarPassword',
-  summary: 'Mudar a palavra-passe de quem está ligado',
-  description: 'A palavra-passe deixa de ser temporária.',
-  body: {
-    type: 'object',
-    properties: {
-      password_atual: { type: 'string', minLength: 1 },
-      password_nova: passwordNova,
-    },
-    required: ['password_atual', 'password_nova'],
-    additionalProperties: false,
-  },
-  response: {
-    200: respostaId,
-    // 400 e não 401 quando a atual está errada: o frontend trata o 401 como "sessão terminada".
-    ...respostasErro(400, 401),
   },
 };
