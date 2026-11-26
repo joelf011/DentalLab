@@ -55,6 +55,12 @@ export const configuracao = {
     // Para onde vão as mensagens do formulário de contacto do site
     laboratorio: process.env.EMAIL_LABORATORIO ?? 'geral@dentallab.local',
   },
+  ficheiros: {
+    // Pasta onde ficam os ficheiros enviados (fotografias, STL...). Por omissão, backend/ficheiros (fora do Git).
+    pasta: process.env.PASTA_FICHEIROS || 'ficheiros',
+    // Tamanho máximo de cada ficheiro: 50 MB (os ficheiros STL dos scanners podem ser grandes)
+    tamanhoMaximo: 50 * 1024 * 1024,
+  },
   // Endereço do site, para os links que vão nos emails (ex.: recuperar a palavra-passe)
   urlSite: process.env.URL_SITE ?? 'http://localhost:5173',
   bcrypt: {

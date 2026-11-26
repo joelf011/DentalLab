@@ -69,6 +69,8 @@ const descricoesErros = {
   403: 'O cargo de quem está ligado não pode fazer isto.',
   404: 'O registo não existe.',
   409: 'Conflito: já existe um registo com esse valor, ou o registo não está no estado certo para isto.',
+  413: 'O pedido (ou o ficheiro enviado) é demasiado grande.',
+  415: 'O formato do pedido não é o esperado (Content-Type).',
   500: 'Erro inesperado na API.',
   503: 'A API não consegue ligar-se à base de dados.',
 };

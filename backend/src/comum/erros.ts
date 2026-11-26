@@ -148,6 +148,13 @@ export function traduzirErro(erro: Erro): { codigo: number; mensagem: string } |
       return dadosInvalidos('O pedido diz que envia JSON (Content-Type: application/json) mas vem sem corpo.');
     case 'FST_ERR_CTP_BODY_TOO_LARGE':
       return { codigo: 413, mensagem: 'O pedido é demasiado grande.' };
+    // erros do envio de ficheiros (@fastify/multipart, modulos/ficheiros)
+    case 'FST_REQ_FILE_TOO_LARGE':
+      return { codigo: 413, mensagem: 'O ficheiro é demasiado grande (máximo 50 MB).' };
+    case 'FST_FILES_LIMIT':
+      return { codigo: 413, mensagem: 'Envie um ficheiro de cada vez.' };
+    case 'FST_INVALID_MULTIPART_CONTENT_TYPE':
+      return { codigo: 415, mensagem: 'O ficheiro tem de ser enviado em multipart/form-data, no campo "ficheiro".' };
     case 'FST_ERR_CTP_INVALID_MEDIA_TYPE':
       return { codigo: 415, mensagem: 'Os dados têm de ser enviados em JSON (Content-Type: application/json).' };
 
