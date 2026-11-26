@@ -544,6 +544,55 @@ LEFT JOIN vw_trabalho_etapa_atual ea ON ea.trabalho_id = t.id
 WHERE t.eliminado_em IS NULL;
 
 
+-- ---------------------------------------------------------------------
+-- Comunicação: comentários, notificações e ficheiros
+-- ---------------------------------------------------------------------
+
+-- comentario
+-- Um comentário pertence a uma ordem (a clínica vê-o) ou a um trabalho (nota interna do laboratório).
+-- Não mostra os comentários eliminados.
+CREATE OR REPLACE VIEW vw_comentario AS
+SELECT c.id, c.ordem_trabalho_id, c.trabalho_id,
+       c.utilizador_id,
+       u.nome      AS autor,
+       ca.designacao AS cargo_autor,
+       c.conteudo, c.data_criacao, c.data_edicao
+FROM comentario c
+JOIN utilizador u ON u.id = c.utilizador_id
+JOIN cargo ca     ON ca.id = u.cargo_id
+WHERE c.eliminado_em IS NULL;
+
+
+-- notificacao
+CREATE OR REPLACE VIEW vw_notificacao AS
+SELECT n.id, n.utilizador_id, n.ordem_trabalho_id, n.trabalho_id,
+       n.mensagem, n.data_criacao, n.data_leitura,
+       n.data_leitura IS NOT NULL AS lida
+FROM notificacao n;
+
+
+-- tipo_ficheiro (STL, Fotografia, Documento, Outro)
+CREATE OR REPLACE VIEW vw_tipo_ficheiro AS
+SELECT t.id, t.designacao
+FROM tipo_ficheiro t;
+
+
+-- ficheiro
+-- localizacao é onde o ficheiro está guardado no servidor da API (só a API a usa).
+-- Não mostra os ficheiros eliminados.
+CREATE OR REPLACE VIEW vw_ficheiro AS
+SELECT f.id, f.ordem_trabalho_id, f.trabalho_id,
+       tf.designacao AS tipo,
+       f.nome, f.localizacao,
+       f.carregado_por AS carregado_por_id,
+       u.nome AS carregado_por,
+       f.data_carregamento
+FROM ficheiro f
+JOIN tipo_ficheiro tf ON tf.id = f.tipo_ficheiro_id
+JOIN utilizador u     ON u.id = f.carregado_por
+WHERE f.eliminado_em IS NULL;
+
+
 -- #####################################################################
 -- 03_funcoes.sql
 -- #####################################################################
@@ -1589,6 +1638,155 @@ BEGIN
                 INSERT INTO trabalho_dente(trabalho_id, numero_fdi) VALUES (v_id, p_dentes[i]);
             END IF;
         END LOOP;
+    END IF;
+
+    RETURN v_id;
+END;
+$BODY$;
+
+
+-- ---------------------------------------------------------------------
+-- Comunicação: comentários e ficheiros
+-- ---------------------------------------------------------------------
+
+-- Comentário de uma ordem (p_ordem_trabalho_id: a clínica vê-o) ou de um trabalho
+-- (p_trabalho_id: nota interna do laboratório). Indica-se um dos dois, nunca os dois.
+-- Em UPDATE só muda o conteúdo (o trigger preenche data_edicao). DELETE é lógico: preenche eliminado_em.
+CREATE OR REPLACE FUNCTION public.fn_comentario_crud(
+    p_operacao          character varying,
+    p_id                bigint,
+    p_ordem_trabalho_id bigint  DEFAULT NULL,
+    p_trabalho_id       bigint  DEFAULT NULL,
+    p_utilizador_id     bigint  DEFAULT NULL,
+    p_conteudo          text    DEFAULT NULL)
+RETURNS bigint
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+    v_operacao character varying := upper(p_operacao);
+    v_id       bigint;
+    n          integer;
+BEGIN
+    IF v_operacao IN ('UPDATE', 'DELETE') THEN
+        SELECT count(*) INTO n FROM comentario WHERE id = p_id AND eliminado_em IS NULL;
+        IF n = 0 THEN
+            RAISE EXCEPTION 'O comentário % não existe', p_id
+                USING ERRCODE = 'no_data_found';
+        END IF;
+    END IF;
+
+    IF v_operacao IN ('CREATE', 'UPDATE') AND p_conteudo IS NOT NULL AND trim(p_conteudo) = '' THEN
+        RAISE EXCEPTION 'O comentário não pode estar vazio';
+    END IF;
+
+    IF v_operacao = 'CREATE' THEN
+        IF p_conteudo IS NULL OR p_utilizador_id IS NULL THEN
+            RAISE EXCEPTION 'Tem de indicar o autor e o conteúdo do comentário';
+        END IF;
+
+        IF p_ordem_trabalho_id IS NOT NULL THEN
+            SELECT count(*) INTO n FROM ordem_trabalho
+            WHERE id = p_ordem_trabalho_id AND eliminado_em IS NULL;
+            IF n = 0 THEN
+                RAISE EXCEPTION 'A ordem de trabalho % não existe', p_ordem_trabalho_id
+                    USING ERRCODE = 'no_data_found';
+            END IF;
+        END IF;
+
+        IF p_trabalho_id IS NOT NULL THEN
+            SELECT count(*) INTO n FROM trabalho WHERE id = p_trabalho_id AND eliminado_em IS NULL;
+            IF n = 0 THEN
+                RAISE EXCEPTION 'O trabalho % não existe', p_trabalho_id
+                    USING ERRCODE = 'no_data_found';
+            END IF;
+        END IF;
+
+        -- ordem ou trabalho, nunca os dois (regra ck_comentario_associacao da tabela)
+        INSERT INTO comentario(ordem_trabalho_id, trabalho_id, utilizador_id, conteudo)
+        VALUES (p_ordem_trabalho_id, p_trabalho_id, p_utilizador_id, p_conteudo)
+        RETURNING id INTO v_id;
+
+    ELSIF v_operacao = 'UPDATE' THEN
+        UPDATE comentario SET conteudo = COALESCE(p_conteudo, conteudo) WHERE id = p_id;
+        v_id := p_id;
+
+    ELSIF v_operacao = 'DELETE' THEN
+        UPDATE comentario SET eliminado_em = now() WHERE id = p_id;
+        v_id := p_id;
+
+    ELSE
+        RAISE EXCEPTION 'Operação inválida: % (use CREATE, UPDATE ou DELETE)', p_operacao;
+    END IF;
+
+    RETURN v_id;
+END;
+$BODY$;
+
+
+-- Ficheiro de uma ordem (a clínica vê-o) ou de um trabalho (interno do laboratório).
+-- O ficheiro em si fica guardado pela API; aqui guarda-se o nome original e a localizacao.
+-- Só tem CREATE e DELETE (lógico: preenche eliminado_em).
+CREATE OR REPLACE FUNCTION public.fn_ficheiro_crud(
+    p_operacao          character varying,
+    p_id                bigint,
+    p_tipo_ficheiro_id  bigint            DEFAULT NULL,
+    p_ordem_trabalho_id bigint            DEFAULT NULL,
+    p_trabalho_id       bigint            DEFAULT NULL,
+    p_carregado_por     bigint            DEFAULT NULL,
+    p_nome              character varying DEFAULT NULL,
+    p_localizacao       text              DEFAULT NULL)
+RETURNS bigint
+LANGUAGE 'plpgsql'
+AS $BODY$
+DECLARE
+    v_operacao character varying := upper(p_operacao);
+    v_id       bigint;
+    n          integer;
+BEGIN
+    IF v_operacao = 'CREATE' THEN
+        IF p_tipo_ficheiro_id IS NULL OR p_carregado_por IS NULL
+           OR p_nome IS NULL OR p_localizacao IS NULL THEN
+            RAISE EXCEPTION 'Tem de indicar o tipo, quem carrega, o nome e a localização do ficheiro';
+        END IF;
+
+        SELECT count(*) INTO n FROM tipo_ficheiro WHERE id = p_tipo_ficheiro_id;
+        IF n = 0 THEN
+            RAISE EXCEPTION 'O tipo de ficheiro % não existe', p_tipo_ficheiro_id;
+        END IF;
+
+        IF p_ordem_trabalho_id IS NOT NULL THEN
+            SELECT count(*) INTO n FROM ordem_trabalho
+            WHERE id = p_ordem_trabalho_id AND eliminado_em IS NULL;
+            IF n = 0 THEN
+                RAISE EXCEPTION 'A ordem de trabalho % não existe', p_ordem_trabalho_id
+                    USING ERRCODE = 'no_data_found';
+            END IF;
+        END IF;
+
+        IF p_trabalho_id IS NOT NULL THEN
+            SELECT count(*) INTO n FROM trabalho WHERE id = p_trabalho_id AND eliminado_em IS NULL;
+            IF n = 0 THEN
+                RAISE EXCEPTION 'O trabalho % não existe', p_trabalho_id
+                    USING ERRCODE = 'no_data_found';
+            END IF;
+        END IF;
+
+        -- ordem ou trabalho, nunca os dois (regra ck_ficheiro_associacao da tabela)
+        INSERT INTO ficheiro(tipo_ficheiro_id, ordem_trabalho_id, trabalho_id, carregado_por, nome, localizacao)
+        VALUES (p_tipo_ficheiro_id, p_ordem_trabalho_id, p_trabalho_id, p_carregado_por, p_nome, p_localizacao)
+        RETURNING id INTO v_id;
+
+    ELSIF v_operacao = 'DELETE' THEN
+        SELECT count(*) INTO n FROM ficheiro WHERE id = p_id AND eliminado_em IS NULL;
+        IF n = 0 THEN
+            RAISE EXCEPTION 'O ficheiro % não existe', p_id
+                USING ERRCODE = 'no_data_found';
+        END IF;
+        UPDATE ficheiro SET eliminado_em = now() WHERE id = p_id;
+        v_id := p_id;
+
+    ELSE
+        RAISE EXCEPTION 'Operação inválida: % (use CREATE ou DELETE)', p_operacao;
     END IF;
 
     RETURN v_id;

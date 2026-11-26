@@ -168,3 +168,52 @@ FROM trabalho t
 JOIN tipo_trabalho tt ON tt.id = t.tipo_trabalho_id
 LEFT JOIN vw_trabalho_etapa_atual ea ON ea.trabalho_id = t.id
 WHERE t.eliminado_em IS NULL;
+
+
+-- ---------------------------------------------------------------------
+-- Comunicação: comentários, notificações e ficheiros
+-- ---------------------------------------------------------------------
+
+-- comentario
+-- Um comentário pertence a uma ordem (a clínica vê-o) ou a um trabalho (nota interna do laboratório).
+-- Não mostra os comentários eliminados.
+CREATE OR REPLACE VIEW vw_comentario AS
+SELECT c.id, c.ordem_trabalho_id, c.trabalho_id,
+       c.utilizador_id,
+       u.nome      AS autor,
+       ca.designacao AS cargo_autor,
+       c.conteudo, c.data_criacao, c.data_edicao
+FROM comentario c
+JOIN utilizador u ON u.id = c.utilizador_id
+JOIN cargo ca     ON ca.id = u.cargo_id
+WHERE c.eliminado_em IS NULL;
+
+
+-- notificacao
+CREATE OR REPLACE VIEW vw_notificacao AS
+SELECT n.id, n.utilizador_id, n.ordem_trabalho_id, n.trabalho_id,
+       n.mensagem, n.data_criacao, n.data_leitura,
+       n.data_leitura IS NOT NULL AS lida
+FROM notificacao n;
+
+
+-- tipo_ficheiro (STL, Fotografia, Documento, Outro)
+CREATE OR REPLACE VIEW vw_tipo_ficheiro AS
+SELECT t.id, t.designacao
+FROM tipo_ficheiro t;
+
+
+-- ficheiro
+-- localizacao é onde o ficheiro está guardado no servidor da API (só a API a usa).
+-- Não mostra os ficheiros eliminados.
+CREATE OR REPLACE VIEW vw_ficheiro AS
+SELECT f.id, f.ordem_trabalho_id, f.trabalho_id,
+       tf.designacao AS tipo,
+       f.nome, f.localizacao,
+       f.carregado_por AS carregado_por_id,
+       u.nome AS carregado_por,
+       f.data_carregamento
+FROM ficheiro f
+JOIN tipo_ficheiro tf ON tf.id = f.tipo_ficheiro_id
+JOIN utilizador u     ON u.id = f.carregado_por
+WHERE f.eliminado_em IS NULL;
