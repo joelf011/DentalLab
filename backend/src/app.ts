@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { PREFIXO_API } from './comum/respostas.ts';
 import { rotasAlteracoesCliente } from './modulos/alteracoes-cliente/alteracoes-cliente.rotas.ts';
+import { rotasAuditoria } from './modulos/auditoria/auditoria.rotas.ts';
 import { rotasAutenticacao } from './modulos/autenticacao/autenticacao.rotas.ts';
 import { rotasCargos } from './modulos/cargos/cargos.rotas.ts';
 import { rotasClientes } from './modulos/clientes/clientes.rotas.ts';
@@ -62,6 +63,7 @@ export function construirApp(mostrarPedidos = true) {
   app.register(rotasComentarios, versao1);
   app.register(rotasNotificacoes, versao1);
   app.register(rotasFicheiros, versao1);
+  app.register(rotasAuditoria, versao1);
 
   return app;
 }

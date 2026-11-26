@@ -39,6 +39,7 @@ export function registarDocumentacao(app: FastifyInstance) {
         { name: 'Ordens', description: 'As encomendas das clínicas: ordens de trabalho e os seus trabalhos.' },
         { name: 'Trabalhos', description: 'Os trabalhos de cada ordem e a sua produção.' },
         { name: 'Comunicação', description: 'Mensagens e notas, notificações e ficheiros.' },
+        { name: 'Registo de Atividades', description: 'Quem alterou o quê e quando (auditoria).' },
         { name: 'Contactos', description: 'Formulário de contacto do site.' },
       ],
       components: {
