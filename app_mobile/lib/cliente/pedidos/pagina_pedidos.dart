@@ -150,15 +150,17 @@ class _PaginaPedidosState extends State<PaginaPedidos> {
           ),
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _filtroEstado('Todos', _selecionarTodos),
-            _filtroEstado('Iniciar', _selecionarIniciar),
-            _filtroEstado('Processamento', _selecionarProcessamento),
-            _filtroEstado('Concluído', _selecionarConcluido),
-          ],
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            spacing: 8,
+            children: [
+              _filtroEstado('Todos', _selecionarTodos),
+              _filtroEstado('Iniciar', _selecionarIniciar),
+              _filtroEstado('Processamento', _selecionarProcessamento),
+              _filtroEstado('Concluído', _selecionarConcluido),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         ExpansionTile(
