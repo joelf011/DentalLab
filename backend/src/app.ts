@@ -1,0 +1,69 @@
+import Fastify from 'fastify';
+import { PREFIXO_API } from './comum/respostas.ts';
+import { rotasAlteracoesCliente } from './modulos/alteracoes-cliente/alteracoes-cliente.rotas.ts';
+import { rotasAuditoria } from './modulos/auditoria/auditoria.rotas.ts';
+import { rotasAutenticacao } from './modulos/autenticacao/autenticacao.rotas.ts';
+import { rotasCargos } from './modulos/cargos/cargos.rotas.ts';
+import { rotasClientes } from './modulos/clientes/clientes.rotas.ts';
+import { rotasComentarios } from './modulos/comentarios/comentarios.rotas.ts';
+import { rotasConta } from './modulos/conta/conta.rotas.ts';
+import { rotasContactos } from './modulos/contactos/contactos.rotas.ts';
+import { rotasEtapas } from './modulos/etapas/etapas.rotas.ts';
+import { rotasFicheiros } from './modulos/ficheiros/ficheiros.rotas.ts';
+import { rotasNotificacoes } from './modulos/notificacoes/notificacoes.rotas.ts';
+import { rotasOrdens } from './modulos/ordens/ordens.rotas.ts';
+import { rotasSaude } from './modulos/saude/saude.rotas.ts';
+import { rotasTiposTrabalho } from './modulos/tipos-trabalho/tipos-trabalho.rotas.ts';
+import { rotasTrabalhos } from './modulos/trabalhos/trabalhos.rotas.ts';
+import { rotasUtilizadores } from './modulos/utilizadores/utilizadores.rotas.ts';
+import { registarCache } from './plugins/cache.ts';
+import { registarCors } from './plugins/cors.ts';
+import { registarDocumentacao } from './plugins/documentacao.ts';
+import { registarJwt } from './plugins/jwt.ts';
+import { registarTratamentoErros } from './plugins/tratamento-erros.ts';
+import { construirValidador } from './plugins/validacao.ts';
+
+// Constrói a API: liga os plugins e os módulos, mas não a põe a ouvir (isso é no servidor.ts).
+// Assim, a API pode ser construída noutros sítios (por exemplo, num script de teste) sem abrir uma porta.
+// mostrarPedidos: o terminal mostra cada pedido que chega (desliga-se nos scripts de teste).
+export function construirApp(mostrarPedidos = true) {
+  const app = Fastify({
+    logger: mostrarPedidos ? { transport: { target: 'pino-pretty' } } : false,
+    // Validação dos pedidos com os esquemas das rotas (plugins/validacao.ts)
+    schemaController: { compilersFactory: { buildValidator: construirValidador } },
+  });
+
+  // A API só recebe dados em JSON. O Fastify também aceita texto simples por omissão;
+  // sem isto, um pedido em texto chegava à rota e dava um erro confuso, em vez de 415.
+  app.removeContentTypeParser('text/plain');
+
+  // Peças ligadas uma vez, para toda a API (pasta plugins/)
+  registarTratamentoErros(app);
+  registarCache(app);
+  registarCors(app);
+  registarJwt(app);
+  registarDocumentacao(app);
+
+  // Módulos: cada área tem a sua pasta em modulos/, com as suas rotas.
+  // Todas ficam debaixo de /api/v1 (PREFIXO_API): o '/cargos' de cargos.rotas.ts passa a ser /api/v1/cargos.
+  // Se um dia houver uma versão incompatível da API, regista-se a nova em /api/v2 sem mexer nesta.
+  const versao1 = { prefix: PREFIXO_API };
+  app.register(rotasSaude, versao1);
+  app.register(rotasAutenticacao, versao1);
+  app.register(rotasConta, versao1);
+  app.register(rotasContactos, versao1);
+  app.register(rotasCargos, versao1);
+  app.register(rotasClientes, versao1);
+  app.register(rotasAlteracoesCliente, versao1);
+  app.register(rotasUtilizadores, versao1);
+  app.register(rotasTiposTrabalho, versao1);
+  app.register(rotasEtapas, versao1);
+  app.register(rotasOrdens, versao1);
+  app.register(rotasTrabalhos, versao1);
+  app.register(rotasComentarios, versao1);
+  app.register(rotasNotificacoes, versao1);
+  app.register(rotasFicheiros, versao1);
+  app.register(rotasAuditoria, versao1);
+
+  return app;
+}

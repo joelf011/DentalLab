@@ -1,0 +1,3 @@
+# Ficheiros enviados para a API (fotografias, STL...): ficam no servidor, nunca no Git.
+# A barra no início quer dizer "só a pasta backend/ficheiros" (e não src/modulos/ficheiros, que é código).
+/ficheiros/

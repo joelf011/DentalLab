@@ -1,0 +1,71 @@
+// Lê o ficheiro .env e coloca os valores em process.env.
+// (é uma função do próprio Node.js, não precisa de nenhum pacote)
+try {
+  process.loadEnvFile();
+} catch {
+  console.error('Falta o ficheiro .env. Copia o .env.example para .env e preenche-o.');
+  process.exit(1);
+}
+
+// Sem segredo, ou com um segredo curto, seria fácil criar tokens de login falsos.
+// Por isso a API não arranca sem um segredo de pelo menos 32 caracteres.
+if (!process.env.JWT_SEGREDO || process.env.JWT_SEGREDO.length < 32) {
+  console.error('O JWT_SEGREDO do ficheiro .env tem de ter pelo menos 32 caracteres. Vê no .env.example como gerar um.');
+  process.exit(1);
+}
+
+// Todas as definições da aplicação ficam aqui, num só sítio.
+export const configuracao = {
+  porta: Number(process.env.PORT ?? 3000),
+  // Sites React que podem usar a API. No .env estão separados por vírgulas;
+  // aqui ficam numa lista: ['http://localhost:5173', 'http://localhost:5174']
+  corsOrigens: (process.env.CORS_ORIGENS ?? '')
+    .split(',')
+    .map((origem) => origem.trim())
+    .filter((origem) => origem !== ''),
+  bd: {
+    host: process.env.DB_HOST,
+    port: Number(process.env.DB_PORT ?? 5432),
+    database: process.env.DB_NAME,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+  },
+  jwt: {
+    // Segredo para assinar os tokens de login. Está no .env e nunca vai para o Git.
+    segredo: process.env.JWT_SEGREDO,
+    // Durante quanto tempo um login é válido: 7 dias, em segundos. Depois disso, é preciso entrar outra vez.
+    // O token da app e o cookie do site duram o mesmo.
+    validade: 7 * 24 * 60 * 60,
+    // Segredo dos links de recuperação da palavra-passe. É diferente do do login (acrescenta-se um texto ao fim),
+    // para que um link de recuperação nunca sirva como sessão, nem o contrário.
+    segredoRecuperacao: `${process.env.JWT_SEGREDO}:recuperacao`,
+    // Durante quanto tempo um link de recuperação serve: 1 hora, em segundos.
+    validadeRecuperacao: 60 * 60,
+  },
+  email: {
+    // Servidor de email (SMTP). Sem SMTP_HOST, os emails não são enviados: aparecem no terminal da API.
+    smtp: {
+      host: process.env.SMTP_HOST ?? '',
+      port: Number(process.env.SMTP_PORT ?? 587),
+      utilizador: process.env.SMTP_UTILIZADOR ?? '',
+      palavraPasse: process.env.SMTP_PALAVRA_PASSE ?? '',
+    },
+    // Quem aparece como remetente dos emails da API
+    remetente: process.env.EMAIL_REMETENTE ?? 'DentalLab <nao-responder@dentallab.local>',
+    // Para onde vão as mensagens do formulário de contacto do site
+    laboratorio: process.env.EMAIL_LABORATORIO ?? 'geral@dentallab.local',
+  },
+  ficheiros: {
+    // Pasta onde ficam os ficheiros enviados (fotografias, STL...). Por omissão, backend/ficheiros (fora do Git).
+    pasta: process.env.PASTA_FICHEIROS || 'ficheiros',
+    // Tamanho máximo de cada ficheiro: 50 MB (os ficheiros STL dos scanners podem ser grandes)
+    tamanhoMaximo: 50 * 1024 * 1024,
+  },
+  // Endereço do site, para os links que vão nos emails (ex.: recuperar a palavra-passe)
+  urlSite: process.env.URL_SITE ?? 'http://localhost:5173',
+  bcrypt: {
+    // O "custo" do bcrypt ao calcular o hash de uma palavra-passe: quanto maior, mais lento é calcular cada hash
+    // e, por isso, adivinhar a palavra-passe a partir dele. É o mesmo dos hashes que já estão na BD.
+    custo: 12,
+  },
+};
