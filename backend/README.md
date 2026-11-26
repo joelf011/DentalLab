@@ -301,6 +301,11 @@ Resumo. Os campos de cada rota, os obrigatórios e as respostas possíveis estã
 | `POST /api/v1/ordens/:id/aceitar` | Aceita a ordem "Em avaliação": `{ "prazo_entrega" }` (laboratório) |
 | `POST /api/v1/ordens/:id/estado` | Muda o estado: `{ "estado", "motivo" }`; "Em espera" e "Rejeitado" precisam de motivo (laboratório) |
 | `PATCH /api/v1/trabalhos/:id` | Altera um trabalho: natureza, cor, dentes (Administrador) |
+| `GET /api/v1/trabalhos` | Trabalhos com as etapas de produção e os dados da ordem; `?abertos=true` só os de ordens por acabar (laboratório) |
+| `GET /api/v1/trabalhos/:id` | Um trabalho, com as etapas (laboratório) |
+| `POST /api/v1/etapas-trabalho/:id/assumir` | Assume e começa a etapa (laboratório; uma etapa atribuída a outra pessoa só ela a assume) |
+| `POST /api/v1/etapas-trabalho/:id/concluir` | Conclui a etapa: `{ "atribuicao": "livre" \| "eu" \| "outro", "colaborador_id", "destino": "avancar" \| "prova" }` (quem a assumiu, ou o Administrador) |
+| `GET /api/v1/colaboradores` | Pessoas ativas do laboratório, para atribuir etapas (laboratório) |
 | `POST /api/v1/contactos` | Público. Formulário de contacto do site: `{ "clinica", "nome", "email", "telefone", "assunto", "mensagem" }`. Vai por email para o laboratório; 503 se o email falhar |
 
 ## Comandos
