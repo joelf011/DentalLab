@@ -68,7 +68,7 @@ src/
       cargos.rotas.ts     as rotas: quem pode, o que se lê ou escreve na BD
       cargos.esquemas.ts  os dados que cada rota recebe e devolve
     saude/  autenticacao/  conta/  clientes/  alteracoes-cliente/  utilizadores/  contactos/
-    tipos-trabalho/  etapas/  ordens/  trabalhos/   (iguais)
+    tipos-trabalho/  etapas/  ordens/  trabalhos/  comentarios/  notificacoes/  ficheiros/   (iguais)
 ```
 
 Os nomes seguem os da app (`lib/comum`, `lib/autenticacao`, `configuracao.dart`) e os do servidor de AI3 (`servidor.js`).
@@ -305,6 +305,18 @@ Resumo. Os campos de cada rota, os obrigatórios e as respostas possíveis estã
 | `GET /api/v1/trabalhos/:id` | Um trabalho, com as etapas (laboratório) |
 | `POST /api/v1/etapas-trabalho/:id/assumir` | Assume e começa a etapa (laboratório; uma etapa atribuída a outra pessoa só ela a assume) |
 | `POST /api/v1/etapas-trabalho/:id/concluir` | Conclui a etapa: `{ "atribuicao": "livre" \| "eu" \| "outro", "colaborador_id", "destino": "avancar" \| "prova" }` (quem a assumiu, ou o Administrador) |
+| `GET /api/v1/ordens/:id/comentarios` | Mensagens da ordem, entre a clínica e o laboratório (Cliente: só as suas ordens) |
+| `POST /api/v1/ordens/:id/comentarios` | Escreve uma mensagem na ordem: `{ "conteudo" }`. Responde 201 com a mensagem |
+| `GET /api/v1/trabalhos/:id/notas` | Notas internas do trabalho; a clínica não as vê (laboratório) |
+| `POST /api/v1/trabalhos/:id/notas` | Escreve uma nota interna: `{ "conteudo" }` (laboratório) |
+| `GET /api/v1/notificacoes` | As minhas notificações, as mais recentes primeiro; `?por_ler=true` só as por ler |
+| `POST /api/v1/notificacoes/:id/lida` | Marca uma notificação como lida |
+| `POST /api/v1/notificacoes/lidas` | Marca todas como lidas |
+| `POST /api/v1/ordens/:id/ficheiros?tipo=STL` | Envia um ficheiro para a ordem (multipart/form-data, campo `ficheiro`, até 50 MB); `tipo`: STL, Fotografia, Documento ou Outro |
+| `POST /api/v1/trabalhos/:id/ficheiros?tipo=Fotografia` | Envia um ficheiro interno do trabalho (laboratório) |
+| `GET /api/v1/ordens/:id/ficheiros` | Ficheiros da ordem (Cliente: só as suas) |
+| `GET /api/v1/trabalhos/:id/ficheiros` | Ficheiros do trabalho (laboratório) |
+| `GET /api/v1/ficheiros/:id` | Descarrega o ficheiro, com o nome original |
 | `GET /api/v1/colaboradores` | Pessoas ativas do laboratório, para atribuir etapas (laboratório) |
 | `POST /api/v1/contactos` | Público. Formulário de contacto do site: `{ "clinica", "nome", "email", "telefone", "assunto", "mensagem" }`. Vai por email para o laboratório; 503 se o email falhar |
 

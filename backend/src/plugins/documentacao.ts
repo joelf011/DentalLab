@@ -38,6 +38,7 @@ export function registarDocumentacao(app: FastifyInstance) {
         { name: 'Catálogo', description: 'Tipos de trabalho e etapas de produção.' },
         { name: 'Ordens', description: 'As encomendas das clínicas: ordens de trabalho e os seus trabalhos.' },
         { name: 'Trabalhos', description: 'Os trabalhos de cada ordem e a sua produção.' },
+        { name: 'Comunicação', description: 'Mensagens e notas, notificações e ficheiros.' },
         { name: 'Contactos', description: 'Formulário de contacto do site.' },
       ],
       components: {

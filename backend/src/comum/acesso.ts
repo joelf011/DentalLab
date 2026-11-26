@@ -104,3 +104,14 @@ export function exigirCargo(...cargos: Cargo[]) {
     }
   };
 }
+
+// A ordem existe e quem pede pode vê-la? A clínica só vê as suas; o laboratório vê todas.
+// Usada nas rotas que dependem de uma ordem (comentários, ficheiros): se der false, responde-se 404.
+export async function podeVerOrdem(utilizador: UtilizadorLogin, ordemId: number): Promise<boolean> {
+  const resultado = await bd.query('SELECT cliente_id FROM vw_ordem_trabalho WHERE id = $1', [ordemId]);
+  const ordem = resultado.rows[0];
+  if (!ordem) {
+    return false;
+  }
+  return utilizador.cargo !== 'Cliente' || ordem.cliente_id === utilizador.cliente_id;
+}
