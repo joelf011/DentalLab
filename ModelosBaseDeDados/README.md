@@ -38,6 +38,8 @@ A base de dados do projeto chama-se **`abd_lab_cd`** (PostgreSQL 12 ou mais rece
    ```bash
    python ModelosBaseDeDados/sql/juntar.py
    ```
+4. Os erros das funções (`RAISE EXCEPTION`) seguem a regra dos códigos explicada no início do `sql/03_funcoes.sql` (404, 409 ou 400 na API).
+5. Para atualizar a BD de alguém sem apagar os dados, ver a secção 3.3 do [guia do backend](../backend/GUIA_BACKEND.md).
 4. Aplicar a mudança na tua BD:
    - **Vistas, funções e procedimentos** (`02`, `03`, `04`): basta correr de novo esse ficheiro, porque usam `CREATE OR REPLACE`.
      - Se mudares os **parâmetros** de uma função ou procedimento, faz primeiro `DROP FUNCTION` ou `DROP PROCEDURE` da versão antiga. Senão ficam duas.

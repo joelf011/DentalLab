@@ -2,13 +2,13 @@
 
 API em **Node.js + Fastify**, ligada ao **PostgreSQL**.
 
-> Quem vai trabalhar no backend (ou a AI que usar) deve ler primeiro o [GUIA_BACKEND.md](GUIA_BACKEND.md): regras, receitas e divisão de tarefas.
+> Quem vai trabalhar no backend (ou a AI que usar) deve ler primeiro o [GUIA_BACKEND.md](GUIA_BACKEND.md): como funciona, regras e receitas.
 
-A lógica da base de dados (tabelas, vistas `vw_*` e funções `fn_*_crud`) é criada no pgAdmin, a partir dos ficheiros de [`ModelosBaseDeDados/`](../ModelosBaseDeDados/).
+A lógica da base de dados (tabelas, vistas `vw_*`, funções `fn_*`, procedimentos `pr_*` e triggers) é criada no pgAdmin, a partir dos ficheiros de [`ModelosBaseDeDados/`](../ModelosBaseDeDados/).
 A API só faz duas coisas:
 
 - **ler:** `SELECT * FROM vw_...`
-- **escrever:** `SELECT fn_..._crud('CREATE' | 'UPDATE' | 'DELETE', ...)`
+- **escrever:** `SELECT fn_..._crud('CREATE' | 'UPDATE' | 'DELETE', ...)` ou `CALL pr_...(...)`
 
 ## Arrancar
 
