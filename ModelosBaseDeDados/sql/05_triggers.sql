@@ -13,7 +13,7 @@
 -- Os erros (RAISE EXCEPTION) seguem a regra dos códigos explicada no início do 03_funcoes.sql.
 --
 -- Lista:
---   T1 trg_<tabela>_auditoria                 auditoria de várias tabelas
+--   T1 trg_<tabela>_auditoria                 auditoria de várias tabelas (também os ficheiros)
 --   T2 trg_ordem_trabalho_datas               datas automáticas pelo estado
 --   T3 trg_ordem_trabalho_notificar_estado    avisa a clínica quando o estado muda
 --   T4 trg_ordem_trabalho_notificar_nova      avisa os administradores de uma ordem nova
@@ -111,6 +111,10 @@ CREATE TRIGGER trg_trabalho_auditoria
 
 CREATE TRIGGER trg_etapa_trabalho_auditoria
     AFTER INSERT OR UPDATE OR DELETE ON etapa_trabalho
+    FOR EACH ROW EXECUTE FUNCTION fn_trg_auditoria();
+
+CREATE TRIGGER trg_ficheiro_auditoria
+    AFTER INSERT OR UPDATE OR DELETE ON ficheiro
     FOR EACH ROW EXECUTE FUNCTION fn_trg_auditoria();
 
 

@@ -593,6 +593,100 @@ JOIN utilizador u     ON u.id = f.carregado_por
 WHERE f.eliminado_em IS NULL;
 
 
+-- ---------------------------------------------------------------------
+-- Registo de Atividades (auditoria)
+-- ---------------------------------------------------------------------
+
+-- Cada linha de registo_auditoria (preenchida pelo trigger fn_trg_auditoria), com quem fez a alteração
+-- e uma descrição em português. As ações mais comuns têm uma descrição própria; as outras ficam com uma
+-- descrição geral ("Alterou a clínica n.º 3"). Os valores antes e depois ficam para ver o pormenor.
+CREATE OR REPLACE VIEW vw_registo_auditoria AS
+SELECT a.id, a.data_hora, a.utilizador_id,
+       u.nome       AS autor,
+       c.designacao AS cargo_autor,
+       a.acao, a.entidade_afetada, a.id_entidade_afetada,
+       CASE
+           -- ordens: criada, e cada mudança de estado
+           WHEN a.entidade_afetada = 'ordem_trabalho' AND a.acao = 'INSERT'
+               THEN format('Criou a ordem n.º %s', a.id_entidade_afetada)
+           WHEN a.entidade_afetada = 'ordem_trabalho' AND a.acao = 'UPDATE'
+                AND ea.id IS DISTINCT FROM ep.id
+               THEN format('A ordem n.º %s passou de "%s" para "%s"', a.id_entidade_afetada, ea.designacao, ep.designacao)
+
+           -- etapas de produção: concluída, começada, atribuída
+           WHEN a.entidade_afetada = 'etapa_trabalho' AND a.acao = 'UPDATE'
+                AND a.valores_anteriores ->> 'data_conclusao' IS NULL
+                AND a.valores_posteriores ->> 'data_conclusao' IS NOT NULL
+               THEN format('Concluiu a etapa "%s" do trabalho n.º %s',
+                           a.valores_posteriores ->> 'nome', a.valores_posteriores ->> 'trabalho_id')
+           WHEN a.entidade_afetada = 'etapa_trabalho' AND a.acao = 'UPDATE'
+                AND a.valores_anteriores ->> 'data_inicio' IS NULL
+                AND a.valores_posteriores ->> 'data_inicio' IS NOT NULL
+               THEN format('Começou a etapa "%s" do trabalho n.º %s',
+                           a.valores_posteriores ->> 'nome', a.valores_posteriores ->> 'trabalho_id')
+           WHEN a.entidade_afetada = 'etapa_trabalho' AND a.acao = 'UPDATE'
+                AND a.valores_anteriores ->> 'responsavel_id' IS DISTINCT FROM a.valores_posteriores ->> 'responsavel_id'
+               THEN format('Atribuiu a etapa "%s" do trabalho n.º %s a %s',
+                           a.valores_posteriores ->> 'nome', a.valores_posteriores ->> 'trabalho_id', ur.nome)
+
+           -- contas
+           WHEN a.entidade_afetada = 'utilizador' AND a.acao = 'INSERT'
+               THEN format('Criou a conta de %s', a.valores_posteriores ->> 'nome')
+           WHEN a.entidade_afetada = 'utilizador' AND a.acao = 'UPDATE'
+                AND a.valores_posteriores ? 'password_alterada'
+               THEN format('Mudou a palavra-passe de %s', a.valores_posteriores ->> 'nome')
+           WHEN a.entidade_afetada = 'utilizador' AND a.acao = 'UPDATE'
+                AND a.valores_anteriores ->> 'data_aprovacao' IS NULL
+                AND a.valores_posteriores ->> 'data_aprovacao' IS NOT NULL
+               THEN format('Aprovou a conta de %s', a.valores_posteriores ->> 'nome')
+           WHEN a.entidade_afetada = 'utilizador' AND a.acao = 'UPDATE'
+                AND a.valores_anteriores ->> 'ativo' <> a.valores_posteriores ->> 'ativo'
+               THEN format('%s a conta de %s',
+                           CASE WHEN (a.valores_posteriores ->> 'ativo')::boolean THEN 'Reativou' ELSE 'Desativou' END,
+                           a.valores_posteriores ->> 'nome')
+
+           -- clínicas
+           WHEN a.entidade_afetada = 'cliente' AND a.acao = 'INSERT'
+               THEN format('Criou a clínica %s', a.valores_posteriores ->> 'nome')
+           WHEN a.entidade_afetada = 'cliente' AND a.acao = 'UPDATE'
+                AND a.valores_anteriores ->> 'ativo' <> a.valores_posteriores ->> 'ativo'
+               THEN format('%s a clínica %s',
+                           CASE WHEN (a.valores_posteriores ->> 'ativo')::boolean THEN 'Reativou' ELSE 'Suspendeu' END,
+                           a.valores_posteriores ->> 'nome')
+
+           -- ficheiros
+           WHEN a.entidade_afetada = 'ficheiro' AND a.acao = 'INSERT'
+               THEN format('Enviou o ficheiro "%s"', a.valores_posteriores ->> 'nome')
+
+           -- as outras alterações: descrição geral
+           ELSE format('%s %s n.º %s',
+                       CASE a.acao WHEN 'INSERT' THEN 'Criou' WHEN 'UPDATE' THEN 'Alterou' ELSE 'Apagou' END,
+                       CASE a.entidade_afetada
+                           WHEN 'ordem_trabalho'    THEN 'a ordem'
+                           WHEN 'trabalho'          THEN 'o trabalho'
+                           WHEN 'etapa_trabalho'    THEN 'a etapa'
+                           WHEN 'cliente'           THEN 'a clínica'
+                           WHEN 'utilizador'        THEN 'a conta'
+                           WHEN 'cargo'             THEN 'o cargo'
+                           WHEN 'tipo_trabalho'     THEN 'o tipo de trabalho'
+                           WHEN 'estado_ordem'      THEN 'o estado'
+                           WHEN 'alteracao_cliente' THEN 'o pedido de alteração'
+                           WHEN 'ficheiro'          THEN 'o ficheiro'
+                           ELSE a.entidade_afetada
+                       END,
+                       a.id_entidade_afetada)
+       END AS descricao,
+       a.valores_anteriores, a.valores_posteriores
+FROM registo_auditoria a
+LEFT JOIN utilizador u    ON u.id = a.utilizador_id
+LEFT JOIN cargo c         ON c.id = u.cargo_id
+-- estados da ordem antes e depois (para "passou de ... para ...")
+LEFT JOIN estado_ordem ea ON ea.id = (a.valores_anteriores ->> 'estado_ordem_id')::bigint
+LEFT JOIN estado_ordem ep ON ep.id = (a.valores_posteriores ->> 'estado_ordem_id')::bigint
+-- responsável de uma etapa (para "atribuiu ... a ...")
+LEFT JOIN utilizador ur   ON ur.id = (a.valores_posteriores ->> 'responsavel_id')::bigint;
+
+
 -- #####################################################################
 -- 03_funcoes.sql
 -- #####################################################################
@@ -2073,7 +2167,7 @@ $BODY$;
 -- Os erros (RAISE EXCEPTION) seguem a regra dos códigos explicada no início do 03_funcoes.sql.
 --
 -- Lista:
---   T1 trg_<tabela>_auditoria                 auditoria de várias tabelas
+--   T1 trg_<tabela>_auditoria                 auditoria de várias tabelas (também os ficheiros)
 --   T2 trg_ordem_trabalho_datas               datas automáticas pelo estado
 --   T3 trg_ordem_trabalho_notificar_estado    avisa a clínica quando o estado muda
 --   T4 trg_ordem_trabalho_notificar_nova      avisa os administradores de uma ordem nova
@@ -2171,6 +2265,10 @@ CREATE TRIGGER trg_trabalho_auditoria
 
 CREATE TRIGGER trg_etapa_trabalho_auditoria
     AFTER INSERT OR UPDATE OR DELETE ON etapa_trabalho
+    FOR EACH ROW EXECUTE FUNCTION fn_trg_auditoria();
+
+CREATE TRIGGER trg_ficheiro_auditoria
+    AFTER INSERT OR UPDATE OR DELETE ON ficheiro
     FOR EACH ROW EXECUTE FUNCTION fn_trg_auditoria();
 
 
