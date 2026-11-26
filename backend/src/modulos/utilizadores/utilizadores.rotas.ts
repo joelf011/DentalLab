@@ -11,11 +11,12 @@ import {
   criarUtilizador,
   desativarUtilizador,
   esquemaUtilizador,
+  listarColaboradores,
   listarUtilizadores,
   obterUtilizador,
 } from './utilizadores.esquemas.ts';
 
-// Rotas das contas de acesso (utilizadores). Todas são do Administrador.
+// Rotas das contas de acesso (utilizadores). Todas são do Administrador, menos a lista de colaboradores.
 // Ler: vista vw_utilizador (não mostra o password_hash).
 // Criar, alterar e desativar: fn_utilizador_crud. Aprovar: fn_aprovar_utilizador.
 // As contas criadas pelo Administrador ficam logo aprovadas, com uma palavra-passe temporária
@@ -151,6 +152,19 @@ export async function rotasUtilizadores(app: FastifyInstance) {
     await escreverComo(request.user.id, "SELECT fn_utilizador_crud('DELETE', $1) AS id", [id]);
     return reply.code(204).send();
   });
+
+  // GET /api/v1/colaboradores: as pessoas ativas do laboratório (para atribuir etapas)
+  // Não é só do Administrador: os colaboradores também escolhem a quem fica a etapa seguinte.
+  app.get(
+    '/colaboradores',
+    { schema: listarColaboradores, preHandler: exigirCargo('Administrador', 'Colaborador') },
+    async () => {
+      const resultado = await bd.query(
+        'SELECT id, nome, cargo FROM vw_utilizador WHERE ativo AND cliente_id IS NULL ORDER BY nome',
+      );
+      return resultado.rows;
+    },
+  );
 
   // POST /api/v1/utilizadores/1/aprovar: aprova uma conta que está à espera
   app.post('/utilizadores/:id/aprovar', { schema: aprovarUtilizador, preHandler: soAdmin }, async (request) => {

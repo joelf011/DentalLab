@@ -147,3 +147,28 @@ export const aprovarUtilizador = {
     ...respostasErro(400, 401, 403, 404, 409),
   },
 };
+
+// GET /api/v1/colaboradores
+export const listarColaboradores = {
+  tags: etiqueta,
+  operationId: 'listarColaboradores',
+  summary: 'Listar quem trabalha no laboratório',
+  description:
+    'O laboratório (Administrador e Colaborador): as contas ativas do laboratório, por nome. ' +
+    'Serve para escolher a quem fica a etapa seguinte ao concluir uma etapa.',
+  response: {
+    200: resposta('As pessoas do laboratório.', {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer' },
+          nome: { type: 'string' },
+          cargo: { type: 'string' },
+        },
+        required: ['id', 'nome', 'cargo'],
+      },
+    }),
+    ...respostasErro(401, 403),
+  },
+};
