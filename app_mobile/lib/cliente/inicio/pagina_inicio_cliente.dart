@@ -107,28 +107,6 @@ class _PaginaInicioClienteState extends State<PaginaInicioCliente> {
           fundo: CoresApp.sucessoClaro,
           aoTocar: widget.aoVerPedidos,
         ),
-        const SizedBox(height: 10),
-        FilledButton(
-          onPressed: widget.aoNovaEncomenda,
-          style: FilledButton.styleFrom(
-            backgroundColor: CoresApp.dourado,
-            foregroundColor: CoresApp.textoForte,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            minimumSize: const Size(64, 64),
-          ),
-          child: const Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Nova Encomenda',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-              ),
-              SizedBox(width: 12),
-              Icon(Icons.add, size: 28),
-            ],
-          ),
-        ),
         const SizedBox(height: 20),
         Row(
           children: [
