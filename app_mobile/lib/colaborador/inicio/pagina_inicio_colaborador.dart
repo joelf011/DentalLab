@@ -89,44 +89,30 @@ class _PaginaInicioColaboradorState extends State<PaginaInicioColaborador> {
 
     final urgentes = trabalhos.where((trabalho) => trabalho.eUrgente).length;
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       children: [
         Text(
           'Olá, ${Sessao.atual!.nome}',
-          style: const TextStyle(fontSize: 20, color: CoresApp.textoForte),
+          style: const TextStyle(
+            fontSize: 22,
+            color: CoresApp.textoForte,
+            fontFamily: 'serif',
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           Sessao.atual!.cargo,
-          style: const TextStyle(fontSize: 14, color: CoresApp.textoSuave),
+          style: const TextStyle(fontSize: 13, color: CoresApp.textoSuave),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         Contador(
-          margem: EdgeInsets.zero,
-          espacamento: const EdgeInsets.all(16),
-          alturaMinima: 0,
-          estiloTexto: const TextStyle(fontSize: 14),
-          estiloValor: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
           texto: 'Ativos',
           valor: ativos,
           cor: CoresApp.douradoEscuro,
-          corValor: CoresApp.textoForte,
           fundo: CoresApp.douradoClaro,
           aoTocar: widget.aoVerOsMeus,
         ),
-        const SizedBox(height: 10),
         Contador(
-          margem: EdgeInsets.zero,
-          espacamento: const EdgeInsets.all(16),
-          alturaMinima: 0,
-          estiloTexto: const TextStyle(fontSize: 14),
-          estiloValor: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
           texto: 'Em execução',
           valor: emExecucao,
           cor: CoresApp.info,
@@ -134,16 +120,7 @@ class _PaginaInicioColaboradorState extends State<PaginaInicioColaborador> {
           fundo: CoresApp.infoClaro,
           aoTocar: widget.aoVerOsMeus,
         ),
-        const SizedBox(height: 10),
         Contador(
-          margem: EdgeInsets.zero,
-          espacamento: const EdgeInsets.all(16),
-          alturaMinima: 0,
-          estiloTexto: const TextStyle(fontSize: 14),
-          estiloValor: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
           texto: 'Urgentes',
           valor: urgentes,
           cor: CoresApp.erro,
@@ -151,7 +128,7 @@ class _PaginaInicioColaboradorState extends State<PaginaInicioColaborador> {
           fundo: CoresApp.avisoClaro,
           aoTocar: _verPrazos,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         Row(
           children: [
             const Expanded(
@@ -167,14 +144,13 @@ class _PaginaInicioColaboradorState extends State<PaginaInicioColaborador> {
             TextButton(
               onPressed: _verPrazos,
               style: TextButton.styleFrom(
-                foregroundColor: CoresApp.textoSuave,
+                foregroundColor: CoresApp.douradoEscuro,
                 textStyle: const TextStyle(fontSize: 12),
               ),
               child: const Text('Ver todos →'),
             ),
           ],
         ),
-        const SizedBox(height: 12),
         if (prioridades.isEmpty)
           const EstadoVazio(mensagem: 'Sem trabalhos atribuídos.')
         else
