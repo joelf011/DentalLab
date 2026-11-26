@@ -63,7 +63,9 @@ SELECT et.id, et.trabalho_id, et.nome, et.ordem,
        CASE WHEN et.data_conclusao IS NOT NULL THEN 'Concluída'
             WHEN et.data_inicio IS NOT NULL    THEN 'Em curso'
             ELSE 'Por iniciar'
-       END AS estado
+       END AS estado,
+       -- no fim (acrescentado depois): a API confirma quem é o responsável da etapa
+       et.responsavel_id
 FROM etapa_trabalho et
 JOIN trabalho t        ON t.id = et.trabalho_id
 LEFT JOIN utilizador u ON u.id = et.responsavel_id
