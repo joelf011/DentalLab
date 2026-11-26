@@ -25,8 +25,14 @@ export const esquemaCliente = {
     telefone: { type: ['string', 'null'] },
     ativo: { type: 'boolean' },
     criado_em: { type: 'string', format: 'date-time' },
+    estado: {
+      type: 'string',
+      enum: ['Ativo', 'A aguardar validação', 'Suspenso'],
+      description: 'Suspenso: desativada. A aguardar validação: tem uma conta por aprovar (ver GET /utilizadores?por_aprovar=true).',
+    },
+    trabalhos_ativos: { type: 'integer', description: 'Trabalhos das ordens que ainda não acabaram.' },
   },
-  required: ['id', 'nome', 'nif', 'morada_faturacao', 'email', 'telefone', 'ativo', 'criado_em'],
+  required: ['id', 'nome', 'nif', 'morada_faturacao', 'email', 'telefone', 'ativo', 'criado_em', 'estado', 'trabalhos_ativos'],
 };
 
 // Os campos de uma clínica que o frontend pode enviar
