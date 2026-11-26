@@ -423,7 +423,23 @@ LEFT JOIN cliente cl ON cl.id = u.cliente_id;
 -- cliente
 
 CREATE OR REPLACE VIEW vw_cliente AS
-SELECT c.id, c.nome, c.nif, c.morada_faturacao, c.email, c.telefone, c.ativo, c.criado_em
+SELECT c.id, c.nome, c.nif, c.morada_faturacao, c.email, c.telefone, c.ativo, c.criado_em,
+       -- no fim (acrescentados depois), para o ecrã Clientes do backoffice:
+       -- o estado (Suspenso, A aguardar validação ou Ativo) e os trabalhos das ordens por acabar
+       CASE
+           WHEN NOT c.ativo THEN 'Suspenso'
+           WHEN EXISTS (SELECT 1 FROM utilizador u
+                        WHERE u.cliente_id = c.id AND u.ativo AND u.data_aprovacao IS NULL)
+               THEN 'A aguardar validação'
+           ELSE 'Ativo'
+       END AS estado,
+       (SELECT count(*)
+        FROM trabalho t
+        JOIN ordem_trabalho o ON o.id = t.ordem_trabalho_id
+        JOIN estado_ordem e   ON e.id = o.estado_ordem_id
+        WHERE o.cliente_id = c.id
+          AND o.eliminado_em IS NULL AND t.eliminado_em IS NULL
+          AND e.designacao NOT IN ('Concluído', 'Entregue', 'Rejeitado')) AS trabalhos_ativos
 FROM cliente c;
 
 
